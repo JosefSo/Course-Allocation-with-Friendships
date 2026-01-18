@@ -200,7 +200,7 @@ c^\* = \arg\max_{c \in C_s}
 \Big)
 $$
 
-#№## Tie-breaking flow
+### Tie-breaking flow
 
 ```mermaid
 flowchart TD
