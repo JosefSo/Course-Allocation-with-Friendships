@@ -502,7 +502,7 @@ python3 hbs_social.py \
   --draft-rounds 3 \
   --post-iters 10 \
   --improve-mode add-drop \
-  --seed 42 \
+  --seed 11 \
   --out-allocation results/allocation.csv \
   --out-adddrop results/post_allocation.csv \
   --out-summary results/summary.csv \
