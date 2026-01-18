@@ -166,8 +166,7 @@ $$
 U(s, c) = Base(s,c) + \lambda_s \cdot FriendBonus(s,c)
 $$
 
-<img width="851" height="141" alt="Screenshot 2026-01-18 at 20 28 23" src="https://github.com/user-attachments/assets/4b449b26-81ab-4527-bbcc-6644fc6cb92a" />
-
+<img width="851" height="141" alt="Screenshot 2026-01-18 at 20 29 13" src="https://github.com/user-attachments/assets/4a2b2e0c-f865-4af3-8df5-ecc314d183f0" />
 
 Code reference: `HBS/hbs_engine.py:203` (method `_utility_components`) and `HBS/hbs_engine.py:70` (default lambda).
 
