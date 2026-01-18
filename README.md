@@ -82,8 +82,8 @@ This formula is used only for Table 2 (friend ranks).
 
 ### 2.4 Utility components (per student and course)
 Definitions:
-- PositionA(s,c): the 1-based rank of course c for student s from Table 1 (1 = most preferred).
-- PositionB(s,f,c): the 1-based rank of friend f for student s in course c from Table 2 (1 = top friend).
+- PositionA(s,c): the 1-based rank of course c for student s from Table 1 (1 = most preferred, k = least preferred).
+- PositionB(s,f,c): the 1-based rank of friend f for student s in course c from Table 2 (1 = top friend, 3 = lowest-ranked friend).
 
 Base utility from Table 1:
 Function type: composition of rank-to-utility (affine Min-Max) with the PositionA lookup.
