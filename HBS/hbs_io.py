@@ -76,6 +76,15 @@ def _read_table_lambda(path: Path) -> list[StudentLambda]:
     return rows
 
 
+def _format_ratio(value: float, max_value: float) -> str:
+    def _fmt(num: float) -> str:
+        if abs(num - round(num)) < 1e-9:
+            return str(int(round(num)))
+        return f"{num:.6f}".rstrip("0").rstrip(".")
+
+    return f"{_fmt(value)}/{_fmt(max_value)}"
+
+
 def _write_allocation_csv(
     path: Path,
     *,
@@ -177,9 +186,9 @@ def _write_summary_csv(
                 b,
                 draft_rounds,
                 post_iters,
-                f"{summary.total_utility:.6f}",
-                f"{summary.gini_total_norm:.6f}",
-                f"{summary.gini_base_norm:.6f}",
+                _format_ratio(summary.total_utility, summary.total_utility_max),
+                _format_ratio(summary.gini_total_norm, summary.gini_total_norm_max),
+                _format_ratio(summary.gini_base_norm, summary.gini_base_norm_max),
             ]
         )
 
@@ -197,4 +206,9 @@ def _write_metrics_extended_csv(
     with path.open("w", newline="", encoding="utf-8") as f:
         writer = csv.writer(f)
         writer.writerow(keys)
-        writer.writerow([f"{metrics.values[k]:.6f}" for k in keys])
+        writer.writerow(
+            [
+                _format_ratio(metrics.values[k], metrics.maxima.get(k, 1.0))
+                for k in keys
+            ]
+        )

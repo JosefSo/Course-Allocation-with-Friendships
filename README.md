@@ -44,6 +44,8 @@ This section matches the exact computation implemented in `HBS/` and breaks it i
 - Course capacity is uniform: `cap(c) = cap_default` for all `c`.
 
 ### Rank-to-utility mapping (Table 1)
+Function type: affine Min-Max linear scaling of rank to [0, 1].
+
 We convert a 1-based course rank into a utility in [0, 1]:
 
 $$
@@ -61,6 +63,8 @@ Example: if K=4, then posU(1,4)=1, posU(2,4)=2/3, posU(4,4)=0; missing p gives 0
 In code, missing `PositionA` yields `Base = 0`, and missing `Score`/`PositionA` are treated as worst-case for tie-breaking.
 
 ### Friend-rank mapping (Table 2, linear without zero)
+Function type: affine linear scaling with a strictly positive minimum for ranked friends.
+
 For friends we use a separate linear mapping so that the lowest rank is still positive:
 
 $$
@@ -78,6 +82,7 @@ This formula is used only for Table 2 (friend ranks).
 
 ### Utility components (per student and course)
 Base utility from Table 1:
+Function type: composition of rank-to-utility (affine Min-Max) with the PositionA lookup.
 
 $$
 Base(s, c) = posU(PositionA(s,c), |C|)
@@ -86,6 +91,7 @@ $$
 Example: |C|=4 and PositionA(s,c)=2 gives Base(s,c)=2/3.
 
 Directed friend preference from Table 2 (ranked among friends):
+Function type: composition of friend-rank linear scaling with the PositionB lookup.
 
 $$
 Pref(s, f, c) = posU_{friend}(PositionB(s,f,c), K_{friend})
@@ -100,6 +106,7 @@ $$
 Example: K_friend=3, PositionB=1 gives Pref=1; PositionB=3 gives Pref=1/3.
 
 Reactive friend bonus (only already allocated friends count):
+Function type: weighted sum over a directed friend set with an indicator (reactive overlap).
 
 $$
 FriendBonus(s, c) = \sum_{f \in F(s)} \mathbb{1}[c \in A_f] \cdot Pref(s,f,c)
@@ -108,6 +115,7 @@ $$
 Example: F(s)={f1,f2}, only f1 already has c, Pref(s,f1,c)=1, Pref(s,f2,c)=0.5 -> FriendBonus=1.
 
 Total per-pick utility:
+Function type: linear combination of base and friend bonus with weight lambda_s.
 
 $$
 U(s, c) = Base(s,c) + \lambda_s \cdot FriendBonus(s,c)
@@ -125,6 +133,7 @@ $$
 Example: C={C1,C2,C3}, cap_left(C2)=0, A_s={C1} -> C_s={C3}.
 
 The chosen course is the lexicographic maximum of a tie-break tuple:
+Function type: lexicographic argmax (utility first, then deterministic tie-breaks).
 
 $$
 c^\* = \arg\max_{c \in C_s}
@@ -157,6 +166,7 @@ Example: pi=[S2,S1,S3] -> round1: S2,S1,S3; round2: S3,S1,S2.
 After the draft, the algorithm can improve the allocation for `post_iters` iterations.
 
 Per-student welfare (final allocation):
+Function type: additive sum of per-course utilities over the final allocation.
 
 $$
 W_s = \sum_{c \in A_s}
@@ -168,6 +178,7 @@ $$
 Example: A_s={C1,C2}, Base(s,C1)=1, Base(s,C2)=0.5, lambda_s=0.4, and only C1 overlaps with friends with sum Pref=1 -> W_s=(1+0.4*1)+(0.5+0)=1.9.
 
 Global welfare:
+Function type: aggregate sum over students.
 
 $$
 W = \sum_{s \in S} W_s
@@ -248,6 +259,7 @@ Example: Total_s=1.98 and MaxTotalUpper_s=2.1 -> TotalNorm_s≈0.943.
 Let `x_i` be a list of non-negative values (the code clamps negatives to 0), sorted in non-decreasing order. Let `n = |x|`.
 
 Total utility:
+Function type: sum (L1 aggregate) over a list of values.
 
 $$
 TotalUtility = \sum_{i=1}^{n} x_i
@@ -256,6 +268,7 @@ $$
 Example: x=[0.75, 0.25, 1.0] -> TotalUtility=2.0.
 
 Gini index (used for `TotalNorm` and `BaseNorm`):
+Function type: normalized Gini coefficient over non-negative values.
 
 $$
 Gini(x) =
@@ -268,6 +281,7 @@ $$
 Example: x=[0, 1] -> Gini=0.5; x=[1, 1, 1] -> Gini=0.
 
 Jain index:
+Function type: Jain's fairness index (quadratic mean ratio).
 
 $$
 Jain(x) =
@@ -280,6 +294,7 @@ $$
 Example: x=[1, 1] -> Jain=1.0; x=[0, 1] -> Jain=0.5.
 
 Theil index:
+Function type: Theil entropy index of inequality.
 
 $$
 Theil(x) =
@@ -290,6 +305,7 @@ $$
 Example: x=[1, 1] -> Theil=0 (perfect equality).
 
 Atkinson index (epsilon = 0.5 in this project):
+Function type: Atkinson inequality index with epsilon = 0.5.
 
 $$
 Atkinson(x; \epsilon) =
@@ -352,10 +368,10 @@ python3 hbs_social.py \
   --post-iters 10 \
   --improve-mode add-drop \
   --seed 42 \
-  --out-allocation allocation.csv \
-  --out-adddrop post_allocation.csv \
-  --out-summary summary.csv \
-  --out-metrics-extended metrics_extended.csv
+  --out-allocation results/allocation.csv \
+  --out-adddrop results/post_allocation.csv \
+  --out-summary results/summary.csv \
+  --out-metrics-extended results/metrics_extended.csv
 ```
 
 Useful optional flags: `--progress`, `--sanity-checks`, `--delta-check-every`, `--log-level`.

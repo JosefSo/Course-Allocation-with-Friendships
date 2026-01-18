@@ -6,6 +6,7 @@ from pathlib import Path
 
 from .hbs_api import run_hbs_social
 from .hbs_io import (
+    _format_ratio,
     _write_allocation_csv,
     _write_metrics_extended_csv,
     _write_post_alloc_csv,
@@ -141,8 +142,8 @@ def main() -> int:
     print(f"OK: {args.out_allocation} ({len(result.pick_log)} picks)")
     print(
         "Metrics: "
-        f"TotalUtility={result.summary.total_utility:.6f} "
-        f"GiniTotalNorm={result.summary.gini_total_norm:.6f} "
-        f"GiniBaseNorm={result.summary.gini_base_norm:.6f}"
+        f"TotalUtility={_format_ratio(result.summary.total_utility, result.summary.total_utility_max)} "
+        f"GiniTotalNorm={_format_ratio(result.summary.gini_total_norm, result.summary.gini_total_norm_max)} "
+        f"GiniBaseNorm={_format_ratio(result.summary.gini_base_norm, result.summary.gini_base_norm_max)}"
     )
     return 0

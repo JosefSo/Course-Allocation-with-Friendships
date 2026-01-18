@@ -50,6 +50,9 @@ class RunSummary:
     total_utility: float
     gini_total_norm: float
     gini_base_norm: float
+    total_utility_max: float
+    gini_total_norm_max: float
+    gini_base_norm_max: float
 
 
 @dataclass(frozen=True)
@@ -57,6 +60,7 @@ class ExtendedMetrics:
     """Additional metrics for deeper analysis (exported to metrics_extended CSV)."""
 
     values: dict[str, float]
+    maxima: dict[str, float]
 
 
 @dataclass(frozen=True)
