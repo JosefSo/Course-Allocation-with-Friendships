@@ -211,6 +211,24 @@ Where `rnd(s,c)` is a seeded random number used only for remaining ties, and `Co
 4) then seeded random,
 5) then stable `CourseID`.
 
+### Why utility is rounded to 9 decimals
+
+Due to floating-point arithmetic, two courses may have utilities that are mathematically equal
+but differ by an insignificant numerical error:
+
+- `U(s, C1) = 0.33333333333333331`
+- `U(s, C2) = 0.33333333333333326`
+
+Without rounding, the algorithm would incorrectly treat `C1` as strictly better and skip all tie-break rules.
+After rounding to 9 decimals:
+
+- `round(U(s, C1), 9) = 0.333333333`
+- `round(U(s, C2), 9) = 0.333333333`
+
+Both courses are treated as equal in utility, and the decision is correctly resolved using
+deterministic tie-breakers (position, score, seeded randomness).
+Differences below \(10^{-9}\) are considered numerically insignificant.
+
 ### 2.6 Draft order (snake)
 Let `pi` be a random permutation of students (seeded). For round `r`:
 - if `r` is odd: order is `pi`
