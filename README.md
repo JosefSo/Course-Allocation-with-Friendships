@@ -280,13 +280,28 @@ Code reference: `HBS/hbs_engine.py:249` (method `_global_welfare`).
 
 Example: if W_s1=1.9 and W_s2=1.1, then W=3.0.
 
-Swap mode:
-- for each iteration, find the feasible swap with the best positive `DeltaW = W_{after} - W_{before}`,
-- apply it if `DeltaW > 0`, otherwise no-op.
+#### 2.7.1 Swap mode (local improvement by swapping courses)
+How it works:
+1) For every pair of students `(s1, s2)`, enumerate all feasible course swaps `(c1 in A_s1, c2 in A_s2)`.
+2) Compute the welfare change `DeltaW = W_after - W_before` using a delta calculation.
+3) Select the best positive `DeltaW`. If `DeltaW > 0`, apply the swap; otherwise do nothing for this iteration.
+4) Repeat for `post_iters` iterations (deterministic order, deterministic tie-break for equal deltas).
 
-Add-drop mode (HBS-style):
-- for each student, build a candidate set: current allocation plus any course with remaining capacity,
-- score candidates by `U(s,c)` and keep the top `b` courses (max courses per student).
+Code reference: `HBS/hbs_engine.py:530` (loop over swap iterations), `HBS/hbs_engine.py:291` (delta computation), `HBS/hbs_engine.py:302` (swap application).
+
+Example: if S1 has C1 and S2 has C2, and swapping increases global welfare by 0.3, the swap is applied; if the best swap gives DeltaW <= 0, the iteration is a no-op.
+
+#### 2.7.2 Add-drop mode (HBS-style pass with spare capacity)
+How it works:
+1) For each iteration, shuffle students and process them one by one.
+2) Build a candidate set = current courses of the student + any course with remaining capacity.
+3) Score candidates with the same `U(s,c)` utility and pick the top `b` courses.
+4) Drop courses not in the top `b` and add newly selected courses (capacity is updated).
+5) If no student changes in the pass, the iteration is recorded as a no-op.
+
+Code reference: `HBS/hbs_engine.py:639` (add/drop loop), `HBS/hbs_engine.py:660` (candidate set), `HBS/hbs_engine.py:669` (scoring and top-b selection), `HBS/hbs_engine.py:697` (capacity updates).
+
+Example: if b=2 and a student currently has {C1,C2}, and C3 has free seats with higher utility, the student may drop C2 and add C3, ending with {C1,C3}.
 
 ### 2.8 Normalization for fairness
 Let `b` be max courses per student.
