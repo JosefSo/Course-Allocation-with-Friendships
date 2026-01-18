@@ -62,6 +62,8 @@ posU(p, K) =
 \end{cases}
 $$
 
+Code reference: `HBS/hbs_engine.py:25` (function `_pos_u`).
+
 Example: if K=4, then posU(1,4)=1, posU(2,4)=2/3, posU(4,4)=0; missing p gives 0.
 
 In code, missing `PositionA` yields `Base = 0`, and missing `Score`/`PositionA` are treated as worst-case for tie-breaking.
@@ -84,6 +86,8 @@ posU_{friend}(p, K) =
 \end{cases}
 $$
 
+Code reference: `HBS/hbs_engine.py:41` (function `_pos_u_friend`) and `HBS/hbs_engine.py:140` (derives `K_friend`).
+
 Example: if K=3, then posU_friend(1,3)=1, posU_friend(2,3)=2/3, posU_friend(3,3)=1/3.
 
 This formula is used only for Table 2 (friend ranks).
@@ -100,6 +104,8 @@ $$
 Base(s, c) = posU(PositionA(s,c), |C|)
 $$
 
+Code reference: `HBS/hbs_engine.py:121` (precompute) and `HBS/hbs_engine.py:158` (method `_base_utility`).
+
 Example: |C|=4 and PositionA(s,c)=2 gives Base(s,c)=2/3.
 
 Directed friend preference from Table 2 (ranked among friends):
@@ -108,6 +114,8 @@ Function type: composition of friend-rank linear scaling with the PositionB look
 $$
 Pref(s, f, c) = posU_{friend}(PositionB(s,f,c), K_{friend})
 $$
+
+Code reference: `HBS/hbs_engine.py:141` (precompute) and `HBS/hbs_engine.py:183` (method `_friend_preference_utility`).
 
 Equivalently (when K_friend > 0):
 
@@ -123,6 +131,8 @@ Function type: weighted sum over a directed friend set with an indicator (reacti
 $$
 FriendBonus(s, c) = \sum_{f \in F(s)} \mathbb{1}[c \in A_f] \cdot Pref(s,f,c)
 $$
+
+Code reference: `HBS/hbs_engine.py:190` (method `_friend_bonus_reactive`).
 
 Interpretation (step-by-step):
 1) Take only the friends listed for student s (the directed set F(s) from Table 2).
@@ -149,6 +159,8 @@ $$
 U(s, c) = Base(s,c) + \lambda_s \cdot FriendBonus(s,c)
 $$
 
+Code reference: `HBS/hbs_engine.py:203` (method `_utility_components`) and `HBS/hbs_engine.py:70` (default lambda).
+
 Example: Base=0.6, lambda_s=0.4, FriendBonus=0.5 -> U=0.6+0.4*0.5=0.8.
 
 ### 2.5 Feasible choices and pick rule
@@ -157,6 +169,8 @@ At a pick, the feasible set is:
 $$
 C_s = \{ c \in C \mid cap\_left(c) > 0 \ \land \ c \notin A_s \}
 $$
+
+Code reference: `HBS/hbs_engine.py:503` (candidate filtering inside `_run_initial_draft`).
 
 Example: C={C1,C2,C3}, cap_left(C2)=0, A_s={C1} -> C_s={C3}.
 
@@ -174,6 +188,8 @@ c^\* = \arg\max_{c \in C_s}
 \Big)
 $$
 
+Code reference: `HBS/hbs_engine.py:518` (score tuple), `HBS/hbs_engine.py:535` (argmax), and `HBS/hbs_engine.py:173` (Score/Position tie-break accessors).
+
 Example: if U is tied and PositionA(C1)=2, PositionA(C2)=1, then C2 wins; if positions equal, higher Score wins, then rnd, then CourseID.
 
 Where `rnd(s,c)` is a seeded random number used only for remaining ties, and `CourseID` is a stable final tie-breaker. This is equivalent to:
@@ -190,6 +206,8 @@ Let `pi` be a random permutation of students (seeded). For round `r`:
 
 Example: pi=[S2,S1,S3] -> round1: S2,S1,S3; round2: S3,S1,S2.
 
+Code reference: `HBS/hbs_engine.py:493` (seeded shuffle) and `HBS/hbs_engine.py:501` (snake order).
+
 ### 2.7 Post-phase objective (swap or add-drop)
 After the draft, the algorithm can improve the allocation for `post_iters` iterations.
 
@@ -203,6 +221,8 @@ Base(s,c) + \lambda_s \cdot \sum_{f \in F(s)} \mathbb{1}[c \in A_f] \cdot Pref(s
 \right]
 $$
 
+Code reference: `HBS/hbs_engine.py:215` (method `_student_welfare`) and `HBS/hbs_engine.py:235` (components).
+
 Example: A_s={C1,C2}, Base(s,C1)=1, Base(s,C2)=0.5, lambda_s=0.4, and only C1 overlaps with friends with sum Pref=1 -> W_s=(1+0.4*1)+(0.5+0)=1.9.
 
 Global welfare:
@@ -211,6 +231,8 @@ Function type: aggregate sum over students.
 $$
 W = \sum_{s \in S} W_s
 $$
+
+Code reference: `HBS/hbs_engine.py:250` (method `_global_welfare`).
 
 Example: if W_s1=1.9 and W_s2=1.1, then W=3.0.
 
@@ -231,17 +253,23 @@ $$
 BaseSum_s = \sum_{c \in A_s} Base(s,c)
 $$
 
+Code reference: `HBS/hbs_engine.py:235` (method `_student_welfare_components`).
+
 Example: A_s={C1,C2}, Base(s,C1)=1, Base(s,C2)=0.5 -> BaseSum_s=1.5.
 
 $$
 FriendSum_s = \sum_{c \in A_s} \sum_{f \in F(s)} \mathbb{1}[c \in A_f] \cdot Pref(s,f,c)
 $$
 
+Code reference: `HBS/hbs_engine.py:235` (method `_student_welfare_components`).
+
 Example: if overlaps sum to 1.0 on C1 and 0.2 on C2, then FriendSum_s=1.2.
 
 $$
 Total_s = BaseSum_s + \lambda_s \cdot FriendSum_s
 $$
+
+Code reference: `HBS/hbs_engine.py:779` (method `_compute_metrics`).
 
 Example: BaseSum_s=1.5, FriendSum_s=1.2, lambda_s=0.4 -> Total_s=1.5+0.48=1.98.
 
@@ -251,11 +279,15 @@ $$
 MaxBase_s = \sum_{c \in Top_b} Base(s,c)
 $$
 
+Code reference: `HBS/hbs_engine.py:255` (method `_max_possible_base`).
+
 Example: b=2 and Base values across courses are [1.0, 0.6, 0.2] -> MaxBase_s=1.6.
 
 $$
 MaxTotalUpper_s = \sum_{c \in Top_b} \Big(Base(s,c) + \lambda_s \cdot \sum_{f \in F(s)} Pref(s,f,c)\Big)
 $$
+
+Code reference: `HBS/hbs_engine.py:260` (method `_max_possible_total_upper`).
 
 Example: b=2 and (Base + lambda*friend_sum) per course is [1.2, 0.9, 0.4] -> MaxTotalUpper_s=2.1.
 
@@ -271,6 +303,8 @@ BaseNorm_s =
 \end{cases}
 $$
 
+Code reference: `HBS/hbs_engine.py:802` (computes `per_student_base_norm`).
+
 Example: BaseSum_s=1.2 and MaxBase_s=1.6 -> BaseNorm_s=0.75.
 
 $$
@@ -280,6 +314,8 @@ TotalNorm_s =
 0, & \text{otherwise}
 \end{cases}
 $$
+
+Code reference: `HBS/hbs_engine.py:806` (computes `per_student_total_norm`).
 
 Example: Total_s=1.98 and MaxTotalUpper_s=2.1 -> TotalNorm_s≈0.943.
 
@@ -292,6 +328,8 @@ Function type: sum (L1 aggregate) over a list of values.
 $$
 TotalUtility = \sum_{i=1}^{n} x_i
 $$
+
+Code reference: `HBS/hbs_metrics.py:7` (function `compute_total_utility`).
 
 Example: x=[0.75, 0.25, 1.0] -> TotalUtility=2.0.
 
@@ -306,6 +344,8 @@ Gini(x) =
 \end{cases}
 $$
 
+Code reference: `HBS/hbs_metrics.py:11` (function `compute_gini_index`).
+
 Example: x=[0, 1] -> Gini=0.5; x=[1, 1, 1] -> Gini=0.
 
 Jain index:
@@ -319,6 +359,8 @@ Jain(x) =
 \end{cases}
 $$
 
+Code reference: `HBS/hbs_metrics.py:36` (function `compute_jain_index`).
+
 Example: x=[1, 1] -> Jain=1.0; x=[0, 1] -> Jain=0.5.
 
 Theil index:
@@ -330,6 +372,8 @@ Theil(x) =
 \quad \mu = \frac{1}{n}\sum_i x_i
 $$
 
+Code reference: `HBS/hbs_metrics.py:48` (function `compute_theil_index`).
+
 Example: x=[1, 1] -> Theil=0 (perfect equality).
 
 Atkinson index (epsilon = 0.5 in this project):
@@ -339,6 +383,8 @@ $$
 Atkinson(x; \epsilon) =
 1 - \frac{\left(\frac{1}{n}\sum_i x_i^{1-\epsilon}\right)^{\frac{1}{1-\epsilon}}}{\mu}
 $$
+
+Code reference: `HBS/hbs_metrics.py:65` (function `compute_atkinson_index`).
 
 Example: x=[1, 1] -> Atkinson=0 (perfect equality).
 
@@ -354,6 +400,8 @@ These are also reported in `metrics_extended.csv`:
   `avg_friend_overlaps_per_student` and share of students with any overlap. Example: overlaps per student [0,2,1] -> avg=1.0, share=2/3.
 - Utility percentiles over `Total_s` using the index rule:
   `idx = round((n - 1) * p)`, for `p` in {0.10, 0.25, 0.50, 0.75, 0.90}. Example: totals=[0.2,0.5,0.9,1.1], p=0.50 -> idx=2 -> percentile=0.9.
+
+Code reference: `HBS/hbs_engine.py:837` (method `_compute_extended_metrics`) and `HBS/hbs_engine.py:911` (percentile index rule).
 
 ## 3. Draft and post-draft logic
 1. Seeded random order of students.
