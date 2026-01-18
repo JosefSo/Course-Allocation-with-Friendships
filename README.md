@@ -136,6 +136,9 @@ $$
 FriendBonus(s, c) = \sum_{f \in F(s)} \mathbb{1}[c \in A_f] \cdot Pref(s,f,c)
 $$
 
+<img width="851" height="153" alt="Screenshot 2026-01-18 at 20 21 09" src="https://github.com/user-attachments/assets/45ab0dab-cb2f-4125-8009-7dc7a9d8d6d0" />
+
+
 Code reference: `HBS/hbs_engine.py:190` (method `_friend_bonus_reactive`).
 
 Interpretation (step-by-step):
