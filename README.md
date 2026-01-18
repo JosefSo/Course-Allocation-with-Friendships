@@ -34,17 +34,50 @@ Table 3: per-student social weight (optional)
 Note: `tables/` is treated as local data and is not tracked on GitHub in this project. Use the generator below to create sample CSVs.
 
 ## Utility model (as implemented)
-Let `posU(p, K) = (K - p) / (K - 1)` for `K > 1`, and 0 for missing.
+Notation:
+- `S` students, `C` courses.
+- `F(s)` is the directed friend set for student `s` (from Table 2).
+- `A_f` is the set of courses already allocated to friend `f` at the current time.
+- `K_friend` is the maximum rank observed in Table 2.
+- `lambda_s` is the per-student weight (defaults to 0.5).
 
-- Base utility: `Base(s, c) = posU(PositionA(s,c), |C|)`
-- Friend preference: `Pref(s, f, c) = posU(PositionB(s,f,c), K_friend)`
-  where `K_friend` is the maximum rank observed in Table 2.
-- Reactive friend bonus:
-  `FriendBonus(s, c) = sum_{f in Friends(s)} 1[c in A_f] * Pref(s,f,c)`
-- Total utility at pick time:
-  `U(s, c) = Base(s,c) + Lambda_s * FriendBonus(s,c)`
+Rank-to-utility mapping:
 
-The friend bonus is reactive: it only counts courses already chosen by friends.
+$$
+posU(p, K) =
+\begin{cases}
+0, & p \text{ is missing} \\
+1, & K \le 1 \land p = 1 \\
+0, & K \le 1 \land p \ne 1 \\
+\frac{K - p}{K - 1}, & K > 1
+\end{cases}
+$$
+
+Base utility (Table 1):
+
+$$
+Base(s, c) = posU(PositionA(s,c), |C|)
+$$
+
+Directed friend preference (Table 2):
+
+$$
+Pref(s, f, c) = posU(PositionB(s,f,c), K_{friend})
+$$
+
+Reactive friend bonus (only courses already chosen by friends count):
+
+$$
+FriendBonus(s, c) = \sum_{f \in F(s)} \mathbb{1}[c \in A_f] \cdot Pref(s,f,c)
+$$
+
+Per-pick utility:
+
+$$
+U(s, c) = Base(s,c) + \lambda_s \cdot FriendBonus(s,c)
+$$
+
+This same structure is used in the post-phase objective (global welfare is the sum of per-student utilities over the final allocations).
 
 ## Draft and post-draft logic
 1. Seeded random order of students.
