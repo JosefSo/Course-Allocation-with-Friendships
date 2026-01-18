@@ -211,7 +211,7 @@ Where `rnd(s,c)` is a seeded random number used only for remaining ties, and `Co
 4) then seeded random,
 5) then stable `CourseID`.
 
-### Why utility is rounded to 9 decimals
+#### *Why utility is rounded to 9 decimals
 
 Due to floating-point arithmetic, two courses may have utilities that are mathematically equal
 but differ by an insignificant numerical error:
