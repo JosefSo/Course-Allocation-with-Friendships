@@ -211,6 +211,9 @@ flowchart LR
     A --> B --> C --> D --> E --> Z["Select"]
 ```
 
+<img width="1018" height="475" alt="Screenshot 2026-01-18 at 21 10 50" src="https://github.com/user-attachments/assets/b0a6884f-9909-433c-ab1d-ed260748bf1f" />
+
+
 Code reference: `HBS/hbs_engine.py:518` (score tuple), `HBS/hbs_engine.py:535` (argmax), and `HBS/hbs_engine.py:173` (Score/Position tie-break accessors).
 
 Example: if U is tied and PositionA(C1)=2, PositionA(C2)=1, then C2 wins; if positions equal, higher Score wins, then rnd, then CourseID.
