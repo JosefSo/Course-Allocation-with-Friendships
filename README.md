@@ -43,8 +43,8 @@ This section matches the exact computation implemented in `HBS/` and breaks it i
 - Per-student social weight `lambda_s` comes from Table 3 (default 0.5 if missing).
 - Course capacity is uniform: `cap(c) = cap_default` for all `c`.
 
-### Rank-to-utility mapping
-We convert a 1-based rank position into a utility in [0, 1]:
+### Rank-to-utility mapping (Table 1)
+We convert a 1-based course rank into a utility in [0, 1]:
 
 $$
 posU(p, K) =
@@ -60,6 +60,20 @@ Example: if K=4, then posU(1,4)=1, posU(2,4)=2/3, posU(4,4)=0; missing p gives 0
 
 In code, missing `PositionA` yields `Base = 0`, and missing `Score`/`PositionA` are treated as worst-case for tie-breaking.
 
+### Friend-rank mapping (Table 2, linear without zero)
+For friends we use a separate linear mapping so that the lowest rank is still positive:
+
+$$
+posU_{friend}(p, K) =
+\begin{cases}
+0, & p \text{ is missing} \\
+0, & K \le 0 \\
+\frac{K + 1 - p}{K}, & K > 0
+\end{cases}
+$$
+
+Example: if K=3, then posU_friend(1,3)=1, posU_friend(2,3)=2/3, posU_friend(3,3)=1/3.
+
 ### Utility components (per student and course)
 Base utility from Table 1:
 
@@ -72,10 +86,10 @@ Example: |C|=4 and PositionA(s,c)=2 gives Base(s,c)=2/3.
 Directed friend preference from Table 2 (ranked among friends):
 
 $$
-Pref(s, f, c) = posU(PositionB(s,f,c), K_{friend})
+Pref(s, f, c) = posU_{friend}(PositionB(s,f,c), K_{friend})
 $$
 
-Example: K_friend=3, PositionB=1 gives Pref=1; PositionB=3 gives Pref=0.
+Example: K_friend=3, PositionB=1 gives Pref=1; PositionB=3 gives Pref=1/3.
 
 Reactive friend bonus (only already allocated friends count):
 

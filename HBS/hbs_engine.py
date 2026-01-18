@@ -37,6 +37,22 @@ def _pos_u(position: int | None, k_courses: int) -> float:
     return (k_courses - position) / (k_courses - 1)
 
 
+def _pos_u_friend(position: int | None, k_friends: int) -> float:
+    """
+    Convert a 1-based friend rank into a (0..1] utility.
+
+    Assumptions:
+      - Lower position means higher preference (1 is best).
+      - For k_friends >= 1: rank 1 -> 1, rank k -> 1/k.
+    """
+
+    if position is None:
+        return 0.0
+    if k_friends <= 0:
+        return 0.0
+    return (k_friends + 1 - position) / k_friends
+
+
 class _HbsSocialDraftEngine:
     """
     Application service that performs the allocation and computes metrics.
@@ -118,11 +134,13 @@ class _HbsSocialDraftEngine:
             for friend_id in friends:
                 self._followers.setdefault(friend_id, set()).add(student_id_a)
 
-        # Table 2 now contains only a friend rank Position (top-k), so we scale its utility by the
-        # maximum observed rank to keep _pos_u semantics consistent.
+        # Table 2 contains only a friend rank Position (top-k). We use a linear mapping without
+        # zero so that rank K is still better than missing.
         self._k_friend_rank = max(1, max((r.position for r in pair_prefs), default=3))
         self._pair_u_by_key: dict[tuple[str, str, str], float] = {
-            (r.student_id_a, r.student_id_b, r.course_id): _pos_u(r.position, self._k_friend_rank)
+            (r.student_id_a, r.student_id_b, r.course_id): _pos_u_friend(
+                r.position, self._k_friend_rank
+            )
             for r in pair_prefs
         }
 
