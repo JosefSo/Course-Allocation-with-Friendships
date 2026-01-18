@@ -147,7 +147,7 @@ Interpretation (step-by-step):
 3) If yes, add Pref(s,f,c); if no, add 0.
 4) Sum over all friends.
 
-Example (more explicit):
+Example:
 - F(s) = {f1, f2, f3}
 - Course c = C2
 - Current allocations: A_f1 = {C2, C3}, A_f2 = {C1}, A_f3 = {C2}
