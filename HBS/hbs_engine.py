@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import math
 import random
 
 from .hbs_config import _RunConfig
@@ -269,33 +268,6 @@ class _HbsSocialDraftEngine:
             values.append(base + lambda_ * friend_sum)
         values.sort(reverse=True)
         return sum(values[: self._config.max_courses])
-
-    def _max_possible_friend_upper(self, student_id: str) -> float:
-        friends = self._friends_list.get(student_id, ())
-        if not friends:
-            return 0.0
-        values: list[float] = []
-        for course_id in self._courses:
-            friend_sum = 0.0
-            for friend_id in friends:
-                friend_sum += self._friend_preference_utility(student_id, friend_id, course_id)
-            values.append(friend_sum)
-        values.sort(reverse=True)
-        return sum(values[: self._config.max_courses])
-
-    def _max_possible_overlap_count(self, student_id: str) -> int:
-        friends = self._friends_list.get(student_id, ())
-        if not friends:
-            return 0
-        counts: list[int] = []
-        for course_id in self._courses:
-            count = 0
-            for friend_id in friends:
-                if (student_id, friend_id, course_id) in self._pair_by_key:
-                    count += 1
-            counts.append(count)
-        counts.sort(reverse=True)
-        return sum(counts[: self._config.max_courses])
 
     # ---- Improvement moves --------------------------------------------
 
@@ -784,8 +756,6 @@ class _HbsSocialDraftEngine:
         per_student_friend: list[float] = []
         per_student_max_base: list[float] = []
         per_student_max_total: list[float] = []
-        per_student_max_friend: list[float] = []
-        per_student_max_overlaps: list[int] = []
 
         for student_id in self._students:
             base_sum, friend_sum = self._student_welfare_components(student_id)
@@ -796,8 +766,6 @@ class _HbsSocialDraftEngine:
             per_student_total.append(total)
             per_student_max_base.append(self._max_possible_base(student_id))
             per_student_max_total.append(self._max_possible_total_upper(student_id))
-            per_student_max_friend.append(self._max_possible_friend_upper(student_id))
-            per_student_max_overlaps.append(self._max_possible_overlap_count(student_id))
 
         per_student_base_norm = [
             (u / max_b if max_b > 0.0 else 0.0)
@@ -811,14 +779,10 @@ class _HbsSocialDraftEngine:
         total_utility = compute_total_utility(per_student_total)
         gini_total_norm = compute_gini_index(per_student_total_norm)
         gini_base_norm = compute_gini_index(per_student_base_norm)
-        total_utility_max = sum(per_student_max_total)
         summary = RunSummary(
             total_utility=total_utility,
             gini_total_norm=gini_total_norm,
             gini_base_norm=gini_base_norm,
-            total_utility_max=total_utility_max,
-            gini_total_norm_max=1.0,
-            gini_base_norm_max=1.0,
         )
 
         metrics = self._compute_extended_metrics(
@@ -827,10 +791,6 @@ class _HbsSocialDraftEngine:
             per_student_friend=per_student_friend,
             per_student_total_norm=per_student_total_norm,
             per_student_base_norm=per_student_base_norm,
-            per_student_max_total=per_student_max_total,
-            per_student_max_base=per_student_max_base,
-            per_student_max_friend=per_student_max_friend,
-            per_student_max_overlaps=per_student_max_overlaps,
         )
         return summary, metrics
 
@@ -842,17 +802,10 @@ class _HbsSocialDraftEngine:
         per_student_friend: list[float],
         per_student_total_norm: list[float],
         per_student_base_norm: list[float],
-        per_student_max_total: list[float],
-        per_student_max_base: list[float],
-        per_student_max_friend: list[float],
-        per_student_max_overlaps: list[int],
     ) -> ExtendedMetrics:
         n_students = len(self._students)
         total_base = sum(per_student_base)
         total_friend = sum(per_student_friend)
-        total_max_base = sum(per_student_max_base)
-        total_max_total = sum(per_student_max_total)
-        total_max_friend = sum(per_student_max_friend)
 
         avg_courses = sum(len(self._alloc_set[s]) for s in self._students) / n_students
         full_alloc = sum(1 for s in self._students if len(self._alloc_set[s]) >= self._config.max_courses)
@@ -941,41 +894,4 @@ class _HbsSocialDraftEngine:
             "utility_p75": _percentile(0.75),
             "utility_p90": _percentile(0.90),
         }
-        max_total_per_student = max(per_student_max_total) if per_student_max_total else 0.0
-        max_overlaps_total = sum(per_student_max_overlaps)
-        avg_overlaps_max = max_overlaps_total / n_students if n_students else 0.0
-        students_with_friend_prefs = sum(1 for v in per_student_max_overlaps if v > 0)
-        share_possible_overlap = (
-            students_with_friend_prefs / n_students if n_students else 0.0
-        )
-        max_course_rank = float(len(self._courses)) if self._courses else 0.0
-        total_seats = float(len(self._courses) * self._config.default_capacity)
-
-        maxima = {
-            "total_utility": total_max_total,
-            "total_base_utility": total_max_base,
-            "total_friend_utility": total_max_friend,
-            "avg_utility_per_student": (total_max_total / n_students if n_students else 0.0),
-            "avg_courses_per_student": float(self._config.max_courses),
-            "students_full_alloc_rate": 1.0,
-            "unfilled_seats_total": total_seats,
-            "course_fill_rate_mean": 1.0,
-            "avg_position": max_course_rank,
-            "median_position": max_course_rank,
-            "share_top1": 1.0,
-            "share_top3": 1.0,
-            "avg_friend_overlaps_per_student": avg_overlaps_max,
-            "share_students_with_any_friend_overlap": share_possible_overlap,
-            "gini_total_norm": 1.0,
-            "gini_base_norm": 1.0,
-            "jain_index": 1.0,
-            "theil_index": (math.log(n_students) if n_students > 0 else 0.0),
-            "atkinson_index_e0_5": 1.0,
-            "utility_min": max_total_per_student,
-            "utility_p10": max_total_per_student,
-            "utility_p25": max_total_per_student,
-            "utility_p50": max_total_per_student,
-            "utility_p75": max_total_per_student,
-            "utility_p90": max_total_per_student,
-        }
-        return ExtendedMetrics(values=metrics, maxima=maxima)
+        return ExtendedMetrics(values=metrics)

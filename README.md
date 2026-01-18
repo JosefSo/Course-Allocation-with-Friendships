@@ -64,7 +64,7 @@ $$
 
 <img width="851" height="153" alt="Screenshot 2026-01-18 at 14 49 36" src="https://github.com/user-attachments/assets/822b5857-7cd6-4373-a701-97850606e72e" />
 
-Code reference: `HBS/hbs_engine.py:25` (function `_pos_u`).
+Code reference: `HBS/hbs_engine.py:24` (function `_pos_u`).
 
 Example: if K=4, then posU(1,4)=1, posU(2,4)=2/3, posU(4,4)=0; missing p gives 0.
 
@@ -90,7 +90,7 @@ $$
 
 <img width="851" height="153" alt="Screenshot 2026-01-18 at 14 46 07" src="https://github.com/user-attachments/assets/48bea5ca-6c62-495c-bc65-51d4db47e1a7" />
 
-Code reference: `HBS/hbs_engine.py:41` (function `_pos_u_friend`) and `HBS/hbs_engine.py:140` (derives `K_friend`).
+Code reference: `HBS/hbs_engine.py:40` (function `_pos_u_friend`) and `HBS/hbs_engine.py:139` (derives `K_friend`).
 
 Example: if K=3, then posU_friend(1,3)=1, posU_friend(2,3)=2/3, posU_friend(3,3)=1/3.
 
@@ -108,7 +108,7 @@ $$
 Base(s, c) = posU(PositionA(s,c), |C|)
 $$
 
-Code reference: `HBS/hbs_engine.py:121` (precompute) and `HBS/hbs_engine.py:158` (method `_base_utility`).
+Code reference: `HBS/hbs_engine.py:120` (precompute) and `HBS/hbs_engine.py:157` (method `_base_utility`).
 
 Example: |C|=4 and PositionA(s,c)=2 gives Base(s,c)=2/3.
 
@@ -119,7 +119,7 @@ $$
 Pref(s, f, c) = posU_{friend}(PositionB(s,f,c), K_{friend})
 $$
 
-Code reference: `HBS/hbs_engine.py:141` (precompute) and `HBS/hbs_engine.py:183` (method `_friend_preference_utility`).
+Code reference: `HBS/hbs_engine.py:140` (precompute) and `HBS/hbs_engine.py:182` (method `_friend_preference_utility`).
 
 Equivalently (when K_friend > 0):
 
@@ -139,7 +139,7 @@ $$
 <img width="851" height="153" alt="Screenshot 2026-01-18 at 20 21 09" src="https://github.com/user-attachments/assets/45ab0dab-cb2f-4125-8009-7dc7a9d8d6d0" />
 
 
-Code reference: `HBS/hbs_engine.py:190` (method `_friend_bonus_reactive`).
+Code reference: `HBS/hbs_engine.py:189` (method `_friend_bonus_reactive`).
 
 Interpretation (step-by-step):
 1) Take only the friends listed for student s (the directed set F(s) from Table 2).
@@ -168,7 +168,7 @@ $$
 
 <img width="851" height="141" alt="Screenshot 2026-01-18 at 20 29 13" src="https://github.com/user-attachments/assets/4a2b2e0c-f865-4af3-8df5-ecc314d183f0" />
 
-Code reference: `HBS/hbs_engine.py:203` (method `_utility_components`) and `HBS/hbs_engine.py:70` (default lambda).
+Code reference: `HBS/hbs_engine.py:202` (method `_utility_components`) and `HBS/hbs_engine.py:69` (default lambda).
 
 Example: Base=0.6, lambda_s=0.4, FriendBonus=0.5 -> U=0.6+0.4*0.5=0.8.
 
@@ -182,7 +182,7 @@ $$
 <img width="874" height="133" alt="Screenshot 2026-01-18 at 20 37 34" src="https://github.com/user-attachments/assets/44d24670-fc7d-4235-99e5-cece916faafc" />
 
 
-Code reference: `HBS/hbs_engine.py:503` (candidate filtering inside `_run_initial_draft`).
+Code reference: `HBS/hbs_engine.py:476` (candidate filtering inside `_run_initial_draft`).
 
 Example: C={C1,C2,C3}, cap_left(C2)=0, A_s={C1} -> C_s={C3}.
 
@@ -214,7 +214,7 @@ flowchart LR
 <img width="1018" height="475" alt="Screenshot 2026-01-18 at 21 10 50" src="https://github.com/user-attachments/assets/b0a6884f-9909-433c-ab1d-ed260748bf1f" />
 
 
-Code reference: `HBS/hbs_engine.py:518` (score tuple), `HBS/hbs_engine.py:535` (argmax), and `HBS/hbs_engine.py:173` (Score/Position tie-break accessors).
+Code reference: `HBS/hbs_engine.py:490` (score tuple), `HBS/hbs_engine.py:507` (argmax), and `HBS/hbs_engine.py:162`/`HBS/hbs_engine.py:172` (Position/Score tie-break accessors).
 
 Example: if U is tied and PositionA(C1)=2, PositionA(C2)=1, then C2 wins; if positions equal, higher Score wins, then rnd, then CourseID.
 
@@ -250,7 +250,7 @@ Let `pi` be a random permutation of students (seeded). For round `r`:
 
 Example: pi=[S2,S1,S3] -> round1: S2,S1,S3; round2: S3,S1,S2.
 
-Code reference: `HBS/hbs_engine.py:493` (seeded shuffle) and `HBS/hbs_engine.py:501` (snake order).
+Code reference: `HBS/hbs_engine.py:465` (seeded shuffle) and `HBS/hbs_engine.py:473` (snake order).
 
 ### 2.7 Post-phase objective (swap or add-drop)
 After the draft, the algorithm can improve the allocation for `post_iters` iterations.
@@ -265,7 +265,7 @@ Base(s,c) + \lambda_s \cdot \sum_{f \in F(s)} \mathbb{1}[c \in A_f] \cdot Pref(s
 \right]
 $$
 
-Code reference: `HBS/hbs_engine.py:215` (method `_student_welfare`) and `HBS/hbs_engine.py:235` (components).
+Code reference: `HBS/hbs_engine.py:214` (method `_student_welfare`) and `HBS/hbs_engine.py:234` (components).
 
 Example: A_s={C1,C2}, Base(s,C1)=1, Base(s,C2)=0.5, lambda_s=0.4, and only C1 overlaps with friends with sum Pref=1 -> W_s=(1+0.4*1)+(0.5+0)=1.9.
 
@@ -276,7 +276,7 @@ $$
 W = \sum_{s \in S} W_s
 $$
 
-Code reference: `HBS/hbs_engine.py:250` (method `_global_welfare`).
+Code reference: `HBS/hbs_engine.py:249` (method `_global_welfare`).
 
 Example: if W_s1=1.9 and W_s2=1.1, then W=3.0.
 
@@ -297,7 +297,7 @@ $$
 BaseSum_s = \sum_{c \in A_s} Base(s,c)
 $$
 
-Code reference: `HBS/hbs_engine.py:235` (method `_student_welfare_components`).
+Code reference: `HBS/hbs_engine.py:234` (method `_student_welfare_components`).
 
 Example: A_s={C1,C2}, Base(s,C1)=1, Base(s,C2)=0.5 -> BaseSum_s=1.5.
 
@@ -305,7 +305,7 @@ $$
 FriendSum_s = \sum_{c \in A_s} \sum_{f \in F(s)} \mathbb{1}[c \in A_f] \cdot Pref(s,f,c)
 $$
 
-Code reference: `HBS/hbs_engine.py:235` (method `_student_welfare_components`).
+Code reference: `HBS/hbs_engine.py:234` (method `_student_welfare_components`).
 
 Example: if overlaps sum to 1.0 on C1 and 0.2 on C2, then FriendSum_s=1.2.
 
@@ -313,7 +313,7 @@ $$
 Total_s = BaseSum_s + \lambda_s \cdot FriendSum_s
 $$
 
-Code reference: `HBS/hbs_engine.py:779` (method `_compute_metrics`).
+Code reference: `HBS/hbs_engine.py:763` (method `_compute_metrics`).
 
 Example: BaseSum_s=1.5, FriendSum_s=1.2, lambda_s=0.4 -> Total_s=1.5+0.48=1.98.
 
@@ -323,7 +323,7 @@ $$
 MaxBase_s = \sum_{c \in Top_b} Base(s,c)
 $$
 
-Code reference: `HBS/hbs_engine.py:255` (method `_max_possible_base`).
+Code reference: `HBS/hbs_engine.py:254` (method `_max_possible_base`).
 
 Example: b=2 and Base values across courses are [1.0, 0.6, 0.2] -> MaxBase_s=1.6.
 
@@ -331,7 +331,7 @@ $$
 MaxTotalUpper_s = \sum_{c \in Top_b} \Big(Base(s,c) + \lambda_s \cdot \sum_{f \in F(s)} Pref(s,f,c)\Big)
 $$
 
-Code reference: `HBS/hbs_engine.py:260` (method `_max_possible_total_upper`).
+Code reference: `HBS/hbs_engine.py:259` (method `_max_possible_total_upper`).
 
 Example: b=2 and (Base + lambda*friend_sum) per course is [1.2, 0.9, 0.4] -> MaxTotalUpper_s=2.1.
 
@@ -347,7 +347,7 @@ BaseNorm_s =
 \end{cases}
 $$
 
-Code reference: `HBS/hbs_engine.py:802` (computes `per_student_base_norm`).
+Code reference: `HBS/hbs_engine.py:770` (computes `per_student_base_norm`).
 
 Example: BaseSum_s=1.2 and MaxBase_s=1.6 -> BaseNorm_s=0.75.
 
@@ -359,7 +359,7 @@ TotalNorm_s =
 \end{cases}
 $$
 
-Code reference: `HBS/hbs_engine.py:806` (computes `per_student_total_norm`).
+Code reference: `HBS/hbs_engine.py:774` (computes `per_student_total_norm`).
 
 Example: Total_s=1.98 and MaxTotalUpper_s=2.1 -> TotalNorm_s≈0.943.
 
@@ -445,7 +445,7 @@ These are also reported in `metrics_extended.csv`:
 - Utility percentiles over `Total_s` using the index rule:
   `idx = round((n - 1) * p)`, for `p` in {0.10, 0.25, 0.50, 0.75, 0.90}. Example: totals=[0.2,0.5,0.9,1.1], p=0.50 -> idx=2 -> percentile=0.9.
 
-Code reference: `HBS/hbs_engine.py:837` (method `_compute_extended_metrics`) and `HBS/hbs_engine.py:911` (percentile index rule).
+Code reference: `HBS/hbs_engine.py:797` (method `_compute_extended_metrics`) and `HBS/hbs_engine.py:864` (percentile index rule).
 
 ## 3. Draft and post-draft logic
 1. Seeded random order of students.
