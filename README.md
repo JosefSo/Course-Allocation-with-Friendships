@@ -62,6 +62,8 @@ posU(p, K) =
 \end{cases}
 $$
 
+<img width="851" height="153" alt="Screenshot 2026-01-18 at 14 49 36" src="https://github.com/user-attachments/assets/822b5857-7cd6-4373-a701-97850606e72e" />
+
 Code reference: `HBS/hbs_engine.py:25` (function `_pos_u`).
 
 Example: if K=4, then posU(1,4)=1, posU(2,4)=2/3, posU(4,4)=0; missing p gives 0.
