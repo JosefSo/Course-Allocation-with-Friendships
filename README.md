@@ -1,20 +1,20 @@
-# HBS Social Snake Draft (Reactive Friends)
+# 1. HBS Social Snake Draft (Reactive Friends)
 
 This repository contains the code and experiments for my master's thesis project on course allocation with social preferences (friendships). The core implementation lives in `HBS/`, with a CLI wrapper at `hbs_social.py`.
 
-## What the project does
+## 1.1 What the project does
 - Simulates an HBS-style snake draft course allocation.
 - Adds a reactive friend bonus to the utility function.
 - Supports optional post-draft improvement (swap or add-drop).
 - Exports audit logs and fairness/inequality metrics.
 
-## Repository layout
+## 1.2 Repository layout
 - `hbs_social.py` - CLI entrypoint.
 - `HBS/` - core engine, API, metrics, and IO.
 - `generate/` - synthetic data generator for CSV inputs.
 - `tests/` - unit tests.
 
-## Input data
+## 1.3 Input data
 The allocator expects three CSV tables (Table 3 is optional):
 
 Table 1: individual course preferences
@@ -33,17 +33,17 @@ Table 3: per-student social weight (optional)
 
 Note: `tables/` is treated as local data and is not tracked on GitHub in this project. Use the generator below to create sample CSVs.
 
-## Mathematical model and formulas
+## 2. Mathematical model and formulas
 This section matches the exact computation implemented in `HBS/` and breaks it into small pieces.
 
-### Sets and inputs
+### 2.1 Sets and inputs
 - Students: `S`, courses: `C`.
 - For each student `s` and course `c`, Table 1 provides `Score(s,c)` and `PositionA(s,c)`.
 - For each directed pair `(s, f)` and course `c`, Table 2 provides `PositionB(s,f,c)` (s's friend rank for f in c).
 - Per-student social weight `lambda_s` comes from Table 3 (default 0.5 if missing).
 - Course capacity is uniform: `cap(c) = cap_default` for all `c`.
 
-### Rank-to-utility mapping (Table 1)
+### 2.2 Rank-to-utility mapping (Table 1)
 Function type: affine Min-Max linear scaling of rank to [0, 1].
 
 We convert a 1-based course rank into a utility in [0, 1]:
@@ -62,7 +62,7 @@ Example: if K=4, then posU(1,4)=1, posU(2,4)=2/3, posU(4,4)=0; missing p gives 0
 
 In code, missing `PositionA` yields `Base = 0`, and missing `Score`/`PositionA` are treated as worst-case for tie-breaking.
 
-### Friend-rank mapping (Table 2, linear without zero)
+### 2.3 Friend-rank mapping (Table 2, linear without zero)
 Function type: affine linear scaling with a strictly positive minimum for ranked friends.
 
 For friends we use a separate linear mapping so that the lowest rank is still positive:
@@ -80,7 +80,7 @@ Example: if K=3, then posU_friend(1,3)=1, posU_friend(2,3)=2/3, posU_friend(3,3)
 
 This formula is used only for Table 2 (friend ranks).
 
-### Utility components (per student and course)
+### 2.4 Utility components (per student and course)
 Base utility from Table 1:
 Function type: composition of rank-to-utility (affine Min-Max) with the PositionA lookup.
 
@@ -112,7 +112,23 @@ $$
 FriendBonus(s, c) = \sum_{f \in F(s)} \mathbb{1}[c \in A_f] \cdot Pref(s,f,c)
 $$
 
-Example: F(s)={f1,f2}, only f1 already has c, Pref(s,f1,c)=1, Pref(s,f2,c)=0.5 -> FriendBonus=1.
+Interpretation (step-by-step):
+1) Take only the friends listed for student s (the directed set F(s) from Table 2).
+2) For each friend f, check if f already has course c in their current allocation A_f.
+3) If yes, add Pref(s,f,c); if no, add 0.
+4) Sum over all friends.
+
+Example (more explicit):
+- F(s) = {f1, f2, f3}
+- Course c = C2
+- Current allocations: A_f1 = {C2, C3}, A_f2 = {C1}, A_f3 = {C2}
+- Friend preferences: Pref(s,f1,C2)=1, Pref(s,f2,C2)=2/3, Pref(s,f3,C2)=1/3
+
+Then only f1 and f3 count (they already have C2), so:
+
+$$
+FriendBonus(s, C2) = 1 + \frac{1}{3} = \frac{4}{3}
+$$
 
 Total per-pick utility:
 Function type: linear combination of base and friend bonus with weight lambda_s.
@@ -123,7 +139,7 @@ $$
 
 Example: Base=0.6, lambda_s=0.4, FriendBonus=0.5 -> U=0.6+0.4*0.5=0.8.
 
-### Feasible choices and pick rule
+### 2.5 Feasible choices and pick rule
 At a pick, the feasible set is:
 
 $$
@@ -155,14 +171,14 @@ Where `rnd(s,c)` is a seeded random number used only for remaining ties, and `Co
 4) then seeded random,
 5) then stable `CourseID`.
 
-### Draft order (snake)
+### 2.6 Draft order (snake)
 Let `pi` be a random permutation of students (seeded). For round `r`:
 - if `r` is odd: order is `pi`
 - if `r` is even: order is `reverse(pi)`
 
 Example: pi=[S2,S1,S3] -> round1: S2,S1,S3; round2: S3,S1,S2.
 
-### Post-phase objective (swap or add-drop)
+### 2.7 Post-phase objective (swap or add-drop)
 After the draft, the algorithm can improve the allocation for `post_iters` iterations.
 
 Per-student welfare (final allocation):
@@ -194,7 +210,7 @@ Add-drop mode (HBS-style):
 - for each student, build a candidate set: current allocation plus any course with remaining capacity,
 - score candidates by `U(s,c)` and keep the top `b` courses (max courses per student).
 
-### Normalization for fairness
+### 2.8 Normalization for fairness
 Let `b` be max courses per student.
 
 Per-student sums on the final allocation:
@@ -255,7 +271,7 @@ $$
 
 Example: Total_s=1.98 and MaxTotalUpper_s=2.1 -> TotalNorm_s≈0.943.
 
-### Inequality and summary metrics (including Gini)
+### 2.9 Inequality and summary metrics (including Gini)
 Let `x_i` be a list of non-negative values (the code clamps negatives to 0), sorted in non-decreasing order. Let `n = |x|`.
 
 Total utility:
@@ -314,7 +330,7 @@ $$
 
 Example: x=[1, 1] -> Atkinson=0 (perfect equality).
 
-### Additional computed statistics
+### 2.10 Additional computed statistics
 These are also reported in `metrics_extended.csv`:
 - Average courses per student: `avg_courses = (1/|S|) * sum_s |A_s|`. Example: |S|=3 and |A_s|=[2,3,1] -> avg_courses=2.0.
 - Full allocation rate: `share(|A_s| >= b)`. Example: b=3 and |A_s|=[3,2,3] -> 2/3.
@@ -327,7 +343,7 @@ These are also reported in `metrics_extended.csv`:
 - Utility percentiles over `Total_s` using the index rule:
   `idx = round((n - 1) * p)`, for `p` in {0.10, 0.25, 0.50, 0.75, 0.90}. Example: totals=[0.2,0.5,0.9,1.1], p=0.50 -> idx=2 -> percentile=0.9.
 
-## Draft and post-draft logic
+## 3. Draft and post-draft logic
 1. Seeded random order of students.
 2. Snake draft for `draft_rounds` rounds (odd rounds forward, even rounds reverse).
 3. Each pick chooses the course with highest utility using deterministic tie-breaks:
@@ -340,13 +356,13 @@ These are also reported in `metrics_extended.csv`:
    - `swap`: best welfare-improving swap between two students per iteration.
    - `add-drop`: HBS-style pass using only courses with spare capacity.
 
-## Outputs
+## 4. Outputs
 - `allocation.csv` - draft picks only.
 - `post_allocation.csv` - post-phase events (swap/add-drop).
 - `summary.csv` - total utility and normalized Gini metrics.
 - `metrics_extended.csv` - extended fairness and distribution metrics (Jain, Theil, Atkinson, percentiles, and more).
 
-## Quick start
+## 5. Quick start
 Requirements: Python 3.10+ (no external dependencies).
 
 Generate sample data:
