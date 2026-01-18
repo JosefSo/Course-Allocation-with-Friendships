@@ -166,6 +166,9 @@ $$
 U(s, c) = Base(s,c) + \lambda_s \cdot FriendBonus(s,c)
 $$
 
+<img width="851" height="141" alt="Screenshot 2026-01-18 at 20 28 23" src="https://github.com/user-attachments/assets/4b449b26-81ab-4527-bbcc-6644fc6cb92a" />
+
+
 Code reference: `HBS/hbs_engine.py:203` (method `_utility_components`) and `HBS/hbs_engine.py:70` (default lambda).
 
 Example: Base=0.6, lambda_s=0.4, FriendBonus=0.5 -> U=0.6+0.4*0.5=0.8.
