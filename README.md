@@ -46,6 +46,10 @@ This section matches the exact computation implemented in `HBS/` and breaks it i
 ### 2.2 Rank-to-utility mapping (Table 1)
 Function type: affine Min-Max linear scaling of rank to [0, 1].
 
+Definitions:
+- p: the 1-based rank position from Table 1 (PositionA).
+- K: the number of courses |C| used for scaling in Table 1.
+
 We convert a 1-based course rank into a utility in [0, 1]:
 
 $$
@@ -64,6 +68,10 @@ In code, missing `PositionA` yields `Base = 0`, and missing `Score`/`PositionA` 
 
 ### 2.3 Friend-rank mapping (Table 2, linear without zero)
 Function type: affine linear scaling with a strictly positive minimum for ranked friends.
+
+Definitions:
+- p: the 1-based friend rank from Table 2 (PositionB).
+- K: the maximum friend rank observed in Table 2 (K_friend).
 
 For friends we use a separate linear mapping so that the lowest rank is still positive:
 
