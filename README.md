@@ -74,6 +74,8 @@ $$
 
 Example: if K=3, then posU_friend(1,3)=1, posU_friend(2,3)=2/3, posU_friend(3,3)=1/3.
 
+This formula is used only for Table 2 (friend ranks).
+
 ### Utility components (per student and course)
 Base utility from Table 1:
 
@@ -87,6 +89,12 @@ Directed friend preference from Table 2 (ranked among friends):
 
 $$
 Pref(s, f, c) = posU_{friend}(PositionB(s,f,c), K_{friend})
+$$
+
+Equivalently (when K_friend > 0):
+
+$$
+Pref(s, f, c) = \frac{K_{friend} + 1 - PositionB(s,f,c)}{K_{friend}}
 $$
 
 Example: K_friend=3, PositionB=1 gives Pref=1; PositionB=3 gives Pref=1/3.
@@ -334,14 +342,14 @@ python generate/generate_tables.py --students 200 --courses 8 --seed 42
 Run the allocator:
 
 ```bash
-python hbs_social.py \
-  --csv-a tables/table1_individual.csv \
-  --csv-b tables/table2_pair.csv \
-  --csv-lambda tables/table3_lambda.csv \
+python3 hbs_social.py \
+  --csv-a tables/table1_200x8.csv \
+  --csv-b tables/table2_200x8.csv \
+  --csv-lambda tables/table3_lambda_200x8.csv \
   --cap-default 80 \
   --b 3 \
   --draft-rounds 3 \
-  --post-iters 2 \
+  --post-iters 10 \
   --improve-mode add-drop \
   --seed 42 \
   --out-allocation allocation.csv \
