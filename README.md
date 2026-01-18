@@ -179,6 +179,9 @@ $$
 C_s = \{ c \in C \mid \mathrm{cap}_{\text{left}}(c) > 0 \;\land\; c \notin A_s \}
 $$
 
+<img width="874" height="133" alt="Screenshot 2026-01-18 at 20 37 34" src="https://github.com/user-attachments/assets/44d24670-fc7d-4235-99e5-cece916faafc" />
+
+
 Code reference: `HBS/hbs_engine.py:503` (candidate filtering inside `_run_initial_draft`).
 
 Example: C={C1,C2,C3}, cap_left(C2)=0, A_s={C1} -> C_s={C3}.
