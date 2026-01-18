@@ -85,6 +85,7 @@ posU_{friend}(p, K) =
 \frac{K + 1 - p}{K}, & K > 0
 \end{cases}
 $$
+
 <img width="851" height="153" alt="Screenshot 2026-01-18 at 14 46 07" src="https://github.com/user-attachments/assets/48bea5ca-6c62-495c-bc65-51d4db47e1a7" />
 
 Code reference: `HBS/hbs_engine.py:41` (function `_pos_u_friend`) and `HBS/hbs_engine.py:140` (derives `K_friend`).
