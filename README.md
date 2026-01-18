@@ -176,7 +176,7 @@ Example: Base=0.6, lambda_s=0.4, FriendBonus=0.5 -> U=0.6+0.4*0.5=0.8.
 At a pick, the feasible set is:
 
 $$
-C_s = \{ c \in C \mid cap_left(c) > 0 \ \land \ c \notin A_s \}
+C_s = \{ c \in C \mid \mathrm{cap}_{\text{left}}(c) > 0 \;\land\; c \notin A_s \}
 $$
 
 Code reference: `HBS/hbs_engine.py:503` (candidate filtering inside `_run_initial_draft`).
