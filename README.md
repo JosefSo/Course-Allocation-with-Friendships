@@ -56,6 +56,8 @@ posU(p, K) =
 \end{cases}
 $$
 
+Example: if K=4, then posU(1,4)=1, posU(2,4)=2/3, posU(4,4)=0; missing p gives 0.
+
 In code, missing `PositionA` yields `Base = 0`, and missing `Score`/`PositionA` are treated as worst-case for tie-breaking.
 
 ### Utility components (per student and course)
@@ -65,11 +67,15 @@ $$
 Base(s, c) = posU(PositionA(s,c), |C|)
 $$
 
+Example: |C|=4 and PositionA(s,c)=2 gives Base(s,c)=2/3.
+
 Directed friend preference from Table 2 (ranked among friends):
 
 $$
 Pref(s, f, c) = posU(PositionB(s,f,c), K_{friend})
 $$
+
+Example: K_friend=3, PositionB=1 gives Pref=1; PositionB=3 gives Pref=0.
 
 Reactive friend bonus (only already allocated friends count):
 
@@ -77,11 +83,15 @@ $$
 FriendBonus(s, c) = \sum_{f \in F(s)} \mathbb{1}[c \in A_f] \cdot Pref(s,f,c)
 $$
 
+Example: F(s)={f1,f2}, only f1 already has c, Pref(s,f1,c)=1, Pref(s,f2,c)=0.5 -> FriendBonus=1.
+
 Total per-pick utility:
 
 $$
 U(s, c) = Base(s,c) + \lambda_s \cdot FriendBonus(s,c)
 $$
+
+Example: Base=0.6, lambda_s=0.4, FriendBonus=0.5 -> U=0.6+0.4*0.5=0.8.
 
 ### Feasible choices and pick rule
 At a pick, the feasible set is:
@@ -89,6 +99,8 @@ At a pick, the feasible set is:
 $$
 C_s = \{ c \in C \mid cap\_left(c) > 0 \ \land \ c \notin A_s \}
 $$
+
+Example: C={C1,C2,C3}, cap_left(C2)=0, A_s={C1} -> C_s={C3}.
 
 The chosen course is the lexicographic maximum of a tie-break tuple:
 
@@ -103,6 +115,8 @@ c^\* = \arg\max_{c \in C_s}
 \Big)
 $$
 
+Example: if U is tied and PositionA(C1)=2, PositionA(C2)=1, then C2 wins; if positions equal, higher Score wins, then rnd, then CourseID.
+
 Where `rnd(s,c)` is a seeded random number used only for remaining ties, and `CourseID` is a stable final tie-breaker. This is equivalent to:
 1) maximize utility (bucketed to 1e-9),
 2) then prefer smaller `PositionA`,
@@ -114,6 +128,8 @@ Where `rnd(s,c)` is a seeded random number used only for remaining ties, and `Co
 Let `pi` be a random permutation of students (seeded). For round `r`:
 - if `r` is odd: order is `pi`
 - if `r` is even: order is `reverse(pi)`
+
+Example: pi=[S2,S1,S3] -> round1: S2,S1,S3; round2: S3,S1,S2.
 
 ### Post-phase objective (swap or add-drop)
 After the draft, the algorithm can improve the allocation for `post_iters` iterations.
@@ -127,11 +143,15 @@ Base(s,c) + \lambda_s \cdot \sum_{f \in F(s)} \mathbb{1}[c \in A_f] \cdot Pref(s
 \right]
 $$
 
+Example: A_s={C1,C2}, Base(s,C1)=1, Base(s,C2)=0.5, lambda_s=0.4, and only C1 overlaps with friends with sum Pref=1 -> W_s=(1+0.4*1)+(0.5+0)=1.9.
+
 Global welfare:
 
 $$
 W = \sum_{s \in S} W_s
 $$
+
+Example: if W_s1=1.9 and W_s2=1.1, then W=3.0.
 
 Swap mode:
 - for each iteration, find the feasible swap with the best positive `DeltaW = W_{after} - W_{before}`,
@@ -150,13 +170,19 @@ $$
 BaseSum_s = \sum_{c \in A_s} Base(s,c)
 $$
 
+Example: A_s={C1,C2}, Base(s,C1)=1, Base(s,C2)=0.5 -> BaseSum_s=1.5.
+
 $$
 FriendSum_s = \sum_{c \in A_s} \sum_{f \in F(s)} \mathbb{1}[c \in A_f] \cdot Pref(s,f,c)
 $$
 
+Example: if overlaps sum to 1.0 on C1 and 0.2 on C2, then FriendSum_s=1.2.
+
 $$
 Total_s = BaseSum_s + \lambda_s \cdot FriendSum_s
 $$
+
+Example: BaseSum_s=1.5, FriendSum_s=1.2, lambda_s=0.4 -> Total_s=1.5+0.48=1.98.
 
 Upper bounds for normalization:
 
@@ -164,9 +190,13 @@ $$
 MaxBase_s = \sum_{c \in Top_b} Base(s,c)
 $$
 
+Example: b=2 and Base values across courses are [1.0, 0.6, 0.2] -> MaxBase_s=1.6.
+
 $$
 MaxTotalUpper_s = \sum_{c \in Top_b} \Big(Base(s,c) + \lambda_s \cdot \sum_{f \in F(s)} Pref(s,f,c)\Big)
 $$
+
+Example: b=2 and (Base + lambda*friend_sum) per course is [1.2, 0.9, 0.4] -> MaxTotalUpper_s=2.1.
 
 Where `Top_b` selects the `b` courses with largest values in the respective expression (ignoring capacity and reactivity for the upper bound).
 
@@ -180,6 +210,8 @@ BaseNorm_s =
 \end{cases}
 $$
 
+Example: BaseSum_s=1.2 and MaxBase_s=1.6 -> BaseNorm_s=0.75.
+
 $$
 TotalNorm_s =
 \begin{cases}
@@ -187,6 +219,8 @@ TotalNorm_s =
 0, & \text{otherwise}
 \end{cases}
 $$
+
+Example: Total_s=1.98 and MaxTotalUpper_s=2.1 -> TotalNorm_s≈0.943.
 
 ### Inequality and summary metrics (including Gini)
 Let `x_i` be a list of non-negative values (the code clamps negatives to 0), sorted in non-decreasing order. Let `n = |x|`.
@@ -196,6 +230,8 @@ Total utility:
 $$
 TotalUtility = \sum_{i=1}^{n} x_i
 $$
+
+Example: x=[0.75, 0.25, 1.0] -> TotalUtility=2.0.
 
 Gini index (used for `TotalNorm` and `BaseNorm`):
 
@@ -207,6 +243,8 @@ Gini(x) =
 \end{cases}
 $$
 
+Example: x=[0, 1] -> Gini=0.5; x=[1, 1, 1] -> Gini=0.
+
 Jain index:
 
 $$
@@ -217,6 +255,8 @@ Jain(x) =
 \end{cases}
 $$
 
+Example: x=[1, 1] -> Jain=1.0; x=[0, 1] -> Jain=0.5.
+
 Theil index:
 
 $$
@@ -225,6 +265,8 @@ Theil(x) =
 \quad \mu = \frac{1}{n}\sum_i x_i
 $$
 
+Example: x=[1, 1] -> Theil=0 (perfect equality).
+
 Atkinson index (epsilon = 0.5 in this project):
 
 $$
@@ -232,18 +274,20 @@ Atkinson(x; \epsilon) =
 1 - \frac{\left(\frac{1}{n}\sum_i x_i^{1-\epsilon}\right)^{\frac{1}{1-\epsilon}}}{\mu}
 $$
 
+Example: x=[1, 1] -> Atkinson=0 (perfect equality).
+
 ### Additional computed statistics
 These are also reported in `metrics_extended.csv`:
-- Average courses per student: `avg_courses = (1/|S|) * sum_s |A_s|`.
-- Full allocation rate: `share(|A_s| >= b)`.
-- Unfilled seats: `sum_c cap_left(c)`.
-- Course fill mean: `mean_c ((cap_default - cap_left(c)) / cap_default)`.
+- Average courses per student: `avg_courses = (1/|S|) * sum_s |A_s|`. Example: |S|=3 and |A_s|=[2,3,1] -> avg_courses=2.0.
+- Full allocation rate: `share(|A_s| >= b)`. Example: b=3 and |A_s|=[3,2,3] -> 2/3.
+- Unfilled seats: `sum_c cap_left(c)`. Example: cap_left=[0,1] -> unfilled=1.
+- Course fill mean: `mean_c ((cap_default - cap_left(c)) / cap_default)`. Example: cap_default=2, cap_left=[0,1] -> fill rates [1.0,0.5], mean=0.75.
 - Position stats over allocated courses with Table 1 rows:
-  `avg_position`, `median_position`, `share_top1`, `share_top3`.
+  `avg_position`, `median_position`, `share_top1`, `share_top3`. Example: positions=[1,2,4] -> avg=7/3, median=2, share_top1=1/3, share_top3=2/3.
 - Friend overlap stats:
-  `avg_friend_overlaps_per_student` and share of students with any overlap.
+  `avg_friend_overlaps_per_student` and share of students with any overlap. Example: overlaps per student [0,2,1] -> avg=1.0, share=2/3.
 - Utility percentiles over `Total_s` using the index rule:
-  `idx = round((n - 1) * p)`, for `p` in {0.10, 0.25, 0.50, 0.75, 0.90}.
+  `idx = round((n - 1) * p)`, for `p` in {0.10, 0.25, 0.50, 0.75, 0.90}. Example: totals=[0.2,0.5,0.9,1.1], p=0.50 -> idx=2 -> percentile=0.9.
 
 ## Draft and post-draft logic
 1. Seeded random order of students.
