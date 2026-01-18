@@ -200,6 +200,27 @@ c^\* = \arg\max_{c \in C_s}
 \Big)
 $$
 
+### Tie-breaking flow
+
+```mermaid
+flowchart TD
+    A["Start: feasible courses C_s"] --> B["Compare rounded utility: round(U(s,c), 9)"]
+
+    B -->|higher| Z["Select course"]
+    B -->|equal| C["Compare PositionA(s,c) (lower is better)"]
+
+    C -->|lower rank| Z
+    C -->|equal| D["Compare Score(s,c) (higher is better)"]
+
+    D -->|higher| Z
+    D -->|equal| E["Compare seeded rnd(s,c)"]
+
+    E -->|higher| Z
+    E -->|equal| F["Compare CourseID (stable final tie-break)"]
+
+    F --> Z
+```
+
 Code reference: `HBS/hbs_engine.py:518` (score tuple), `HBS/hbs_engine.py:535` (argmax), and `HBS/hbs_engine.py:173` (Score/Position tie-break accessors).
 
 Example: if U is tied and PositionA(C1)=2, PositionA(C2)=1, then C2 wins; if positions equal, higher Score wins, then rnd, then CourseID.
