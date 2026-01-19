@@ -282,13 +282,13 @@ Example: if W_s1=1.9 and W_s2=1.1, then W=3.0.
 
 #### 2.7.1 Add-drop mode (HBS-style pass with spare capacity)
 How it works:
-1) For each iteration, shuffle students and process them one by one.
+1) For each iteration, use the draft order and apply snake parity (odd iterations forward, even iterations reverse).
 2) Build a candidate set = current courses of the student + any course with remaining capacity.
 3) Score candidates with the same `U(s,c)` utility and pick the top `b` courses.
 4) Drop courses not in the top `b` and add newly selected courses (capacity is updated).
 5) If no student changes in the pass, the iteration is recorded as a no-op.
 
-Code reference: `HBS/hbs_engine.py:639` (add/drop loop), `HBS/hbs_engine.py:660` (candidate set), `HBS/hbs_engine.py:669` (scoring and top-b selection), `HBS/hbs_engine.py:697` (capacity updates).
+Code reference: `HBS/hbs_engine.py:641` (add/drop loop), `HBS/hbs_engine.py:659` (snake order), `HBS/hbs_engine.py:664` (candidate set), `HBS/hbs_engine.py:672` (scoring and top-b selection), `HBS/hbs_engine.py:700` (capacity updates).
 
 Example: if b=2 and a student currently has {C1,C2}, and C3 has free seats with higher utility, the student may drop C2 and add C3, ending with {C1,C3}.
 
@@ -299,7 +299,7 @@ How it works:
 3) Select the best positive `DeltaW`. If `DeltaW > 0`, apply the swap; otherwise do nothing for this iteration.
 4) Repeat for `post_iters` iterations (deterministic order, deterministic tie-break for equal deltas).
 
-Code reference: `HBS/hbs_engine.py:530` (loop over swap iterations), `HBS/hbs_engine.py:291` (delta computation), `HBS/hbs_engine.py:302` (swap application).
+Code reference: `HBS/hbs_engine.py:530` (loop over swap iterations), `HBS/hbs_engine.py:291` (delta computation), `HBS/hbs_engine.py:275` (swap application).
 
 Example: if S1 has C1 and S2 has C2, and swapping increases global welfare by 0.3, the swap is applied; if the best swap gives DeltaW <= 0, the iteration is a no-op.
 
@@ -328,7 +328,7 @@ $$
 Total_s = BaseSum_s + \lambda_s \cdot FriendSum_s
 $$
 
-Code reference: `HBS/hbs_engine.py:763` (method `_compute_metrics`).
+Code reference: `HBS/hbs_engine.py:766` (computes `Total_s` in `_compute_metrics`).
 
 Example: BaseSum_s=1.5, FriendSum_s=1.2, lambda_s=0.4 -> Total_s=1.5+0.48=1.98.
 
@@ -362,7 +362,7 @@ BaseNorm_s =
 \end{cases}
 $$
 
-Code reference: `HBS/hbs_engine.py:770` (computes `per_student_base_norm`).
+Code reference: `HBS/hbs_engine.py:773` (computes `per_student_base_norm`).
 
 Example: BaseSum_s=1.2 and MaxBase_s=1.6 -> BaseNorm_s=0.75.
 
@@ -374,7 +374,7 @@ TotalNorm_s =
 \end{cases}
 $$
 
-Code reference: `HBS/hbs_engine.py:774` (computes `per_student_total_norm`).
+Code reference: `HBS/hbs_engine.py:777` (computes `per_student_total_norm`).
 
 Example: Total_s=1.98 and MaxTotalUpper_s=2.1 -> TotalNorm_s≈0.943.
 
@@ -405,7 +405,7 @@ $$
 GiniTotalNorm = Gini(\{TotalNorm_s\}_{s \in S})
 $$
 
-Code reference: `HBS/hbs_engine.py:779` (calls `compute_gini_index` for base/total norms).
+Code reference: `HBS/hbs_engine.py:783` (calls `compute_gini_index` for base/total norms).
 
 $$
 Gini(x) =
