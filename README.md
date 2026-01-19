@@ -378,7 +378,7 @@ Code reference: `HBS/hbs_engine.py:774` (computes `per_student_total_norm`).
 
 Example: Total_s=1.98 and MaxTotalUpper_s=2.1 -> TotalNorm_s≈0.943.
 
-### 2.9 GINI metric
+### 2.9 TotalUtility & GINI metrics
 Let `x_i` be a list of non-negative values (the code clamps negatives to 0), sorted in non-decreasing order. Let `n = |x|`.
 
 Total utility:
