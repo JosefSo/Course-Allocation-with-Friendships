@@ -280,7 +280,7 @@ Code reference: `HBS/hbs_engine.py:249` (method `_global_welfare`).
 
 Example: if W_s1=1.9 and W_s2=1.1, then W=3.0.
 
-#### 2.7.2 Add-drop mode (HBS-style pass with spare capacity)
+#### 2.7.1 Add-drop mode (HBS-style pass with spare capacity)
 How it works:
 1) For each iteration, shuffle students and process them one by one.
 2) Build a candidate set = current courses of the student + any course with remaining capacity.
@@ -292,7 +292,7 @@ Code reference: `HBS/hbs_engine.py:639` (add/drop loop), `HBS/hbs_engine.py:660`
 
 Example: if b=2 and a student currently has {C1,C2}, and C3 has free seats with higher utility, the student may drop C2 and add C3, ending with {C1,C3}.
 
-#### 2.7.1 Swap mode (local improvement by swapping courses)
+#### 2.7.2 Swap mode (local improvement by swapping courses)
 How it works:
 1) For every pair of students `(s1, s2)`, enumerate all feasible course swaps `(c1 in A_s1, c2 in A_s2)`.
 2) Compute the welfare change `DeltaW = W_after - W_before` using a delta calculation.
