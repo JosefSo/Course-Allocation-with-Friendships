@@ -126,19 +126,16 @@ Definitions:
 - eps: small constant (default 0.01) that preserves deterministic ordering for equal scores.
 - posU_friend: friend-rank mapping from 2.3.
 
-$$
-\mathrm{Pref}(s,f,c) =
+```math
+\mathrm{Pref}(s,f,c)=
 \frac{
 \mathrm{scoreU}\!\left(\mathrm{ScoreB}(s,f,c)\right)
-+ \varepsilon \cdot
-\mathrm{posU}_{\mathrm{friend}}\!\left(
-\mathrm{PositionB}(s,f,c),
-K_{\mathrm{friend}}
-\right)
++\varepsilon\cdot
+\mathrm{posU}_{\mathrm{friend}}\!\left(\mathrm{PositionB}(s,f,c),K_{\mathrm{friend}}\right)
 }{
-1 + \varepsilon
+1+\varepsilon
 }
-$$
+```
 
 
 Fallback rule:
