@@ -105,6 +105,7 @@ class _HbsSocialDraftEngine:
                     self._lambda_by_student[student_id] = value
 
         self._rng = random.Random(config.seed)
+        self._draft_order: tuple[str, ...] | None = None
 
         # Allocation state:
         # - list: preserves pick order (useful for reporting / debugging)
@@ -464,6 +465,7 @@ class _HbsSocialDraftEngine:
 
         order = self._students[:]
         self._rng.shuffle(order)
+        self._draft_order = tuple(order)
 
         pick_log: list[PickLogRow] = []
 
@@ -640,7 +642,8 @@ class _HbsSocialDraftEngine:
         """
         Phase B (HBS-style): add/drop passes over students using only courses with spare capacity.
 
-        Each iteration is a single pass over students in a new random order.
+        Each iteration is a single pass over students in the draft order, using snake parity
+        (odd iterations forward, even iterations reverse).
         """
 
         if n <= 0:
@@ -653,8 +656,8 @@ class _HbsSocialDraftEngine:
             if self._config.progress:
                 print(f"Iter {iteration}/{self._config.total_iters}: ADD_DROP pass", flush=True)
 
-            order = self._students[:]
-            self._rng.shuffle(order)
+            base_order = list(self._draft_order or self._students)
+            order = base_order if iteration % 2 == 1 else list(reversed(base_order))
             changed_in_pass = False
 
             for student_id in order:
