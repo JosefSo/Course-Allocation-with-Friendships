@@ -104,10 +104,14 @@ Definitions:
 - ScoreB(s,f,c): the raw friend score from Table 2.
 - score_min, score_max: min/max of all non-missing friend scores in Table 2.
 
-Plain-text formula:
-```
-scoreU(score) = clamp((score - score_min) / (score_max - score_min), 0, 1)
-```
+$$
+\mathrm{scoreU}(\text{score}) =
+\left[
+\frac{\text{score} - \text{score}_{\min}}
+{\text{score}_{\max} - \text{score}_{\min}}
+\right]_{0}^{1}
+$$
+
 
 If the score scale is degenerate (score_max <= score_min), the implementation returns 1.0 for any present score.
 
@@ -122,10 +126,20 @@ Definitions:
 - eps: small constant (default 0.01) that preserves deterministic ordering for equal scores.
 - posU_friend: friend-rank mapping from 2.3.
 
-Plain-text formula:
-```
-Pref(s,f,c) = ( scoreU(ScoreB(s,f,c)) + eps * posU_friend(PositionB(s,f,c), K_friend) ) / (1 + eps)
-```
+$$
+\mathrm{Pref}(s,f,c) =
+\frac{
+\mathrm{scoreU}\!\left(\mathrm{ScoreB}(s,f,c)\right)
++ \varepsilon \cdot
+\mathrm{posU}_{\mathrm{friend}}\!\left(
+\mathrm{PositionB}(s,f,c),
+K_{\mathrm{friend}}
+\right)
+}{
+1 + \varepsilon
+}
+$$
+
 
 Fallback rule:
 - If ScoreB is missing for a row, Pref(s,f,c) = posU_friend(PositionB(s,f,c), K_friend).
