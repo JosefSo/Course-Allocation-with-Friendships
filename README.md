@@ -378,7 +378,7 @@ Code reference: `HBS/hbs_engine.py:774` (computes `per_student_total_norm`).
 
 Example: Total_s=1.98 and MaxTotalUpper_s=2.1 -> TotalNorm_s≈0.943.
 
-### 2.9 Inequality and summary metrics (including Gini)
+### 2.9 GINI metric
 Let `x_i` be a list of non-negative values (the code clamps negatives to 0), sorted in non-decreasing order. Let `n = |x|`.
 
 Total utility:
@@ -407,60 +407,6 @@ Code reference: `HBS/hbs_metrics.py:11` (function `compute_gini_index`).
 
 Example: x=[0, 1] -> Gini=0.5; x=[1, 1, 1] -> Gini=0.
 
-Jain index:
-Function type: Jain's fairness index (quadratic mean ratio).
-
-$$
-Jain(x) =
-\begin{cases}
-0, & \sum_i x_i = 0 \\
-\frac{(\sum_i x_i)^2}{n \cdot \sum_i x_i^2}, & \text{otherwise}
-\end{cases}
-$$
-
-Code reference: `HBS/hbs_metrics.py:36` (function `compute_jain_index`).
-
-Example: x=[1, 1] -> Jain=1.0; x=[0, 1] -> Jain=0.5.
-
-Theil index:
-Function type: Theil entropy index of inequality.
-
-$$
-Theil(x) =
-\frac{1}{n} \sum_{i: x_i > 0} \frac{x_i}{\mu} \cdot \log\left(\frac{x_i}{\mu}\right),
-\quad \mu = \frac{1}{n}\sum_i x_i
-$$
-
-Code reference: `HBS/hbs_metrics.py:48` (function `compute_theil_index`).
-
-Example: x=[1, 1] -> Theil=0 (perfect equality).
-
-Atkinson index (epsilon = 0.5 in this project):
-Function type: Atkinson inequality index with epsilon = 0.5.
-
-$$
-Atkinson(x; \epsilon) =
-1 - \frac{\left(\frac{1}{n}\sum_i x_i^{1-\epsilon}\right)^{\frac{1}{1-\epsilon}}}{\mu}
-$$
-
-Code reference: `HBS/hbs_metrics.py:65` (function `compute_atkinson_index`).
-
-Example: x=[1, 1] -> Atkinson=0 (perfect equality).
-
-### 2.10 Additional computed statistics
-These are also reported in `metrics_extended.csv`:
-- Average courses per student: `avg_courses = (1/|S|) * sum_s |A_s|`. Example: |S|=3 and |A_s|=[2,3,1] -> avg_courses=2.0.
-- Full allocation rate: `share(|A_s| >= b)`. Example: b=3 and |A_s|=[3,2,3] -> 2/3.
-- Unfilled seats: `sum_c cap_left(c)`. Example: cap_left=[0,1] -> unfilled=1.
-- Course fill mean: `mean_c ((cap_default - cap_left(c)) / cap_default)`. Example: cap_default=2, cap_left=[0,1] -> fill rates [1.0,0.5], mean=0.75.
-- Position stats over allocated courses with Table 1 rows:
-  `avg_position`, `median_position`, `share_top1`, `share_top3`. Example: positions=[1,2,4] -> avg=7/3, median=2, share_top1=1/3, share_top3=2/3.
-- Friend overlap stats:
-  `avg_friend_overlaps_per_student` and share of students with any overlap. Example: overlaps per student [0,2,1] -> avg=1.0, share=2/3.
-- Utility percentiles over `Total_s` using the index rule:
-  `idx = round((n - 1) * p)`, for `p` in {0.10, 0.25, 0.50, 0.75, 0.90}. Example: totals=[0.2,0.5,0.9,1.1], p=0.50 -> idx=2 -> percentile=0.9.
-
-Code reference: `HBS/hbs_engine.py:797` (method `_compute_extended_metrics`) and `HBS/hbs_engine.py:864` (percentile index rule).
 
 ## 3. Draft and post-draft logic
 1. Seeded random order of students.
