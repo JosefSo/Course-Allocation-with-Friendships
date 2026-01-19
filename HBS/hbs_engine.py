@@ -53,6 +53,21 @@ def _pos_u_friend(position: int | None, k_friends: int) -> float:
     return (k_friends + 1 - position) / k_friends
 
 
+def _score_u(score: int | None, score_min: int, score_max: int) -> float:
+    """
+    Normalize score into [0..1].
+
+    If the scale is degenerate (score_max <= score_min), return 1.0 for any present score.
+    """
+
+    if score is None:
+        return 0.0
+    if score_max <= score_min:
+        return 1.0
+    value = (score - score_min) / (score_max - score_min)
+    return max(0.0, min(1.0, value))
+
+
 class _HbsSocialDraftEngine:
     """
     Application service that performs the allocation and computes metrics.
@@ -67,6 +82,7 @@ class _HbsSocialDraftEngine:
     _MISSING_POSITION = 10**9
     _MISSING_SCORE = -(10**9)
     _DEFAULT_LAMBDA = 0.5
+    _FRIEND_SCORE_EPS = 0.01
 
     def __init__(
         self,
@@ -135,16 +151,35 @@ class _HbsSocialDraftEngine:
             for friend_id in friends:
                 self._followers.setdefault(friend_id, set()).add(student_id_a)
 
-        # Table 2 contains only a friend rank Position (top-k). We use a linear mapping without
-        # zero so that rank K is still better than missing.
+        # Table 2 contains a friend rank Position (top-k) and an optional Score.
+        # We use a linear mapping without zero for Position and a normalized Score
+        # with a small eps tie-breaker on position.
         self._k_friend_rank = max(1, max((r.position for r in pair_prefs), default=3))
-        self._friend_bonus_max_per_course = sum(
-            _pos_u_friend(rank, self._k_friend_rank) for rank in range(1, self._k_friend_rank + 1)
-        )
-        self._pair_u_by_key: dict[tuple[str, str, str], float] = {
-            (r.student_id_a, r.student_id_b, r.course_id): _pos_u_friend(
-                r.position, self._k_friend_rank
+        friend_scores = [r.score for r in pair_prefs if r.score is not None]
+        self._friend_score_min = min(friend_scores) if friend_scores else 0
+        self._friend_score_max = max(friend_scores) if friend_scores else 0
+
+        def _pair_weight(position: int, score: int | None) -> float:
+            pos_u = _pos_u_friend(position, self._k_friend_rank)
+            if score is None:
+                return pos_u
+            score_u = _score_u(score, self._friend_score_min, self._friend_score_max)
+            eps = self._FRIEND_SCORE_EPS
+            return (score_u + eps * pos_u) / (1.0 + eps)
+
+        if friend_scores:
+            self._friend_bonus_max_per_course = sum(
+                _pair_weight(rank, self._friend_score_max)
+                for rank in range(1, self._k_friend_rank + 1)
             )
+        else:
+            self._friend_bonus_max_per_course = sum(
+                _pos_u_friend(rank, self._k_friend_rank)
+                for rank in range(1, self._k_friend_rank + 1)
+            )
+
+        self._pair_u_by_key: dict[tuple[str, str, str], float] = {
+            (r.student_id_a, r.student_id_b, r.course_id): _pair_weight(r.position, r.score)
             for r in pair_prefs
         }
 

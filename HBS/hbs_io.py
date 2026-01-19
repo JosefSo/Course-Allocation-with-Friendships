@@ -43,15 +43,20 @@ def _read_table_2(path: Path) -> list[PairPref]:
     with path.open(newline="", encoding="utf-8") as f:
         reader = csv.DictReader(f)
         required = {"StudentID_A", "StudentID_B", "CourseID", "Position"}
-        if reader.fieldnames is None or not required.issubset(set(reader.fieldnames)):
+        fieldnames = set(reader.fieldnames or [])
+        if reader.fieldnames is None or not required.issubset(fieldnames):
             raise ValueError(f"CSV B need to include rows: {sorted(required)} (file: {path})")
+        has_score = "Score" in fieldnames
         for r in reader:
+            score_raw = str(r.get("Score", "")).strip() if has_score else ""
+            score = int(score_raw) if score_raw != "" else None
             rows.append(
                 PairPref(
                     student_id_a=str(r["StudentID_A"]).strip(),
                     student_id_b=str(r["StudentID_B"]).strip(),
                     course_id=str(r["CourseID"]).strip(),
                     position=int(r["Position"]),
+                    score=score,
                 )
             )
     return rows

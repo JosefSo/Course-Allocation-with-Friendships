@@ -23,9 +23,10 @@ Table 1: individual course preferences
 - `Score` is used only for deterministic tie-breaking.
 
 Table 2: directed friend preferences per course
-- columns: `StudentID_A, StudentID_B, CourseID, Position`
+- columns: `StudentID_A, StudentID_B, CourseID, Position, Score`
 - represents "A prefers to be with B in course".
 - `Position` is a 1-based rank among A's friends for that course (top-k).
+- `Score` captures the intensity of that friend preference (ties allowed). If missing, the algorithm falls back to Position only.
 
 Table 3: per-student social weight (optional)
 - columns: `StudentID, LambdaFriend`
@@ -39,7 +40,7 @@ This section matches the exact computation implemented in `HBS/` and breaks it i
 ### 2.1 Sets and inputs
 - Students: `S`, courses: `C`.
 - For each student `s` and course `c`, Table 1 provides `Score(s,c)` and `PositionA(s,c)`.
-- For each directed pair `(s, f)` and course `c`, Table 2 provides `PositionB(s,f,c)` (s's friend rank for f in c).
+- For each directed pair `(s, f)` and course `c`, Table 2 provides `PositionB(s,f,c)` and `ScoreB(s,f,c)` (s's friend rank and intensity for f in c).
 - Per-student social weight `lambda_s` comes from Table 3 (default 0.5 if missing).
 - Course capacity is uniform: `cap(c) = cap_default` for all `c`.
 
@@ -90,16 +91,57 @@ $$
 
 <img width="851" height="153" alt="Screenshot 2026-01-18 at 14 46 07" src="https://github.com/user-attachments/assets/48bea5ca-6c62-495c-bc65-51d4db47e1a7" />
 
-Code reference: `HBS/hbs_engine.py:40` (function `_pos_u_friend`) and `HBS/hbs_engine.py:140` (derives `K_friend`).
+Code reference: `HBS/hbs_engine.py:40` (function `_pos_u_friend`) and `HBS/hbs_engine.py:157` (derives `K_friend`).
 
 Example: if K=3, then posU_friend(1,3)=1, posU_friend(2,3)=2/3, posU_friend(3,3)=1/3.
 
 This formula is used only for Table 2 (friend ranks).
 
+### 2.3.1 Friend-score normalization (Table 2)
+Function type: affine Min-Max scaling to [0, 1] with clamping.
+
+Definitions:
+- ScoreB(s,f,c): the raw friend score from Table 2.
+- score_min, score_max: min/max of all non-missing friend scores in Table 2.
+
+Plain-text formula:
+```
+scoreU(score) = clamp((score - score_min) / (score_max - score_min), 0, 1)
+```
+
+If the score scale is degenerate (score_max <= score_min), the implementation returns 1.0 for any present score.
+
+Code reference: `HBS/hbs_engine.py:56` (function `_score_u`).
+
+Example: score_min=1, score_max=5 -> score=5 gives scoreU=1, score=3 gives scoreU=0.5, score=1 gives scoreU=0.
+
+### 2.3.2 Friend weight with score + position (score-dominant)
+Function type: convex mix of normalized score with a small position tie-breaker.
+
+Definitions:
+- eps: small constant (default 0.01) that preserves deterministic ordering for equal scores.
+- posU_friend: friend-rank mapping from 2.3.
+
+Plain-text formula:
+```
+Pref(s,f,c) = ( scoreU(ScoreB(s,f,c)) + eps * posU_friend(PositionB(s,f,c), K_friend) ) / (1 + eps)
+```
+
+Fallback rule:
+- If ScoreB is missing for a row, Pref(s,f,c) = posU_friend(PositionB(s,f,c), K_friend).
+
+Code reference: `HBS/hbs_engine.py:162` (pair weight helper) and `HBS/hbs_engine.py:181` (precompute map).
+
+Example: K_friend=3, score range 1..5, eps=0.01
+- (pos=1, score=5): Pref≈1.0000
+- (pos=2, score=5): Pref≈0.9967
+- (pos=3, score=5): Pref≈0.9934
+
 ### 2.4 Utility components (per student and course)
 Definitions:
 - PositionA(s,c): the 1-based rank of course c for student s from Table 1 (1 = most preferred, k = least preferred).
-- PositionB(s,f,c): the 1-based rank of friend f for student s in course c from Table 2 (1 = top friend, 3 = lowest-ranked friend).
+- PositionB(s,f,c): the 1-based rank of friend f for student s in course c from Table 2 (1 = top friend, K_friend = lowest-ranked friend).
+- ScoreB(s,f,c): the friend preference score from Table 2 (ties allowed).
 
 Base utility from Table 1:
 Function type: composition of rank-to-utility (affine Min-Max) with the PositionA lookup.
@@ -108,26 +150,19 @@ $$
 Base(s, c) = posU(PositionA(s,c), |C|)
 $$
 
-Code reference: `HBS/hbs_engine.py:121` (precompute) and `HBS/hbs_engine.py:161` (method `_base_utility`).
+Code reference: `HBS/hbs_engine.py:137` (precompute) and `HBS/hbs_engine.py:196` (method `_base_utility`).
 
 Example: |C|=4 and PositionA(s,c)=2 gives Base(s,c)=2/3.
 
-Directed friend preference from Table 2 (ranked among friends):
-Function type: composition of friend-rank linear scaling with the PositionB lookup.
+Directed friend preference from Table 2 (score-dominant with position tie-break):
+Function type: convex mix of normalized score with a small position term (see 2.3.2).
 
-$$
-Pref(s, f, c) = posU_{friend}(PositionB(s,f,c), K_{friend})
-$$
+Plain-text formula:
+```
+Pref(s,f,c) = ( scoreU(ScoreB(s,f,c)) + eps * posU_friend(PositionB(s,f,c), K_friend) ) / (1 + eps)
+```
 
-Code reference: `HBS/hbs_engine.py:144` (precompute) and `HBS/hbs_engine.py:186` (method `_friend_preference_utility`).
-
-Equivalently (when K_friend > 0):
-
-$$
-Pref(s, f, c) = \frac{K_{friend} + 1 - PositionB(s,f,c)}{K_{friend}}
-$$
-
-Example: K_friend=3, PositionB=1 gives Pref=1; PositionB=3 gives Pref=1/3.
+Code reference: `HBS/hbs_engine.py:181` (precompute) and `HBS/hbs_engine.py:221` (method `_friend_preference_utility`).
 
 Reactive friend bonus (only already allocated friends count):
 Function type: weighted sum over a directed friend set with an indicator (reactive overlap).
@@ -139,7 +174,7 @@ $$
 <img width="851" height="153" alt="Screenshot 2026-01-18 at 20 21 09" src="https://github.com/user-attachments/assets/45ab0dab-cb2f-4125-8009-7dc7a9d8d6d0" />
 
 
-Code reference: `HBS/hbs_engine.py:193` (method `_friend_bonus_reactive`).
+Code reference: `HBS/hbs_engine.py:228` (method `_friend_bonus_reactive`).
 
 Interpretation (step-by-step):
 1) Take only the friends listed for student s (the directed set F(s) from Table 2).
@@ -151,27 +186,37 @@ Example:
 - F(s) = {f1, f2, f3}
 - Course c = C2
 - Current allocations: A_f1 = {C2, C3}, A_f2 = {C1}, A_f3 = {C2}
-- Friend preferences: Pref(s,f1,C2)=1, Pref(s,f2,C2)=2/3, Pref(s,f3,C2)=1/3
+- Friend preferences (K_friend=3, score range 1..5, eps=0.01, all scores=5):
+  - Pref(s,f1,C2)≈1.0000
+  - Pref(s,f2,C2)≈0.9967
+  - Pref(s,f3,C2)≈0.9934
 
 Then only f1 and f3 count (they already have C2), so:
 
-$$
-FriendBonus(s, C2) = 1 + \frac{1}{3} = \frac{4}{3}
-$$
+Plain-text:
+```
+FriendBonus(s, C2) ≈ 1.0000 + 0.9934 = 1.9934
+```
 
 Friend bonus normalization (fixed top-K, variant 4):
 
-$$
-MaxFriendBonus = \sum_{p=1}^{K_{friend}} posU_{friend}(p, K_{friend}) = \frac{K_{friend} + 1}{2}
-$$
+Plain-text:
+```
+MaxFriendBonus = sum_{p=1..K_friend} Pref_max(p)
+Pref_max(p) = ( 1 + eps * posU_friend(p, K_friend) ) / (1 + eps)
+FriendBonusNorm(s,c) = FriendBonus(s,c) / MaxFriendBonus
+```
 
-$$
-FriendBonusNorm(s,c) = \frac{FriendBonus(s,c)}{MaxFriendBonus}
-$$
+If Table 2 has no scores at all, the implementation falls back to:
+```
+MaxFriendBonus = sum_{p=1..K_friend} posU_friend(p, K_friend) = (K_friend + 1) / 2
+```
 
-Example: with K_friend=3, MaxFriendBonus=2, so FriendBonusNorm(s,C2) = (4/3)/2 = 2/3.
+Example (K_friend=3, eps=0.01):
+- MaxFriendBonus≈2.9901
+- FriendBonusNorm(s,C2)≈1.9934/2.9901≈0.667
 
-Code reference: `HBS/hbs_engine.py:141` (MaxFriendBonus precompute) and `HBS/hbs_engine.py:206` (normalization helper).
+Code reference: `HBS/hbs_engine.py:170` (MaxFriendBonus precompute) and `HBS/hbs_engine.py:241` (normalization helper).
 
 Total per-pick utility:
 Function type: convex combination of base and normalized friend bonus with weight lambda_s.
@@ -180,7 +225,7 @@ $$
 U(s, c) = (1 - \lambda_s) \cdot Base(s,c) + \lambda_s \cdot FriendBonusNorm(s,c)
 $$
 
-Code reference: `HBS/hbs_engine.py:211` (method `_utility_components`) and `HBS/hbs_engine.py:69` (default lambda).
+Code reference: `HBS/hbs_engine.py:246` (method `_utility_components`) and `HBS/hbs_engine.py:84` (default lambda).
 
 Example: Base=0.6, lambda_s=0.4, FriendBonusNorm=0.5 -> U=0.6*0.6 + 0.4*0.5 = 0.56.
 
@@ -194,7 +239,7 @@ $$
 <img width="874" height="133" alt="Screenshot 2026-01-18 at 20 37 34" src="https://github.com/user-attachments/assets/44d24670-fc7d-4235-99e5-cece916faafc" />
 
 
-Code reference: `HBS/hbs_engine.py:492` (candidate filtering inside `_run_initial_draft`).
+Code reference: `HBS/hbs_engine.py:527` (candidate filtering inside `_run_initial_draft`).
 
 Example: C={C1,C2,C3}, cap_left(C2)=0, A_s={C1} -> C_s={C3}.
 
@@ -226,7 +271,7 @@ flowchart LR
 <img width="1018" height="475" alt="Screenshot 2026-01-18 at 21 10 50" src="https://github.com/user-attachments/assets/b0a6884f-9909-433c-ab1d-ed260748bf1f" />
 
 
-Code reference: `HBS/hbs_engine.py:506` (score tuple), `HBS/hbs_engine.py:523` (argmax), and `HBS/hbs_engine.py:166`/`HBS/hbs_engine.py:176` (Position/Score tie-break accessors).
+Code reference: `HBS/hbs_engine.py:541` (score tuple), `HBS/hbs_engine.py:558` (argmax), and `HBS/hbs_engine.py:201`/`HBS/hbs_engine.py:211` (Position/Score tie-break accessors).
 
 Example: if U is tied and PositionA(C1)=2, PositionA(C2)=1, then C2 wins; if positions equal, higher Score wins, then rnd, then CourseID.
 
@@ -262,7 +307,7 @@ Let `pi` be a random permutation of students (seeded). For round `r`:
 
 Example: pi=[S2,S1,S3] -> round1: S2,S1,S3; round2: S3,S1,S2.
 
-Code reference: `HBS/hbs_engine.py:480` (seeded shuffle) and `HBS/hbs_engine.py:489` (snake order).
+Code reference: `HBS/hbs_engine.py:515` (seeded shuffle) and `HBS/hbs_engine.py:524` (snake order).
 
 ### 2.7 Post-phase objective (add-drop or swap)
 After the draft, the algorithm can improve the allocation for `post_iters` iterations.
@@ -277,7 +322,7 @@ W_s = \sum_{c \in A_s}
 \right]
 $$
 
-Code reference: `HBS/hbs_engine.py:225` (method `_student_welfare`) and `HBS/hbs_engine.py:248` (components).
+Code reference: `HBS/hbs_engine.py:260` (method `_student_welfare`) and `HBS/hbs_engine.py:283` (components).
 
 Example: A_s={C1,C2}, Base(s,C1)=1, Base(s,C2)=0.5, lambda_s=0.4, FriendBonusNorm(s,C1)=0.5, FriendBonusNorm(s,C2)=0 -> W_s=(0.6*1+0.4*0.5)+(0.6*0.5+0)=0.8+0.3=1.1.
 
@@ -288,7 +333,7 @@ $$
 W = \sum_{s \in S} W_s
 $$
 
-Code reference: `HBS/hbs_engine.py:263` (method `_global_welfare`).
+Code reference: `HBS/hbs_engine.py:298` (method `_global_welfare`).
 
 Example: if W_s1=1.9 and W_s2=1.1, then W=3.0.
 
@@ -300,7 +345,7 @@ How it works:
 4) Drop courses not in the top `b` and add newly selected courses (capacity is updated).
 5) If no student changes in the pass, the iteration is recorded as a no-op.
 
-Code reference: `HBS/hbs_engine.py:641` (add/drop loop), `HBS/hbs_engine.py:659` (snake order), `HBS/hbs_engine.py:663` (candidate set), `HBS/hbs_engine.py:672` (scoring and top-b selection), `HBS/hbs_engine.py:700` (capacity updates).
+Code reference: `HBS/hbs_engine.py:703` (add/drop loop), `HBS/hbs_engine.py:708` (snake order), `HBS/hbs_engine.py:713` (candidate set), `HBS/hbs_engine.py:721` (scoring and top-b selection), `HBS/hbs_engine.py:745` (capacity updates).
 
 Example: if b=2 and a student currently has {C1,C2}, and C3 has free seats with higher utility, the student may drop C2 and add C3, ending with {C1,C3}.
 
@@ -311,7 +356,7 @@ How it works:
 3) Select the best positive `DeltaW`. If `DeltaW > 0`, apply the swap; otherwise do nothing for this iteration.
 4) Repeat for `post_iters` iterations (deterministic order, deterministic tie-break for equal deltas).
 
-Code reference: `HBS/hbs_engine.py:546` (loop over swap iterations), `HBS/hbs_engine.py:292` (delta computation), `HBS/hbs_engine.py:275` (swap application).
+Code reference: `HBS/hbs_engine.py:581` (loop over swap iterations), `HBS/hbs_engine.py:341` (delta computation), `HBS/hbs_engine.py:324` (swap application).
 
 Example: if S1 has C1 and S2 has C2, and swapping increases global welfare by 0.3, the swap is applied; if the best swap gives DeltaW <= 0, the iteration is a no-op.
 
@@ -324,7 +369,7 @@ $$
 BaseSum_s = \sum_{c \in A_s} Base(s,c)
 $$
 
-Code reference: `HBS/hbs_engine.py:248` (method `_student_welfare_components`).
+Code reference: `HBS/hbs_engine.py:283` (method `_student_welfare_components`).
 
 Example: A_s={C1,C2}, Base(s,C1)=1, Base(s,C2)=0.5 -> BaseSum_s=1.5.
 
@@ -332,7 +377,7 @@ $$
 FriendSumRaw_s = \sum_{c \in A_s} \sum_{f \in F(s)} \mathbb{1}[c \in A_f] \cdot Pref(s,f,c)
 $$
 
-Code reference: `HBS/hbs_engine.py:248` (method `_student_welfare_components`).
+Code reference: `HBS/hbs_engine.py:283` (method `_student_welfare_components`).
 
 Example: if overlaps sum to 1.0 on C1 and 0.2 on C2, then FriendSumRaw_s=1.2.
 
@@ -340,15 +385,15 @@ $$
 FriendSumNorm_s = \frac{FriendSumRaw_s}{MaxFriendBonus}
 $$
 
-Code reference: `HBS/hbs_engine.py:248` (normalization inside `_student_welfare_components`).
+Code reference: `HBS/hbs_engine.py:283` (normalization inside `_student_welfare_components`).
 
-Example: with MaxFriendBonus=2, FriendSumNorm_s=1.2/2=0.6.
+Example: with MaxFriendBonus=2.9901, FriendSumNorm_s=1.2/2.9901≈0.401.
 
 $$
 Total_s = (1 - \lambda_s) \cdot BaseSum_s + \lambda_s \cdot FriendSumNorm_s
 $$
 
-Code reference: `HBS/hbs_engine.py:780` (computes `Total_s` in `_compute_metrics`).
+Code reference: `HBS/hbs_engine.py:815` (computes `Total_s` in `_compute_metrics`).
 
 Example: BaseSum_s=1.5, FriendSumNorm_s=0.6, lambda_s=0.4 -> Total_s=0.9+0.24=1.14.
 
@@ -358,7 +403,7 @@ $$
 MaxBase_s = \sum_{c \in Top_b} Base(s,c)
 $$
 
-Code reference: `HBS/hbs_engine.py:268` (method `_max_possible_base`).
+Code reference: `HBS/hbs_engine.py:303` (method `_max_possible_base`).
 
 Example: b=2 and Base values across courses are [1.0, 0.6, 0.2] -> MaxBase_s=1.6.
 
@@ -366,7 +411,7 @@ $$
 MaxTotalUpper_s = \sum_{c \in Top_b} \Big((1 - \lambda_s) \cdot Base(s,c) + \lambda_s \cdot \frac{\sum_{f \in F(s)} Pref(s,f,c)}{MaxFriendBonus}\Big)
 $$
 
-Code reference: `HBS/hbs_engine.py:273` (method `_max_possible_total_upper`).
+Code reference: `HBS/hbs_engine.py:308` (method `_max_possible_total_upper`).
 
 Example: b=2 and the per-course values are [0.9, 0.7, 0.3] -> MaxTotalUpper_s=1.6.
 
@@ -382,7 +427,7 @@ BaseNorm_s =
 \end{cases}
 $$
 
-Code reference: `HBS/hbs_engine.py:787` (computes `per_student_base_norm`).
+Code reference: `HBS/hbs_engine.py:822` (computes `per_student_base_norm`).
 
 Example: BaseSum_s=1.2 and MaxBase_s=1.6 -> BaseNorm_s=0.75.
 
@@ -394,7 +439,7 @@ TotalNorm_s =
 \end{cases}
 $$
 
-Code reference: `HBS/hbs_engine.py:791` (computes `per_student_total_norm`).
+Code reference: `HBS/hbs_engine.py:826` (computes `per_student_total_norm`).
 
 Example: Total_s=1.98 and MaxTotalUpper_s=2.1 -> TotalNorm_s≈0.943.
 
@@ -425,7 +470,7 @@ $$
 GiniTotalNorm = Gini(\{TotalNorm_s\}_{s \in S})
 $$
 
-Code reference: `HBS/hbs_engine.py:797` (calls `compute_gini_index` for base/total norms).
+Code reference: `HBS/hbs_engine.py:831` (calls `compute_gini_index` for base/total norms).
 
 $$
 Gini(x) =
@@ -465,7 +510,7 @@ Requirements: Python 3.10+ (no external dependencies).
 Generate sample data:
 
 ```bash
-python generate/generate_tables.py --students 200 --courses 8 --seed 42
+python3 generate/generate_tables.py --students 200 --courses 8 --seed 11
 ```
 
 Run the allocator:

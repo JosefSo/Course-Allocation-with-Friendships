@@ -16,7 +16,7 @@ def _write_table_1(path: Path) -> None:
 
 def _write_table_2(path: Path) -> None:
     with path.open("w", newline="", encoding="utf-8") as f:
-        f.write("StudentID_A,StudentID_B,CourseID,Position\n")
+        f.write("StudentID_A,StudentID_B,CourseID,Position,Score\n")
 
 
 def _write_table_lambda(path: Path, value: float) -> None:

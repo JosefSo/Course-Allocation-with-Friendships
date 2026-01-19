@@ -21,6 +21,7 @@ class PairPref:
     student_id_b: str
     course_id: str
     position: int
+    score: int | None
 
 
 @dataclass(frozen=True)

@@ -31,16 +31,16 @@ def _write_table_1(path: Path) -> None:
 
 def _write_table_2(path: Path) -> None:
     rows = [
-        ("S1", "S2", "C1", 1),
-        ("S1", "S2", "C2", 1),
-        ("S2", "S3", "C1", 1),
-        ("S2", "S3", "C2", 1),
-        ("S3", "S1", "C1", 1),
-        ("S3", "S1", "C2", 1),
+        ("S1", "S2", "C1", 1, 5),
+        ("S1", "S2", "C2", 1, 5),
+        ("S2", "S3", "C1", 1, 5),
+        ("S2", "S3", "C2", 1, 5),
+        ("S3", "S1", "C1", 1, 5),
+        ("S3", "S1", "C2", 1, 5),
     ]
     with path.open("w", newline="", encoding="utf-8") as f:
         writer = csv.writer(f)
-        writer.writerow(["StudentID_A", "StudentID_B", "CourseID", "Position"])
+        writer.writerow(["StudentID_A", "StudentID_B", "CourseID", "Position", "Score"])
         writer.writerows(rows)
 
 

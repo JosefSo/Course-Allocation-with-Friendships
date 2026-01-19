@@ -44,7 +44,7 @@ class TestFriendBonus(unittest.TestCase):
             IndividualPref(student_id="S2", course_id="C1", score=10, position=1),
         ]
         pair_prefs = [
-            PairPref(student_id_a="S1", student_id_b="S2", course_id="C1", position=1)
+            PairPref(student_id_a="S1", student_id_b="S2", course_id="C1", position=1, score=5)
         ]
         engine = _make_engine(
             individual_prefs=prefs,
