@@ -63,7 +63,7 @@ class TestFriendBonus(unittest.TestCase):
         total, base, friend_bonus = engine._utility_components("S1", "C1")
         self.assertAlmostEqual(base, 1.0, places=9)
         self.assertAlmostEqual(friend_bonus, 1.0, places=9)
-        self.assertAlmostEqual(total, 2.0, places=9)
+        self.assertAlmostEqual(total, 1.0, places=9)
 
 
 if __name__ == "__main__":

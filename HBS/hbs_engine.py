@@ -138,6 +138,9 @@ class _HbsSocialDraftEngine:
         # Table 2 contains only a friend rank Position (top-k). We use a linear mapping without
         # zero so that rank K is still better than missing.
         self._k_friend_rank = max(1, max((r.position for r in pair_prefs), default=3))
+        self._friend_bonus_max_per_course = sum(
+            _pos_u_friend(rank, self._k_friend_rank) for rank in range(1, self._k_friend_rank + 1)
+        )
         self._pair_u_by_key: dict[tuple[str, str, str], float] = {
             (r.student_id_a, r.student_id_b, r.course_id): _pos_u_friend(
                 r.position, self._k_friend_rank
@@ -200,14 +203,21 @@ class _HbsSocialDraftEngine:
                 total += self._friend_preference_utility(student_id, friend_id, course_id)
         return total
 
+    def _friend_bonus_norm(self, friend_bonus: float) -> float:
+        if self._friend_bonus_max_per_course <= 0.0:
+            return 0.0
+        return friend_bonus / self._friend_bonus_max_per_course
+
     def _utility_components(self, student_id: str, course_id: str) -> tuple[float, float, float]:
         """
         Return (total_utility, base, friend_bonus).
         """
 
         base = self._base_utility(student_id, course_id)
-        friend_bonus = self._friend_bonus_reactive(student_id, course_id)
-        total = base + self._lambda_by_student.get(student_id, self._DEFAULT_LAMBDA) * friend_bonus
+        friend_bonus_raw = self._friend_bonus_reactive(student_id, course_id)
+        friend_bonus = self._friend_bonus_norm(friend_bonus_raw)
+        lambda_ = self._lambda_by_student.get(student_id, self._DEFAULT_LAMBDA)
+        total = (1.0 - lambda_) * base + lambda_ * friend_bonus
         return total, base, friend_bonus
 
     # ---- Improvement objective (order-independent) ---------------------
@@ -216,7 +226,7 @@ class _HbsSocialDraftEngine:
         """
         Order-independent welfare contribution for a single student based on the final allocation.
 
-        W_s = Σ_{c ∈ Alloc(s)} [ Base(s,c) + λ * FriendOverlap(s,c) ]
+        W_s = Σ_{c ∈ Alloc(s)} [ (1-λ) * Base(s,c) + λ * FriendBonusNorm(s,c) ]
         """
 
         friends = self._friends_list.get(student_id, ())
@@ -224,28 +234,31 @@ class _HbsSocialDraftEngine:
         total = 0.0
         student_courses = self._alloc_set[student_id]
         for course_id in sorted(student_courses):
-            total += self._base_utility(student_id, course_id)
+            base = self._base_utility(student_id, course_id)
+            friend_bonus_raw = 0.0
             for friend_id in friends:
                 if course_id in self._alloc_set[friend_id]:
-                    total += lambda_ * self._friend_preference_utility(
+                    friend_bonus_raw += self._friend_preference_utility(
                         student_id, friend_id, course_id
                     )
+            friend_bonus = self._friend_bonus_norm(friend_bonus_raw)
+            total += (1.0 - lambda_) * base + lambda_ * friend_bonus
         return total
 
     def _student_welfare_components(self, student_id: str) -> tuple[float, float]:
         """
-        Return (base_sum, friend_overlap_sum) for the final allocation.
+        Return (base_sum, friend_bonus_norm_sum) for the final allocation.
         """
 
         base_sum = 0.0
-        friend_sum = 0.0
+        friend_sum_raw = 0.0
         friends = self._friends_list.get(student_id, ())
         for course_id in sorted(self._alloc_set[student_id]):
             base_sum += self._base_utility(student_id, course_id)
             for friend_id in friends:
                 if course_id in self._alloc_set[friend_id]:
-                    friend_sum += self._friend_preference_utility(student_id, friend_id, course_id)
-        return base_sum, friend_sum
+                    friend_sum_raw += self._friend_preference_utility(student_id, friend_id, course_id)
+        return base_sum, self._friend_bonus_norm(friend_sum_raw)
 
     def _global_welfare(self) -> float:
         """Global welfare W(allocation) as a sum of per-student welfare contributions."""
@@ -266,7 +279,8 @@ class _HbsSocialDraftEngine:
             friend_sum = 0.0
             for friend_id in friends:
                 friend_sum += self._friend_preference_utility(student_id, friend_id, course_id)
-            values.append(base + lambda_ * friend_sum)
+            friend_norm = self._friend_bonus_norm(friend_sum)
+            values.append((1.0 - lambda_) * base + lambda_ * friend_norm)
         values.sort(reverse=True)
         return sum(values[: self._config.max_courses])
 
@@ -763,7 +777,7 @@ class _HbsSocialDraftEngine:
         for student_id in self._students:
             base_sum, friend_sum = self._student_welfare_components(student_id)
             lambda_ = self._lambda_by_student.get(student_id, self._DEFAULT_LAMBDA)
-            total = base_sum + lambda_ * friend_sum
+            total = (1.0 - lambda_) * base_sum + lambda_ * friend_sum
             per_student_base.append(base_sum)
             per_student_friend.append(friend_sum)
             per_student_total.append(total)
