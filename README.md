@@ -395,6 +395,18 @@ Example: x=[0.75, 0.25, 1.0] -> TotalUtility=2.0.
 Gini index (used for `TotalNorm` and `BaseNorm`):
 Function type: normalized Gini coefficient over non-negative values.
 
+We compute two Gini metrics explicitly:
+
+$$
+GiniBaseNorm = Gini(\{BaseNorm_s\}_{s \in S})
+$$
+
+$$
+GiniTotalNorm = Gini(\{TotalNorm_s\}_{s \in S})
+$$
+
+Code reference: `HBS/hbs_engine.py:779` (calls `compute_gini_index` for base/total norms).
+
 $$
 Gini(x) =
 \begin{cases}
