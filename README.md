@@ -168,9 +168,19 @@ Example: |C|=4 and PositionA(s,c)=2 gives Base(s,c)=2/3.
 Directed friend preference from Table 2 (score-dominant with position tie-break):
 Function type: convex mix of normalized score with a small position term (see 2.3.2).
 
-Plain-text formula:
-```
-Pref(s,f,c) = ( scoreU(ScoreB(s,f,c)) + eps * posU_friend(PositionB(s,f,c), K_friend) ) / (1 + eps)
+
+```math
+\mathrm{Pref}(s,f,c)=
+\frac{
+\mathrm{scoreU}\!\left(\mathrm{ScoreB}(s,f,c)\right)
++\varepsilon\cdot
+\mathrm{posU}_{\mathrm{friend}}\!\left(
+\mathrm{PositionB}(s,f,c),
+K_{\mathrm{friend}}
+\right)
+}{
+1+\varepsilon
+}
 ```
 
 Code reference: `HBS/hbs_engine.py:181` (precompute) and `HBS/hbs_engine.py:221` (method `_friend_preference_utility`).
@@ -204,24 +214,34 @@ Example:
 
 Then only f1 and f3 count (they already have C2), so:
 
-Plain-text:
-```
-FriendBonus(s, C2) ≈ 1.0000 + 0.9934 = 1.9934
+
+```math
+\mathrm{FriendBonus}(s, C_2)
+\approx 1.0000 + 0.9934
+= 1.9934
 ```
 
 Friend bonus normalization (fixed top-K, variant 4):
 
-Plain-text:
-```
-MaxFriendBonus = sum_{p=1..K_friend} Pref_max(p)
-Pref_max(p) = ( 1 + eps * posU_friend(p, K_friend) ) / (1 + eps)
-FriendBonusNorm(s,c) = FriendBonus(s,c) / MaxFriendBonus
-```
+
+$$
+\begin{aligned}
+\mathrm{MaxFriendBonus} &= \sum_{p=1}^{K_{\mathrm{friend}}} \mathrm{Pref}_{\max}(p), \\\\
+\mathrm{Pref}_{\max}(p) &= \frac{1 + \varepsilon \cdot \mathrm{posU}_{\mathrm{friend}}(p, K_{\mathrm{friend}})}{1 + \varepsilon}, \\\\
+\mathrm{FriendBonusNorm}(s,c) &= \frac{\mathrm{FriendBonus}(s,c)}{\mathrm{MaxFriendBonus}}.
+\end{aligned}
+$$
 
 If Table 2 has no scores at all, the implementation falls back to:
-```
-MaxFriendBonus = sum_{p=1..K_friend} posU_friend(p, K_friend) = (K_friend + 1) / 2
-```
+
+$$
+\begin{aligned}
+\mathrm{MaxFriendBonus}
+&= \sum_{p=1}^{K_{\mathrm{friend}}} \mathrm{posU}_{\mathrm{friend}}(p, K_{\mathrm{friend}})
+= \frac{K_{\mathrm{friend}} + 1}{2}.
+\end{aligned}
+$$
+
 
 Example (K_friend=3, eps=0.01):
 - MaxFriendBonus≈2.9901
