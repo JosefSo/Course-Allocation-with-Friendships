@@ -1,4 +1,4 @@
-# 1. HBS Social Snake Draft (Reactive Friends)
+# 1. HBS Social
 
 This repository contains the code and experiments for my master's thesis project on course allocation with social preferences (friendships). The core implementation lives in `HBS/`, with a CLI wrapper at `hbs_social.py`.
 
@@ -243,7 +243,7 @@ Both courses are treated as equal in utility, and the decision is correctly reso
 deterministic tie-breakers (position, score, seeded randomness).
 Differences below \(10^{-9}\) are considered numerically insignificant.
 
-### 2.6 Draft order (snake)
+### 2.6 HBS algorithm order
 Let `pi` be a random permutation of students (seeded). For round `r`:
 - if `r` is odd: order is `pi`
 - if `r` is even: order is `reverse(pi)`
@@ -252,7 +252,7 @@ Example: pi=[S2,S1,S3] -> round1: S2,S1,S3; round2: S3,S1,S2.
 
 Code reference: `HBS/hbs_engine.py:465` (seeded shuffle) and `HBS/hbs_engine.py:473` (snake order).
 
-### 2.7 Post-phase objective (swap or add-drop)
+### 2.7 Post-phase objective (add-drop or swap)
 After the draft, the algorithm can improve the allocation for `post_iters` iterations.
 
 Per-student welfare (final allocation):
@@ -280,17 +280,6 @@ Code reference: `HBS/hbs_engine.py:249` (method `_global_welfare`).
 
 Example: if W_s1=1.9 and W_s2=1.1, then W=3.0.
 
-#### 2.7.1 Swap mode (local improvement by swapping courses)
-How it works:
-1) For every pair of students `(s1, s2)`, enumerate all feasible course swaps `(c1 in A_s1, c2 in A_s2)`.
-2) Compute the welfare change `DeltaW = W_after - W_before` using a delta calculation.
-3) Select the best positive `DeltaW`. If `DeltaW > 0`, apply the swap; otherwise do nothing for this iteration.
-4) Repeat for `post_iters` iterations (deterministic order, deterministic tie-break for equal deltas).
-
-Code reference: `HBS/hbs_engine.py:530` (loop over swap iterations), `HBS/hbs_engine.py:291` (delta computation), `HBS/hbs_engine.py:302` (swap application).
-
-Example: if S1 has C1 and S2 has C2, and swapping increases global welfare by 0.3, the swap is applied; if the best swap gives DeltaW <= 0, the iteration is a no-op.
-
 #### 2.7.2 Add-drop mode (HBS-style pass with spare capacity)
 How it works:
 1) For each iteration, shuffle students and process them one by one.
@@ -302,6 +291,17 @@ How it works:
 Code reference: `HBS/hbs_engine.py:639` (add/drop loop), `HBS/hbs_engine.py:660` (candidate set), `HBS/hbs_engine.py:669` (scoring and top-b selection), `HBS/hbs_engine.py:697` (capacity updates).
 
 Example: if b=2 and a student currently has {C1,C2}, and C3 has free seats with higher utility, the student may drop C2 and add C3, ending with {C1,C3}.
+
+#### 2.7.1 Swap mode (local improvement by swapping courses)
+How it works:
+1) For every pair of students `(s1, s2)`, enumerate all feasible course swaps `(c1 in A_s1, c2 in A_s2)`.
+2) Compute the welfare change `DeltaW = W_after - W_before` using a delta calculation.
+3) Select the best positive `DeltaW`. If `DeltaW > 0`, apply the swap; otherwise do nothing for this iteration.
+4) Repeat for `post_iters` iterations (deterministic order, deterministic tie-break for equal deltas).
+
+Code reference: `HBS/hbs_engine.py:530` (loop over swap iterations), `HBS/hbs_engine.py:291` (delta computation), `HBS/hbs_engine.py:302` (swap application).
+
+Example: if S1 has C1 and S2 has C2, and swapping increases global welfare by 0.3, the swap is applied; if the best swap gives DeltaW <= 0, the iteration is a no-op.
 
 ### 2.8 Normalization for fairness
 Let `b` be max courses per student.
