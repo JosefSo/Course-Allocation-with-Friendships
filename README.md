@@ -570,3 +570,224 @@ Run tests:
 ```bash
 python tests/run_all_tests.py
 ```
+
+## 6. End-to-end toy example (small numbers)
+This example shows the full pipeline on a tiny dataset, with explicit numbers for every formula.
+
+### 6.1 Inputs (tables + parameters)
+Students: S1, S2, S3
+Courses: C1, C2, C3
+Parameters: cap_default=2, b=1, draft_rounds=1, improve_mode=none
+Draft order (seeded example): S1 -> S2 -> S3
+
+Table 1 (Student -> Course):
+```
+StudentID,CourseID,Score,Position
+S1,C1,5,1
+S1,C2,4,2
+S1,C3,2,3
+S2,C1,4,2
+S2,C2,5,1
+S2,C3,1,3
+S3,C1,5,1
+S3,C2,3,2
+S3,C3,2,3
+```
+
+Table 2 (Friend -> Course, top-2 per course, with Score):
+```
+StudentID_A,StudentID_B,CourseID,Position,Score
+S1,S2,C1,1,5
+S1,S3,C1,2,5
+S1,S2,C2,1,4
+S1,S3,C2,2,2
+S1,S2,C3,1,3
+S1,S3,C3,2,2
+S2,S1,C1,1,5
+S2,S3,C1,2,3
+S2,S1,C2,1,2
+S2,S3,C2,2,2
+S2,S1,C3,1,2
+S2,S3,C3,2,5
+S3,S1,C1,1,1
+S3,S2,C1,2,2
+S3,S2,C2,1,5
+S3,S1,C2,2,5
+S3,S1,C3,1,5
+S3,S2,C3,2,4
+```
+
+Table 3 (lambda):
+```
+StudentID,LambdaFriend
+S1,0.2
+S2,0.1
+S3,0.8
+```
+
+### 6.2 Step 1: Base(s,c) from Table 1 positions
+Formula (affine Min-Max rank scaling):
+```
+posU(p, K) = (K - p) / (K - 1), for K > 1
+```
+Explanation: lower position is better; for K=3 -> posU(1)=1, posU(2)=0.5, posU(3)=0.
+Code reference: `HBS/hbs_engine.py:24`.
+
+Compute base utilities (K=3):
+```
+S1: Base(C1)=1, Base(C2)=0.5, Base(C3)=0
+S2: Base(C1)=0.5, Base(C2)=1, Base(C3)=0
+S3: Base(C1)=1, Base(C2)=0.5, Base(C3)=0
+```
+
+### 6.3 Step 2: Friend score normalization (Table 2)
+Formula (Min-Max to [0,1]):
+```
+scoreU(score) = clamp((score - score_min) / (score_max - score_min), 0, 1)
+```
+Explanation: scores are scaled to [0,1], with clamping for safety.
+Code reference: `HBS/hbs_engine.py:56`.
+
+In this table: score_min=1, score_max=5, so:
+```
+score=5 -> scoreU=1
+score=4 -> scoreU=0.75
+score=3 -> scoreU=0.5
+score=2 -> scoreU=0.25
+score=1 -> scoreU=0
+```
+
+### 6.4 Step 3: Friend rank normalization (Table 2)
+Formula (linear without zero):
+```
+posU_friend(p, K_friend) = (K_friend + 1 - p) / K_friend
+```
+Explanation: rank 1 maps to 1, rank K maps to 1/K (never zero).
+Code reference: `HBS/hbs_engine.py:40`.
+
+Here K_friend=2:
+```
+posU_friend(1)=1
+posU_friend(2)=0.5
+```
+
+### 6.5 Step 4: Directed friend preference Pref(s,f,c)
+Formula (score-dominant + small position tie-break):
+```
+Pref(s,f,c) = ( scoreU(ScoreB) + eps * posU_friend(PositionB, K_friend) ) / (1 + eps)
+```
+Explanation: Score drives the weight; position only breaks ties slightly. In code, eps=0.01.
+Code reference: `HBS/hbs_engine.py:162` and `HBS/hbs_engine.py:181`.
+
+Useful values with eps=0.01, K_friend=2:
+```
+score=5, pos=1 -> Pref=1.0000
+score=5, pos=2 -> Pref≈0.9951
+score=4, pos=1 -> Pref≈0.7525
+score=3, pos=1 -> Pref≈0.5050
+score=2, pos=2 -> Pref≈0.2525
+score=1, pos=1 -> Pref≈0.0099
+```
+
+### 6.6 Step 5: FriendBonus and normalization
+Reactive friend bonus formula:
+```
+FriendBonus(s,c) = sum over friends f in F(s):
+    indicator(friend f already has course c) * Pref(s,f,c)
+```
+Explanation: only friends already allocated to c contribute.
+Code reference: `HBS/hbs_engine.py:228`.
+
+Normalization (fixed top-K):
+```
+MaxFriendBonus = sum_{p=1..K_friend} Pref_max(p)
+Pref_max(p) = (1 + eps * posU_friend(p, K_friend)) / (1 + eps)
+FriendBonusNorm(s,c) = FriendBonus(s,c) / MaxFriendBonus
+```
+Explanation: Pref_max uses the best possible score (scoreU=1) for each rank.
+Code reference: `HBS/hbs_engine.py:170` and `HBS/hbs_engine.py:241`.
+
+For K_friend=2 and eps=0.01:
+```
+Pref_max(1)=1.0000
+Pref_max(2)=0.9951
+MaxFriendBonus=1.9951
+```
+
+### 6.7 Step 6: Per-course utility and pick rule
+Utility formula:
+```
+U(s,c) = (1 - lambda_s) * Base(s,c) + lambda_s * FriendBonusNorm(s,c)
+```
+Explanation: convex mix of base and normalized friend bonus.
+Code reference: `HBS/hbs_engine.py:246`.
+
+Pick rule:
+```
+Choose the feasible course with maximum U(s,c).
+```
+Explanation: capacity and "already picked" filters apply first, then U is maximized; tie-breaks use PositionA, ScoreA, seeded random, CourseID.
+Code reference: `HBS/hbs_engine.py:527` and `HBS/hbs_engine.py:541`.
+
+Now we apply this to each pick:
+
+Pick 1 (S1, lambda=0.2, no friends allocated yet):
+```
+FriendBonusNorm for all courses = 0
+U(C1)=0.8*1 + 0 = 0.8
+U(C2)=0.8*0.5 + 0 = 0.4
+U(C3)=0.8*0 + 0 = 0
+Pick: C1
+```
+
+Pick 2 (S2, lambda=0.1, S1 already in C1):
+```
+FriendBonus(C1) = Pref(S2,S1,C1)=1.0000
+FriendBonusNorm(C1)=1.0000/1.9951=0.5012
+FriendBonusNorm(C2)=0
+FriendBonusNorm(C3)=0
+
+U(C1)=0.9*0.5 + 0.1*0.5012 = 0.4500 + 0.0501 = 0.5001
+U(C2)=0.9*1.0 + 0 = 0.9
+U(C3)=0
+Pick: C2
+```
+
+Pick 3 (S3, lambda=0.8, S1 in C1, S2 in C2):
+```
+FriendBonus(C1) = Pref(S3,S1,C1)=0.0099
+FriendBonusNorm(C1)=0.0099/1.9951=0.0050
+
+FriendBonus(C2) = Pref(S3,S2,C2)=1.0000
+FriendBonusNorm(C2)=1.0000/1.9951=0.5012
+
+FriendBonus(C3)=0
+
+U(C1)=0.2*1.0 + 0.8*0.0050 = 0.2000 + 0.0040 = 0.2040
+U(C2)=0.2*0.5 + 0.8*0.5012 = 0.1000 + 0.4010 = 0.5010
+U(C3)=0
+Pick: C2 (social preference dominates base)
+```
+
+### 6.8 Final allocation and totals
+Final allocation (b=1):
+```
+S1 -> C1
+S2 -> C2
+S3 -> C2
+```
+
+Per-student welfare (since b=1, W_s = U(s, chosen course)):
+```
+W_S1 = 0.8000
+W_S2 = 0.9000
+W_S3 = 0.5010
+TotalUtility = 2.2010
+```
+
+This example shows how:
+1) rank-to-utility normalization defines Base,
+2) friend scores and ranks produce Pref,
+3) Pref is normalized into FriendBonusNorm,
+4) U mixes Base and FriendBonusNorm using lambda,
+5) the draft order + capacity filters determine the final allocation.
