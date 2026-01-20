@@ -41,6 +41,7 @@ This section matches the exact computation implemented in `HBS/` and breaks it i
 - Students: `S`, courses: `C`.
 - For each student `s` and course `c`, Table 1 provides `Score(s,c)` and `PositionA(s,c)`.
 - For each directed pair `(s, f)` and course `c`, Table 2 provides `PositionB(s,f,c)` and `ScoreB(s,f,c)` (s's friend rank and intensity for f in c).
+- Let `F(s,c)` be the top-K friends for student `s` in course `c` after score/position tie-break.
 - Per-student social weight `lambda_s` comes from Table 3 (default 0.5 if missing).
 - Course capacity is uniform: `cap(c) = cap_default` for all `c`.
 
@@ -95,7 +96,7 @@ Code reference: `HBS/hbs_engine.py:41` (function `_pos_u_friend`) and `HBS/hbs_e
 
 Example: if K=3, then posU_friend(1,3)=1, posU_friend(2,3)=2/3, posU_friend(3,3)=1/3.
 
-This formula is used only for Table 2 (friend ranks).
+This formula is used only as a fallback when ScoreB is missing (or when Table 2 has no scores).
 
 ### 2.3.1 Friend-score normalization (Table 2)
 Function type: affine Min-Max scaling to [0, 1] with clamping.
@@ -186,7 +187,7 @@ Reactive friend bonus (only already allocated friends count):
 Function type: weighted sum over a directed friend set with an indicator (reactive overlap).
 
 $$
-FriendBonus(s, c) = \sum_{f \in F(s)} \mathbb{1}[c \in A_f] \cdot Pref(s,f,c)
+FriendBonus(s, c) = \sum_{f \in F(s,c)} \mathbb{1}[c \in A_f] \cdot Pref(s,f,c)
 $$
 
 <img width="851" height="153" alt="Screenshot 2026-01-18 at 20 21 09" src="https://github.com/user-attachments/assets/45ab0dab-cb2f-4125-8009-7dc7a9d8d6d0" />
@@ -195,13 +196,13 @@ $$
 Code reference: `HBS/hbs_engine.py:263` (method `_friend_bonus_reactive`).
 
 Interpretation (step-by-step):
-1) Take only the friends listed for student s (the directed set F(s) from Table 2).
+1) Take only the friends listed for student s in course c (the directed set F(s,c) from Table 2).
 2) For each friend f, check if f already has course c in their current allocation A_f.
 3) If yes, add Pref(s,f,c); if no, add 0.
 4) Sum over all friends.
 
 Example:
-- F(s) = {f1, f2, f3}
+- F(s,c) = {f1, f2, f3}
 - Course c = C2
 - Current allocations: A_f1 = {C2, C3}, A_f2 = {C1}, A_f3 = {C2}
 - Friend preferences (K_friend=3, score range 1..5, all scores=5):
@@ -387,7 +388,7 @@ Code reference: `HBS/hbs_engine.py:317` (method `_student_welfare_components`).
 Example: A_s={C1,C2}, Base(s,C1)=1, Base(s,C2)=0.5 -> BaseSum_s=1.5.
 
 $$
-FriendSumRaw_s = \sum_{c \in A_s} \sum_{f \in F(s)} \mathbb{1}[c \in A_f] \cdot Pref(s,f,c)
+FriendSumRaw_s = \sum_{c \in A_s} \sum_{f \in F(s,c)} \mathbb{1}[c \in A_f] \cdot Pref(s,f,c)
 $$
 
 Code reference: `HBS/hbs_engine.py:317` (method `_student_welfare_components`).
@@ -421,7 +422,7 @@ Code reference: `HBS/hbs_engine.py:336` (method `_max_possible_base`).
 Example: b=2 and Base values across courses are [1.0, 0.6, 0.2] -> MaxBase_s=1.6.
 
 $$
-MaxTotalUpper_s = \sum_{c \in Top_b} \Big((1 - \lambda_s) \cdot Base(s,c) + \lambda_s \cdot \frac{\sum_{f \in F(s)} Pref(s,f,c)}{MaxFriendBonus}\Big)
+MaxTotalUpper_s = \sum_{c \in Top_b} \Big((1 - \lambda_s) \cdot Base(s,c) + \lambda_s \cdot \frac{\sum_{f \in F(s,c)} Pref(s,f,c)}{MaxFriendBonus}\Big)
 $$
 
 Code reference: `HBS/hbs_engine.py:341` (method `_max_possible_total_upper`).
@@ -502,7 +503,7 @@ Example: x=[0, 1] -> Gini=0.5; x=[1, 1, 1] -> Gini=0.
 1. Seeded random order of students.
 2. Snake draft for `draft_rounds` rounds (odd rounds forward, even rounds reverse).
 3. Each pick chooses the course with highest utility using deterministic tie-breaks:
-   1) max utility (bucketed to 1e-9)
+   1) max utility within tau (1e-9)
    2) best Position from Table 1 (smaller is better)
    3) highest Score from Table 1
    4) seeded random tie
@@ -652,6 +653,7 @@ Here K_friend=2:
 posU_friend(1)=1
 posU_friend(2)=0.5
 ```
+Note: with ScoreB present, PositionB does not change Pref numerically; it is used only as a tie-break when scores are equal or missing.
 
 ### 6.5 Step 4: Directed friend preference Pref(s,f,c)
 Formula (score only; Position is tie-break only):
@@ -673,7 +675,7 @@ score=1 -> Pref=0
 ### 6.6 Step 5: FriendBonus and normalization
 Reactive friend bonus formula:
 ```
-FriendBonus(s,c) = sum over friends f in F(s):
+FriendBonus(s,c) = sum over friends f in F(s,c):
     indicator(friend f already has course c) * Pref(s,f,c)
 ```
 Explanation: only friends already allocated to c contribute.
