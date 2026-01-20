@@ -210,7 +210,7 @@ def generate_table_2(
 def generate_table_3(
     student_ids: Sequence[str],
     *,
-    lambda_default: float = 0.5,
+    lambda_default: float = 0.3,
 ) -> list[Table3Row]:
     """
     Генерирует Таблицу 3 с per-student lambda (важность friend bonus).
@@ -377,7 +377,7 @@ def _parse_args() -> argparse.Namespace:
     p.add_argument(
         "--lambda-default",
         type=float,
-        default=0.5,
+        default=0.3,
         help="Lambda по умолчанию для всех студентов (0..1)",
     )
     p.add_argument(

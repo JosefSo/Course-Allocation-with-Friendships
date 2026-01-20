@@ -30,7 +30,7 @@ Table 2: directed friend preferences per course
 
 Table 3: per-student social weight (optional)
 - columns: `StudentID, LambdaFriend`
-- `LambdaFriend` must be in [0, 1]. If omitted, all students default to 0.5.
+- `LambdaFriend` must be in [0, 1]. If omitted, all students default to 0.3.
 
 Note: `tables/` is treated as local data and is not tracked on GitHub in this project. Use the generator below to create sample CSVs.
 
@@ -42,7 +42,7 @@ This section matches the exact computation implemented in `HBS/` and breaks it i
 - For each student `s` and course `c`, Table 1 provides `Score(s,c)` and `PositionA(s,c)`.
 - For each directed pair `(s, f)` and course `c`, Table 2 provides `PositionB(s,f,c)` and `ScoreB(s,f,c)` (s's friend rank and intensity for f in c).
 - Let `F(s,c)` be the top-K friends for student `s` in course `c` after score/position tie-break.
-- Per-student social weight `lambda_s` comes from Table 3 (default 0.5 if missing).
+- Per-student social weight `lambda_s` comes from Table 3 (default 0.3 if missing).
 - Course capacity is uniform: `cap(c) = cap_default` for all `c`.
 
 ### 2.2 Rank-to-utility mapping (Table 1)

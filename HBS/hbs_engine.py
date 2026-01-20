@@ -82,7 +82,7 @@ class _HbsSocialDraftEngine:
 
     _MISSING_POSITION = 10**9
     _MISSING_SCORE = -(10**9)
-    _DEFAULT_LAMBDA = 0.5
+    _DEFAULT_LAMBDA = 0.3
     _UTILITY_TAU = 1e-9  # Matches prior 1e-9 rounding to treat FP noise as ties.
 
     def __init__(
