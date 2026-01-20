@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import random
+from functools import cmp_to_key
 
 from .hbs_config import _RunConfig
 from .hbs_domain import (
@@ -82,7 +83,7 @@ class _HbsSocialDraftEngine:
     _MISSING_POSITION = 10**9
     _MISSING_SCORE = -(10**9)
     _DEFAULT_LAMBDA = 0.5
-    _FRIEND_SCORE_EPS = 0.01
+    _UTILITY_TAU = 1e-9  # Matches prior 1e-9 rounding to treat FP noise as ties.
 
     def __init__(
         self,
@@ -138,10 +139,32 @@ class _HbsSocialDraftEngine:
             (r.student_id, r.course_id): _pos_u(r.position, self._k_courses) for r in individual_prefs
         }
 
+        # Group pair preferences by (student, course) to enable deterministic top-K selection.
+        pair_groups: dict[tuple[str, str], list[PairPref]] = {}
+        for r in pair_prefs:
+            pair_groups.setdefault((r.student_id_a, r.course_id), []).append(r)
+
+        # Table 2 contains a friend rank Position (top-k) and an optional Score.
+        # Score is the only numerical driver of Pref; Position is used only for tie-breaks.
+        self._k_friend_rank = max(1, max((r.position for r in pair_prefs), default=3))
+
+        def _friend_sort_key(row: PairPref) -> tuple[float, int, str]:
+            score_key = row.score if row.score is not None else float("-inf")
+            return (-score_key, row.position, row.student_id_b)
+
+        self._friends_by_course: dict[tuple[str, str], tuple[str, ...]] = {}
+        top_pairs: list[PairPref] = []
+        for key, items in pair_groups.items():
+            items_sorted = sorted(items, key=_friend_sort_key)
+            if len(items_sorted) > self._k_friend_rank:
+                items_sorted = items_sorted[: self._k_friend_rank]
+            top_pairs.extend(items_sorted)
+            self._friends_by_course[key] = tuple(r.student_id_b for r in items_sorted)
+
         # Index pair preferences for O(1) lookup and build the directed friend graph.
         self._pair_by_key: dict[tuple[str, str, str], PairPref] = {}
         self._friends: dict[str, set[str]] = {}
-        for r in pair_prefs:
+        for r in top_pairs:
             self._pair_by_key[(r.student_id_a, r.student_id_b, r.course_id)] = r
             self._friends.setdefault(r.student_id_a, set()).add(r.student_id_b)
 
@@ -151,47 +174,59 @@ class _HbsSocialDraftEngine:
             for friend_id in friends:
                 self._followers.setdefault(friend_id, set()).add(student_id_a)
 
-        # Table 2 contains a friend rank Position (top-k) and an optional Score.
-        # We use a linear mapping without zero for Position and a normalized Score
-        # with a small eps tie-breaker on position.
-        self._k_friend_rank = max(1, max((r.position for r in pair_prefs), default=3))
-        friend_scores = [r.score for r in pair_prefs if r.score is not None]
+        friend_scores = [r.score for r in top_pairs if r.score is not None]
         self._friend_score_min = min(friend_scores) if friend_scores else 0
         self._friend_score_max = max(friend_scores) if friend_scores else 0
 
         def _pair_weight(position: int, score: int | None) -> float:
-            pos_u = _pos_u_friend(position, self._k_friend_rank)
             if score is None:
-                return pos_u
-            score_u = _score_u(score, self._friend_score_min, self._friend_score_max)
-            eps = self._FRIEND_SCORE_EPS
-            return (score_u + eps * pos_u) / (1.0 + eps)
+                return _pos_u_friend(position, self._k_friend_rank)
+            return _score_u(score, self._friend_score_min, self._friend_score_max)
 
-        if friend_scores:
-            self._friend_bonus_max_per_course = sum(
-                _pair_weight(rank, self._friend_score_max)
-                for rank in range(1, self._k_friend_rank + 1)
-            )
-        else:
-            self._friend_bonus_max_per_course = sum(
+        self._friend_bonus_max_per_course = (
+            float(self._k_friend_rank)
+            if friend_scores
+            else sum(
                 _pos_u_friend(rank, self._k_friend_rank)
                 for rank in range(1, self._k_friend_rank + 1)
             )
+        )
 
         self._pair_u_by_key: dict[tuple[str, str, str], float] = {
             (r.student_id_a, r.student_id_b, r.course_id): _pair_weight(r.position, r.score)
-            for r in pair_prefs
+            for r in top_pairs
         }
 
         # Precompute sorted adjacency for deterministic iteration and faster deltas.
-        self._friends_list: dict[str, tuple[str, ...]] = {
-            s: tuple(sorted(self._friends.get(s, set()))) for s in self._students
-        }
         self._followers_list: dict[str, tuple[str, ...]] = {
             s: tuple(sorted(self._followers.get(s, set()))) for s in self._students
         }
 
     # ---- Utility model -------------------------------------------------
+
+    def _sort_course_entries(self, entries: list[tuple]) -> list[tuple]:
+        """
+        Sort course entries by utility with a tau-based tie-break on PositionA.
+
+        Entries must contain (u, position, score, rnd, course_id, ...).
+        """
+
+        def _cmp(a: tuple, b: tuple) -> int:
+            u_a, pos_a, score_a, rnd_a, course_a = a[0], a[1], a[2], a[3], a[4]
+            u_b, pos_b, score_b, rnd_b, course_b = b[0], b[1], b[2], b[3], b[4]
+            if abs(u_a - u_b) > self._UTILITY_TAU:
+                return -1 if u_a > u_b else 1
+            if pos_a != pos_b:
+                return -1 if pos_a < pos_b else 1
+            if score_a != score_b:
+                return -1 if score_a > score_b else 1
+            if rnd_a != rnd_b:
+                return -1 if rnd_a > rnd_b else 1
+            if course_a != course_b:
+                return -1 if course_a > course_b else 1
+            return 0
+
+        return sorted(entries, key=cmp_to_key(_cmp))
 
     def _base_utility(self, student_id: str, course_id: str) -> float:
         """Compute Base(student, course) from Table 1 Position only."""
@@ -233,7 +268,7 @@ class _HbsSocialDraftEngine:
         """
 
         total = 0.0
-        for friend_id in self._friends_list.get(student_id, ()):
+        for friend_id in self._friends_by_course.get((student_id, course_id), ()):
             if course_id in self._alloc_set.get(friend_id, set()):
                 total += self._friend_preference_utility(student_id, friend_id, course_id)
         return total
@@ -264,14 +299,13 @@ class _HbsSocialDraftEngine:
         W_s = Σ_{c ∈ Alloc(s)} [ (1-λ) * Base(s,c) + λ * FriendBonusNorm(s,c) ]
         """
 
-        friends = self._friends_list.get(student_id, ())
         lambda_ = self._lambda_by_student.get(student_id, self._DEFAULT_LAMBDA)
         total = 0.0
         student_courses = self._alloc_set[student_id]
         for course_id in sorted(student_courses):
             base = self._base_utility(student_id, course_id)
             friend_bonus_raw = 0.0
-            for friend_id in friends:
+            for friend_id in self._friends_by_course.get((student_id, course_id), ()):
                 if course_id in self._alloc_set[friend_id]:
                     friend_bonus_raw += self._friend_preference_utility(
                         student_id, friend_id, course_id
@@ -287,10 +321,9 @@ class _HbsSocialDraftEngine:
 
         base_sum = 0.0
         friend_sum_raw = 0.0
-        friends = self._friends_list.get(student_id, ())
         for course_id in sorted(self._alloc_set[student_id]):
             base_sum += self._base_utility(student_id, course_id)
-            for friend_id in friends:
+            for friend_id in self._friends_by_course.get((student_id, course_id), ()):
                 if course_id in self._alloc_set[friend_id]:
                     friend_sum_raw += self._friend_preference_utility(student_id, friend_id, course_id)
         return base_sum, self._friend_bonus_norm(friend_sum_raw)
@@ -307,12 +340,11 @@ class _HbsSocialDraftEngine:
 
     def _max_possible_total_upper(self, student_id: str) -> float:
         lambda_ = self._lambda_by_student.get(student_id, self._DEFAULT_LAMBDA)
-        friends = self._friends_list.get(student_id, ())
         values: list[float] = []
         for course_id in self._courses:
             base = self._base_utility(student_id, course_id)
             friend_sum = 0.0
-            for friend_id in friends:
+            for friend_id in self._friends_by_course.get((student_id, course_id), ()):
                 friend_sum += self._friend_preference_utility(student_id, friend_id, course_id)
             friend_norm = self._friend_bonus_norm(friend_sum)
             values.append((1.0 - lambda_) * base + lambda_ * friend_norm)
@@ -365,8 +397,10 @@ class _HbsSocialDraftEngine:
                 return course_id in alloc_set[s2]
             return course_id in alloc_set[student_id]
 
-        friends_s1 = self._friends_list.get(s1, ())
-        friends_s2 = self._friends_list.get(s2, ())
+        friends_s1_c1 = self._friends_by_course.get((s1, c1), ())
+        friends_s1_c2 = self._friends_by_course.get((s1, c2), ())
+        friends_s2_c1 = self._friends_by_course.get((s2, c1), ())
+        friends_s2_c2 = self._friends_by_course.get((s2, c2), ())
 
         # ---- Self utility deltas (s1, s2) -----------------------------------
 
@@ -382,24 +416,24 @@ class _HbsSocialDraftEngine:
         if lambda_s1 != 0.0:
             # s1 loses c1
             removed = 0.0
-            for f in friends_s1:
+            for f in friends_s1_c1:
                 if c1 in alloc_set[f]:
                     removed += self._friend_preference_utility(s1, f, c1)
             # s1 gains c2
             added = 0.0
-            for f in friends_s1:
+            for f in friends_s1_c2:
                 if _has_after(f, c2):
                     added += self._friend_preference_utility(s1, f, c2)
             delta += lambda_s1 * (added - removed)
 
             # s2 loses c2
             removed = 0.0
-            for f in friends_s2:
+            for f in friends_s2_c2:
                 if c2 in alloc_set[f]:
                     removed += self._friend_preference_utility(s2, f, c2)
             # s2 gains c1
             added = 0.0
-            for f in friends_s2:
+            for f in friends_s2_c1:
                 if _has_after(f, c1):
                     added += self._friend_preference_utility(s2, f, c1)
             delta += lambda_s2 * (added - removed)
@@ -533,32 +567,28 @@ class _HbsSocialDraftEngine:
                     continue
 
                 # We want deterministic but tie-breakable picks:
-                #   1) max utility (bucketed to treat "similar utility" as ties)
+                #   1) max utility (ties within _UTILITY_TAU are considered equal)
                 #   2) min rank position (Position from table A; smaller is better)
                 #   3) max raw score (Score from table A)
                 #   4) seeded random (break remaining ties)
                 #   5) stable course id (as a final deterministic tie-breaker)
-                scored: list[tuple[float, int, int, float, str, float, float, float]] = []
+                scored: list[tuple[float, int, int, float, str, float, float]] = []
                 for course_id in candidates:
                     u, base, friend_bonus = self._utility_components(student_id, course_id)
-                    u_bucket = round(u, 9)
                     scored.append(
                         (
-                            u_bucket,
+                            u,
                             self._position_a(student_id, course_id),
                             self._score_a(student_id, course_id),
                             self._rng.random(),
                             course_id,
-                            u,
                             base,
                             friend_bonus,
                         )
                     )
 
-                _u_bucket, _pos, _score, _rnd, course_id_star, u, base, friend_bonus = max(
-                    scored,
-                    key=lambda t: (t[0], -t[1], t[2], t[3], t[4]),
-                )
+                ranked = self._sort_course_entries(scored)
+                u, _pos, _score, _rnd, course_id_star, base, friend_bonus = ranked[0]
 
                 self._alloc_list[student_id].append(course_id_star)
                 self._alloc_set[student_id].add(course_id_star)
@@ -719,19 +749,18 @@ class _HbsSocialDraftEngine:
                     continue
 
                 scored: list[tuple[float, int, int, float, str]] = []
-                for course_id in candidates:
+                for course_id in sorted(candidates):
                     u, _base, _friend_bonus = self._utility_components(student_id, course_id)
-                    u_bucket = round(u, 9)
                     scored.append(
                         (
-                            u_bucket,
+                            u,
                             self._position_a(student_id, course_id),
                             self._score_a(student_id, course_id),
                             self._rng.random(),
                             course_id,
                         )
                     )
-                scored.sort(key=lambda t: (t[0], -t[1], t[2], t[3], t[4]), reverse=True)
+                scored = self._sort_course_entries(scored)
 
                 k = min(self._config.max_courses, len(scored))
                 desired_list = [item[4] for item in scored[:k]]
@@ -892,11 +921,11 @@ class _HbsSocialDraftEngine:
         overlaps_total = 0
         students_with_overlap = 0
         for student_id in self._students:
-            friends = self._friends_list.get(student_id, ())
-            if not friends:
-                continue
             student_overlaps = 0
             for course_id in self._alloc_set[student_id]:
+                friends = self._friends_by_course.get((student_id, course_id), ())
+                if not friends:
+                    continue
                 for friend_id in friends:
                     if (student_id, friend_id, course_id) not in self._pair_by_key:
                         continue
