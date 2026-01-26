@@ -1,7 +1,7 @@
 from __future__ import annotations
 
+import math
 import random
-from functools import cmp_to_key
 
 from .hbs_config import _RunConfig
 from .hbs_domain import (
@@ -54,21 +54,6 @@ def _pos_u_friend(position: int | None, k_friends: int) -> float:
     return (k_friends + 1 - position) / k_friends
 
 
-def _score_u(score: int | None, score_min: int, score_max: int) -> float:
-    """
-    Normalize score into [0..1].
-
-    If the scale is degenerate (score_max <= score_min), return 1.0 for any present score.
-    """
-
-    if score is None:
-        return 0.0
-    if score_max <= score_min:
-        return 1.0
-    value = (score - score_min) / (score_max - score_min)
-    return max(0.0, min(1.0, value))
-
-
 class _HbsSocialDraftEngine:
     """
     Application service that performs the allocation and computes metrics.
@@ -82,8 +67,7 @@ class _HbsSocialDraftEngine:
 
     _MISSING_POSITION = 10**9
     _MISSING_SCORE = -(10**9)
-    _DEFAULT_LAMBDA = 0.3
-    _UTILITY_TAU = 1e-9  # Matches prior 1e-9 rounding to treat FP noise as ties.
+    _DEFAULT_LAMBDA = 0.5
 
     def __init__(
         self,
@@ -122,7 +106,6 @@ class _HbsSocialDraftEngine:
                     self._lambda_by_student[student_id] = value
 
         self._rng = random.Random(config.seed)
-        self._draft_order: tuple[str, ...] | None = None
 
         # Allocation state:
         # - list: preserves pick order (useful for reporting / debugging)
@@ -139,32 +122,10 @@ class _HbsSocialDraftEngine:
             (r.student_id, r.course_id): _pos_u(r.position, self._k_courses) for r in individual_prefs
         }
 
-        # Group pair preferences by (student, course) to enable deterministic top-K selection.
-        pair_groups: dict[tuple[str, str], list[PairPref]] = {}
-        for r in pair_prefs:
-            pair_groups.setdefault((r.student_id_a, r.course_id), []).append(r)
-
-        # Table 2 contains a friend rank Position (top-k) and an optional Score.
-        # Score is the only numerical driver of Pref; Position is used only for tie-breaks.
-        self._k_friend_rank = max(1, max((r.position for r in pair_prefs), default=3))
-
-        def _friend_sort_key(row: PairPref) -> tuple[float, int, str]:
-            score_key = row.score if row.score is not None else float("-inf")
-            return (-score_key, row.position, row.student_id_b)
-
-        self._friends_by_course: dict[tuple[str, str], tuple[str, ...]] = {}
-        top_pairs: list[PairPref] = []
-        for key, items in pair_groups.items():
-            items_sorted = sorted(items, key=_friend_sort_key)
-            if len(items_sorted) > self._k_friend_rank:
-                items_sorted = items_sorted[: self._k_friend_rank]
-            top_pairs.extend(items_sorted)
-            self._friends_by_course[key] = tuple(r.student_id_b for r in items_sorted)
-
         # Index pair preferences for O(1) lookup and build the directed friend graph.
         self._pair_by_key: dict[tuple[str, str, str], PairPref] = {}
         self._friends: dict[str, set[str]] = {}
-        for r in top_pairs:
+        for r in pair_prefs:
             self._pair_by_key[(r.student_id_a, r.student_id_b, r.course_id)] = r
             self._friends.setdefault(r.student_id_a, set()).add(r.student_id_b)
 
@@ -174,59 +135,25 @@ class _HbsSocialDraftEngine:
             for friend_id in friends:
                 self._followers.setdefault(friend_id, set()).add(student_id_a)
 
-        friend_scores = [r.score for r in top_pairs if r.score is not None]
-        self._friend_score_min = min(friend_scores) if friend_scores else 0
-        self._friend_score_max = max(friend_scores) if friend_scores else 0
-
-        def _pair_weight(position: int, score: int | None) -> float:
-            if score is None:
-                return _pos_u_friend(position, self._k_friend_rank)
-            return _score_u(score, self._friend_score_min, self._friend_score_max)
-
-        self._friend_bonus_max_per_course = (
-            float(self._k_friend_rank)
-            if friend_scores
-            else sum(
-                _pos_u_friend(rank, self._k_friend_rank)
-                for rank in range(1, self._k_friend_rank + 1)
-            )
-        )
-
+        # Table 2 contains only a friend rank Position (top-k). We use a linear mapping without
+        # zero so that rank K is still better than missing.
+        self._k_friend_rank = max(1, max((r.position for r in pair_prefs), default=3))
         self._pair_u_by_key: dict[tuple[str, str, str], float] = {
-            (r.student_id_a, r.student_id_b, r.course_id): _pair_weight(r.position, r.score)
-            for r in top_pairs
+            (r.student_id_a, r.student_id_b, r.course_id): _pos_u_friend(
+                r.position, self._k_friend_rank
+            )
+            for r in pair_prefs
         }
 
         # Precompute sorted adjacency for deterministic iteration and faster deltas.
+        self._friends_list: dict[str, tuple[str, ...]] = {
+            s: tuple(sorted(self._friends.get(s, set()))) for s in self._students
+        }
         self._followers_list: dict[str, tuple[str, ...]] = {
             s: tuple(sorted(self._followers.get(s, set()))) for s in self._students
         }
 
     # ---- Utility model -------------------------------------------------
-
-    def _sort_course_entries(self, entries: list[tuple]) -> list[tuple]:
-        """
-        Sort course entries by utility with a tau-based tie-break on PositionA.
-
-        Entries must contain (u, position, score, rnd, course_id, ...).
-        """
-
-        def _cmp(a: tuple, b: tuple) -> int:
-            u_a, pos_a, score_a, rnd_a, course_a = a[0], a[1], a[2], a[3], a[4]
-            u_b, pos_b, score_b, rnd_b, course_b = b[0], b[1], b[2], b[3], b[4]
-            if abs(u_a - u_b) > self._UTILITY_TAU:
-                return -1 if u_a > u_b else 1
-            if pos_a != pos_b:
-                return -1 if pos_a < pos_b else 1
-            if score_a != score_b:
-                return -1 if score_a > score_b else 1
-            if rnd_a != rnd_b:
-                return -1 if rnd_a > rnd_b else 1
-            if course_a != course_b:
-                return -1 if course_a > course_b else 1
-            return 0
-
-        return sorted(entries, key=cmp_to_key(_cmp))
 
     def _base_utility(self, student_id: str, course_id: str) -> float:
         """Compute Base(student, course) from Table 1 Position only."""
@@ -268,26 +195,15 @@ class _HbsSocialDraftEngine:
         """
 
         total = 0.0
-        for friend_id in self._friends_by_course.get((student_id, course_id), ()):
+        for friend_id in self._friends_list.get(student_id, ()):
             if course_id in self._alloc_set.get(friend_id, set()):
                 total += self._friend_preference_utility(student_id, friend_id, course_id)
         return total
 
-    def _friend_bonus_norm(self, friend_bonus: float) -> float:
-        if self._friend_bonus_max_per_course <= 0.0:
-            return 0.0
-        return friend_bonus / self._friend_bonus_max_per_course
-
     def _utility_components(self, student_id: str, course_id: str) -> tuple[float, float, float]:
-        """
-        Return (total_utility, base, friend_bonus).
-        """
-
         base = self._base_utility(student_id, course_id)
-        friend_bonus_raw = self._friend_bonus_reactive(student_id, course_id)
-        friend_bonus = self._friend_bonus_norm(friend_bonus_raw)
-        lambda_ = self._lambda_by_student.get(student_id, self._DEFAULT_LAMBDA)
-        total = (1.0 - lambda_) * base + lambda_ * friend_bonus
+        friend_bonus = self._friend_bonus_reactive(student_id, course_id)
+        total = base + self._lambda_by_student.get(student_id, self._DEFAULT_LAMBDA) * friend_bonus
         return total, base, friend_bonus
 
     # ---- Improvement objective (order-independent) ---------------------
@@ -296,37 +212,36 @@ class _HbsSocialDraftEngine:
         """
         Order-independent welfare contribution for a single student based on the final allocation.
 
-        W_s = Σ_{c ∈ Alloc(s)} [ (1-λ) * Base(s,c) + λ * FriendBonusNorm(s,c) ]
+        W_s = Σ_{c ∈ Alloc(s)} [ Base(s,c) + λ * FriendOverlap(s,c) ]
         """
 
+        friends = self._friends_list.get(student_id, ())
         lambda_ = self._lambda_by_student.get(student_id, self._DEFAULT_LAMBDA)
         total = 0.0
         student_courses = self._alloc_set[student_id]
         for course_id in sorted(student_courses):
-            base = self._base_utility(student_id, course_id)
-            friend_bonus_raw = 0.0
-            for friend_id in self._friends_by_course.get((student_id, course_id), ()):
+            total += self._base_utility(student_id, course_id)
+            for friend_id in friends:
                 if course_id in self._alloc_set[friend_id]:
-                    friend_bonus_raw += self._friend_preference_utility(
+                    total += lambda_ * self._friend_preference_utility(
                         student_id, friend_id, course_id
                     )
-            friend_bonus = self._friend_bonus_norm(friend_bonus_raw)
-            total += (1.0 - lambda_) * base + lambda_ * friend_bonus
         return total
 
     def _student_welfare_components(self, student_id: str) -> tuple[float, float]:
         """
-        Return (base_sum, friend_bonus_norm_sum) for the final allocation.
+        Return (base_sum, friend_overlap_sum) for the final allocation.
         """
 
         base_sum = 0.0
-        friend_sum_raw = 0.0
+        friend_sum = 0.0
+        friends = self._friends_list.get(student_id, ())
         for course_id in sorted(self._alloc_set[student_id]):
             base_sum += self._base_utility(student_id, course_id)
-            for friend_id in self._friends_by_course.get((student_id, course_id), ()):
+            for friend_id in friends:
                 if course_id in self._alloc_set[friend_id]:
-                    friend_sum_raw += self._friend_preference_utility(student_id, friend_id, course_id)
-        return base_sum, self._friend_bonus_norm(friend_sum_raw)
+                    friend_sum += self._friend_preference_utility(student_id, friend_id, course_id)
+        return base_sum, friend_sum
 
     def _global_welfare(self) -> float:
         """Global welfare W(allocation) as a sum of per-student welfare contributions."""
@@ -340,16 +255,43 @@ class _HbsSocialDraftEngine:
 
     def _max_possible_total_upper(self, student_id: str) -> float:
         lambda_ = self._lambda_by_student.get(student_id, self._DEFAULT_LAMBDA)
+        friends = self._friends_list.get(student_id, ())
         values: list[float] = []
         for course_id in self._courses:
             base = self._base_utility(student_id, course_id)
             friend_sum = 0.0
-            for friend_id in self._friends_by_course.get((student_id, course_id), ()):
+            for friend_id in friends:
                 friend_sum += self._friend_preference_utility(student_id, friend_id, course_id)
-            friend_norm = self._friend_bonus_norm(friend_sum)
-            values.append((1.0 - lambda_) * base + lambda_ * friend_norm)
+            values.append(base + lambda_ * friend_sum)
         values.sort(reverse=True)
         return sum(values[: self._config.max_courses])
+
+    def _max_possible_friend_upper(self, student_id: str) -> float:
+        friends = self._friends_list.get(student_id, ())
+        if not friends:
+            return 0.0
+        values: list[float] = []
+        for course_id in self._courses:
+            friend_sum = 0.0
+            for friend_id in friends:
+                friend_sum += self._friend_preference_utility(student_id, friend_id, course_id)
+            values.append(friend_sum)
+        values.sort(reverse=True)
+        return sum(values[: self._config.max_courses])
+
+    def _max_possible_overlap_count(self, student_id: str) -> int:
+        friends = self._friends_list.get(student_id, ())
+        if not friends:
+            return 0
+        counts: list[int] = []
+        for course_id in self._courses:
+            count = 0
+            for friend_id in friends:
+                if (student_id, friend_id, course_id) in self._pair_by_key:
+                    count += 1
+            counts.append(count)
+        counts.sort(reverse=True)
+        return sum(counts[: self._config.max_courses])
 
     # ---- Improvement moves --------------------------------------------
 
@@ -397,10 +339,8 @@ class _HbsSocialDraftEngine:
                 return course_id in alloc_set[s2]
             return course_id in alloc_set[student_id]
 
-        friends_s1_c1 = self._friends_by_course.get((s1, c1), ())
-        friends_s1_c2 = self._friends_by_course.get((s1, c2), ())
-        friends_s2_c1 = self._friends_by_course.get((s2, c1), ())
-        friends_s2_c2 = self._friends_by_course.get((s2, c2), ())
+        friends_s1 = self._friends_list.get(s1, ())
+        friends_s2 = self._friends_list.get(s2, ())
 
         # ---- Self utility deltas (s1, s2) -----------------------------------
 
@@ -416,24 +356,24 @@ class _HbsSocialDraftEngine:
         if lambda_s1 != 0.0:
             # s1 loses c1
             removed = 0.0
-            for f in friends_s1_c1:
+            for f in friends_s1:
                 if c1 in alloc_set[f]:
                     removed += self._friend_preference_utility(s1, f, c1)
             # s1 gains c2
             added = 0.0
-            for f in friends_s1_c2:
+            for f in friends_s1:
                 if _has_after(f, c2):
                     added += self._friend_preference_utility(s1, f, c2)
             delta += lambda_s1 * (added - removed)
 
             # s2 loses c2
             removed = 0.0
-            for f in friends_s2_c2:
+            for f in friends_s2:
                 if c2 in alloc_set[f]:
                     removed += self._friend_preference_utility(s2, f, c2)
             # s2 gains c1
             added = 0.0
-            for f in friends_s2_c1:
+            for f in friends_s2:
                 if _has_after(f, c1):
                     added += self._friend_preference_utility(s2, f, c1)
             delta += lambda_s2 * (added - removed)
@@ -548,7 +488,6 @@ class _HbsSocialDraftEngine:
 
         order = self._students[:]
         self._rng.shuffle(order)
-        self._draft_order = tuple(order)
 
         pick_log: list[PickLogRow] = []
 
@@ -567,28 +506,32 @@ class _HbsSocialDraftEngine:
                     continue
 
                 # We want deterministic but tie-breakable picks:
-                #   1) max utility (ties within _UTILITY_TAU are considered equal)
+                #   1) max utility (bucketed to treat "similar utility" as ties)
                 #   2) min rank position (Position from table A; smaller is better)
                 #   3) max raw score (Score from table A)
                 #   4) seeded random (break remaining ties)
                 #   5) stable course id (as a final deterministic tie-breaker)
-                scored: list[tuple[float, int, int, float, str, float, float]] = []
+                scored: list[tuple[float, int, int, float, str, float, float, float]] = []
                 for course_id in candidates:
                     u, base, friend_bonus = self._utility_components(student_id, course_id)
+                    u_bucket = round(u, 9)
                     scored.append(
                         (
-                            u,
+                            u_bucket,
                             self._position_a(student_id, course_id),
                             self._score_a(student_id, course_id),
                             self._rng.random(),
                             course_id,
+                            u,
                             base,
                             friend_bonus,
                         )
                     )
 
-                ranked = self._sort_course_entries(scored)
-                u, _pos, _score, _rnd, course_id_star, base, friend_bonus = ranked[0]
+                _u_bucket, _pos, _score, _rnd, course_id_star, u, base, friend_bonus = max(
+                    scored,
+                    key=lambda t: (t[0], -t[1], t[2], t[3], t[4]),
+                )
 
                 self._alloc_list[student_id].append(course_id_star)
                 self._alloc_set[student_id].add(course_id_star)
@@ -721,8 +664,7 @@ class _HbsSocialDraftEngine:
         """
         Phase B (HBS-style): add/drop passes over students using only courses with spare capacity.
 
-        Each iteration is a single pass over students in the draft order, using snake parity
-        (odd iterations forward, even iterations reverse).
+        Each iteration is a single pass over students in a new random order.
         """
 
         if n <= 0:
@@ -735,8 +677,8 @@ class _HbsSocialDraftEngine:
             if self._config.progress:
                 print(f"Iter {iteration}/{self._config.total_iters}: ADD_DROP pass", flush=True)
 
-            base_order = list(self._draft_order or self._students)
-            order = base_order if iteration % 2 == 1 else list(reversed(base_order))
+            order = self._students[:]
+            self._rng.shuffle(order)
             changed_in_pass = False
 
             for student_id in order:
@@ -749,18 +691,19 @@ class _HbsSocialDraftEngine:
                     continue
 
                 scored: list[tuple[float, int, int, float, str]] = []
-                for course_id in sorted(candidates):
+                for course_id in candidates:
                     u, _base, _friend_bonus = self._utility_components(student_id, course_id)
+                    u_bucket = round(u, 9)
                     scored.append(
                         (
-                            u,
+                            u_bucket,
                             self._position_a(student_id, course_id),
                             self._score_a(student_id, course_id),
                             self._rng.random(),
                             course_id,
                         )
                     )
-                scored = self._sort_course_entries(scored)
+                scored.sort(key=lambda t: (t[0], -t[1], t[2], t[3], t[4]), reverse=True)
 
                 k = min(self._config.max_courses, len(scored))
                 desired_list = [item[4] for item in scored[:k]]
@@ -837,16 +780,20 @@ class _HbsSocialDraftEngine:
         per_student_friend: list[float] = []
         per_student_max_base: list[float] = []
         per_student_max_total: list[float] = []
+        per_student_max_friend: list[float] = []
+        per_student_max_overlaps: list[int] = []
 
         for student_id in self._students:
             base_sum, friend_sum = self._student_welfare_components(student_id)
             lambda_ = self._lambda_by_student.get(student_id, self._DEFAULT_LAMBDA)
-            total = (1.0 - lambda_) * base_sum + lambda_ * friend_sum
+            total = base_sum + lambda_ * friend_sum
             per_student_base.append(base_sum)
             per_student_friend.append(friend_sum)
             per_student_total.append(total)
             per_student_max_base.append(self._max_possible_base(student_id))
             per_student_max_total.append(self._max_possible_total_upper(student_id))
+            per_student_max_friend.append(self._max_possible_friend_upper(student_id))
+            per_student_max_overlaps.append(self._max_possible_overlap_count(student_id))
 
         per_student_base_norm = [
             (u / max_b if max_b > 0.0 else 0.0)
@@ -860,10 +807,14 @@ class _HbsSocialDraftEngine:
         total_utility = compute_total_utility(per_student_total)
         gini_total_norm = compute_gini_index(per_student_total_norm)
         gini_base_norm = compute_gini_index(per_student_base_norm)
+        total_utility_max = sum(per_student_max_total)
         summary = RunSummary(
             total_utility=total_utility,
             gini_total_norm=gini_total_norm,
             gini_base_norm=gini_base_norm,
+            total_utility_max=total_utility_max,
+            gini_total_norm_max=1.0,
+            gini_base_norm_max=1.0,
         )
 
         metrics = self._compute_extended_metrics(
@@ -872,6 +823,10 @@ class _HbsSocialDraftEngine:
             per_student_friend=per_student_friend,
             per_student_total_norm=per_student_total_norm,
             per_student_base_norm=per_student_base_norm,
+            per_student_max_total=per_student_max_total,
+            per_student_max_base=per_student_max_base,
+            per_student_max_friend=per_student_max_friend,
+            per_student_max_overlaps=per_student_max_overlaps,
         )
         return summary, metrics
 
@@ -883,10 +838,17 @@ class _HbsSocialDraftEngine:
         per_student_friend: list[float],
         per_student_total_norm: list[float],
         per_student_base_norm: list[float],
+        per_student_max_total: list[float],
+        per_student_max_base: list[float],
+        per_student_max_friend: list[float],
+        per_student_max_overlaps: list[int],
     ) -> ExtendedMetrics:
         n_students = len(self._students)
         total_base = sum(per_student_base)
         total_friend = sum(per_student_friend)
+        total_max_base = sum(per_student_max_base)
+        total_max_total = sum(per_student_max_total)
+        total_max_friend = sum(per_student_max_friend)
 
         avg_courses = sum(len(self._alloc_set[s]) for s in self._students) / n_students
         full_alloc = sum(1 for s in self._students if len(self._alloc_set[s]) >= self._config.max_courses)
@@ -921,11 +883,11 @@ class _HbsSocialDraftEngine:
         overlaps_total = 0
         students_with_overlap = 0
         for student_id in self._students:
+            friends = self._friends_list.get(student_id, ())
+            if not friends:
+                continue
             student_overlaps = 0
             for course_id in self._alloc_set[student_id]:
-                friends = self._friends_by_course.get((student_id, course_id), ())
-                if not friends:
-                    continue
                 for friend_id in friends:
                     if (student_id, friend_id, course_id) not in self._pair_by_key:
                         continue
@@ -975,4 +937,41 @@ class _HbsSocialDraftEngine:
             "utility_p75": _percentile(0.75),
             "utility_p90": _percentile(0.90),
         }
-        return ExtendedMetrics(values=metrics)
+        max_total_per_student = max(per_student_max_total) if per_student_max_total else 0.0
+        max_overlaps_total = sum(per_student_max_overlaps)
+        avg_overlaps_max = max_overlaps_total / n_students if n_students else 0.0
+        students_with_friend_prefs = sum(1 for v in per_student_max_overlaps if v > 0)
+        share_possible_overlap = (
+            students_with_friend_prefs / n_students if n_students else 0.0
+        )
+        max_course_rank = float(len(self._courses)) if self._courses else 0.0
+        total_seats = float(len(self._courses) * self._config.default_capacity)
+
+        maxima = {
+            "total_utility": total_max_total,
+            "total_base_utility": total_max_base,
+            "total_friend_utility": total_max_friend,
+            "avg_utility_per_student": (total_max_total / n_students if n_students else 0.0),
+            "avg_courses_per_student": float(self._config.max_courses),
+            "students_full_alloc_rate": 1.0,
+            "unfilled_seats_total": total_seats,
+            "course_fill_rate_mean": 1.0,
+            "avg_position": max_course_rank,
+            "median_position": max_course_rank,
+            "share_top1": 1.0,
+            "share_top3": 1.0,
+            "avg_friend_overlaps_per_student": avg_overlaps_max,
+            "share_students_with_any_friend_overlap": share_possible_overlap,
+            "gini_total_norm": 1.0,
+            "gini_base_norm": 1.0,
+            "jain_index": 1.0,
+            "theil_index": (math.log(n_students) if n_students > 0 else 0.0),
+            "atkinson_index_e0_5": 1.0,
+            "utility_min": max_total_per_student,
+            "utility_p10": max_total_per_student,
+            "utility_p25": max_total_per_student,
+            "utility_p50": max_total_per_student,
+            "utility_p75": max_total_per_student,
+            "utility_p90": max_total_per_student,
+        }
+        return ExtendedMetrics(values=metrics, maxima=maxima)
