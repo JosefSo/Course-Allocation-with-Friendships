@@ -554,6 +554,134 @@ Run tests:
 python tests/run_all_tests.py
 ```
 
+## 5.1 CLI options (generate tables + allocator)
+This section lists the available flags for `generate_tables.py` and `hbs_social.py`,
+with short explanations and concrete examples.
+
+### 5.1.1 `generate/generate_tables.py`
+Creates three CSVs: Table 1 (individual preferences), Table 2 (friend preferences),
+Table 3 (per-student lambda).
+
+If `--students` or `--courses` is omitted, the script will prompt for the value.
+
+**Flags**
+- `--students N` - number of students (required unless provided interactively).
+- `--courses K` - number of courses (required unless provided interactively).
+- `--seed SEED` - RNG seed for reproducibility (default: none).
+- `--score-min INT` - minimum score for Table 1 (default: 1).
+- `--score-max INT` - maximum score for Table 1 (default: 5).
+- `--swap-prob P` - probability of swapping adjacent positions when ranking Table 1
+  (0..1, default: 0.0). Use `> 0` to introduce small rank noise.
+- `--friend-top-k K` - top-K friends per (student, course) in Table 2 (default: 3).
+- `--friend-score-min INT` - min score for Table 2 friends (default: `--score-min`).
+- `--friend-score-max INT` - max score for Table 2 friends (default: `--score-max`).
+- `--friend-score-mode {score_first,position_first}` - how friend Score/Position are
+  generated (default: `score_first`).
+- `--friend-swap-prob P` - swap probability for friend ranking (0..1, default: 0.0).
+- `--lambda-default X` - lambda value for all students in Table 3 (0..1, default: 0.3).
+- `--out1 PATH` - output CSV for Table 1 (default: `tables/table1_individual.csv`).
+- `--out2 PATH` - output CSV for Table 2 (default: `tables/table2_pair.csv`).
+- `--out3 PATH` - output CSV for Table 3 (default: `tables/table3_lambda.csv`).
+
+**Examples**
+Generate with custom score ranges and friend top-k:
+```bash
+python3 generate/generate_tables.py \
+  --students 120 \
+  --courses 6 \
+  --seed 7 \
+  --score-min 1 \
+  --score-max 7 \
+  --friend-top-k 4 \
+  --friend-score-min 1 \
+  --friend-score-max 9 \
+  --lambda-default 0.25 \
+  --out1 tables/table1_120x6.csv \
+  --out2 tables/table2_120x6.csv \
+  --out3 tables/table3_lambda_120x6.csv
+```
+
+Interactive mode (will prompt for N and K):
+```bash
+python3 generate/generate_tables.py --seed 11
+```
+
+Generate 200x8 with custom lambda:
+```bash
+python3 generate/generate_tables.py \
+  --students 200 \
+  --courses 8 \
+  --seed 11 \
+  --lambda-default 0.4 \
+  --out1 tables/table1_200x8.csv \
+  --out2 tables/table2_200x8.csv \
+  --out3 tables/table3_lambda_200x8.csv
+```
+
+### 5.1.2 `hbs_social.py` (allocator)
+Runs the HBS snake draft with reactive friend bonus and optional post-phase.
+
+**Input flags**
+- `--csv-a PATH` - Table 1 CSV (default: `tables/table1_individual.csv`).
+- `--csv-b PATH` - Table 2 CSV (default: `tables/table2_pair.csv`).
+- `--csv-lambda PATH` - optional Table 3 CSV with per-student lambda.
+
+**Draft + improve flags**
+- `--cap-default INT` - capacity per course (default: 10).
+- `--b INT` - max courses per student (default: 3).
+- `--draft-rounds INT` - number of draft rounds (default: `b`).
+- `--post-iters INT` or `--n INT` - post-phase iterations (default: 0).
+- `--improve-mode {swap,add-drop}` - post-phase mode (default: `swap`).
+- `--seed INT` - RNG seed (default: 42).
+- `--progress` - print progress during draft/improve (flag).
+
+**Output flags**
+- `--out-allocation PATH` - CSV with draft picks only
+  (default: `allocation.csv`).
+- `--out-adddrop PATH` - CSV with post-phase events
+  (default: `post_allocation.csv`).
+- `--out-summary PATH` - CSV with summary metrics (default: `summary.csv`).
+- `--out-metrics-extended PATH` - CSV with extended metrics
+  (default: `metrics_extended.csv`).
+
+**Debug/checking flags**
+- `--sanity-checks` - enable extra invariants and consistency checks.
+- `--delta-check-every N` - validate swap deltas every N swaps (0 = off).
+- `--log-level {CRITICAL,ERROR,WARNING,INFO,DEBUG}` - logging verbosity.
+
+**Examples**
+Basic run (no post-phase):
+```bash
+python3 hbs_social.py \
+  --csv-a tables/table1_200x8.csv \
+  --csv-b tables/table2_200x8.csv \
+  --cap-default 80 \
+  --b 3 \
+  --draft-rounds 3 \
+  --seed 11
+```
+
+Add-drop post-phase with custom outputs:
+```bash
+python3 hbs_social.py \
+  --csv-a tables/table1_200x8.csv \
+  --csv-b tables/table2_200x8.csv \
+  --csv-lambda tables/table3_lambda_200x8.csv \
+  --cap-default 80 \
+  --b 3 \
+  --draft-rounds 3 \
+  --post-iters 10 \
+  --improve-mode add-drop \
+  --seed 11 \
+  --out-allocation results/allocation.csv \
+  --out-adddrop results/post_allocation.csv \
+  --out-summary results/summary.csv \
+  --out-metrics-extended results/metrics_extended.csv \
+  --progress \
+  --sanity-checks \
+  --log-level INFO
+```
+
 ## 6. End-to-end toy example (small numbers)
 This example shows the full pipeline on a tiny dataset, with explicit numbers for every formula.
 
