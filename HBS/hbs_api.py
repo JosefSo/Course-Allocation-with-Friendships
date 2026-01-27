@@ -40,8 +40,8 @@ def run_hbs_social(
         raise ValueError("b must be > 0")
     if post_iters < 0:
         raise ValueError("post_iters must be >= 0")
-    if improve_mode not in {"swap", "add-drop"}:
-        raise ValueError("improve_mode must be one of: swap, add-drop")
+    if improve_mode not in {"swap", "add-drop", "adaptive"}:
+        raise ValueError("improve_mode must be one of: swap, add-drop, adaptive")
     if delta_check_every < 0:
         raise ValueError("delta_check_every must be >= 0")
     if draft_rounds is None:

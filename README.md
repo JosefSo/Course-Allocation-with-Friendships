@@ -631,7 +631,11 @@ Runs the HBS snake draft with reactive friend bonus and optional post-phase.
 - `--b INT` - max courses per student (default: 3).
 - `--draft-rounds INT` - number of draft rounds (default: `b`).
 - `--post-iters INT` or `--n INT` - post-phase iterations (default: 0).
-- `--improve-mode {swap,add-drop}` - post-phase mode (default: `swap`).
+- `--improve-mode {swap,add-drop,adaptive}` - post-phase mode (default: `swap`).
+  - `swap`: best welfare-improving swap per iteration.
+  - `add-drop`: HBS-style pass using only courses with spare capacity.
+  - `adaptive`: snake-order passes; each student gets 0/1 best move
+    (add/drop if target has space, otherwise swap), accepted only if global `ΔW > 0`.
 - `--seed INT` - RNG seed (default: 42).
 - `--progress` - print progress during draft/improve (flag).
 
@@ -646,7 +650,7 @@ Runs the HBS snake draft with reactive friend bonus and optional post-phase.
 
 **Debug/checking flags**
 - `--sanity-checks` - enable extra invariants and consistency checks.
-- `--delta-check-every N` - validate swap deltas every N swaps (0 = off).
+- `--delta-check-every N` - validate move deltas every N applied moves (0 = off).
 - `--log-level {CRITICAL,ERROR,WARNING,INFO,DEBUG}` - logging verbosity.
 
 **Examples**
@@ -680,6 +684,24 @@ python3 hbs_social.py \
   --progress \
   --sanity-checks \
   --log-level INFO
+```
+
+Adaptive post-phase (snake-order pull + swap/add-drop):
+```bash
+python3 hbs_social.py \
+  --csv-a tables/table1_200x8.csv \
+  --csv-b tables/table2_200x8.csv \
+  --csv-lambda tables/table3_lambda_200x8.csv \
+  --cap-default 80 \
+  --b 3 \
+  --draft-rounds 3 \
+  --post-iters 10 \
+  --improve-mode adaptive \
+  --seed 11 \
+  --out-allocation results/allocation.csv \
+  --out-adddrop results/post_allocation.csv \
+  --out-summary results/summary.csv \
+  --out-metrics-extended results/metrics_extended.csv
 ```
 
 ## 6. End-to-end toy example (small numbers)

@@ -54,6 +54,21 @@ def _pos_u_friend(position: int | None, k_friends: int) -> float:
     return (k_friends + 1 - position) / k_friends
 
 
+def _score_u(score: int | None, score_min: int | None, score_max: int | None) -> float:
+    """
+    Normalize a score into [0..1] using min-max scaling with clamping.
+
+    If the score scale is degenerate, any present score maps to 1.0.
+    """
+
+    if score is None or score_min is None or score_max is None:
+        return 0.0
+    if score_max <= score_min:
+        return 1.0
+    value = (score - score_min) / (score_max - score_min)
+    return max(0.0, min(1.0, float(value)))
+
+
 class _HbsSocialDraftEngine:
     """
     Application service that performs the allocation and computes metrics.
@@ -106,6 +121,7 @@ class _HbsSocialDraftEngine:
                     self._lambda_by_student[student_id] = value
 
         self._rng = random.Random(config.seed)
+        self._draft_order: list[str] | None = None
 
         # Allocation state:
         # - list: preserves pick order (useful for reporting / debugging)
@@ -135,15 +151,27 @@ class _HbsSocialDraftEngine:
             for friend_id in friends:
                 self._followers.setdefault(friend_id, set()).add(student_id_a)
 
-        # Table 2 contains only a friend rank Position (top-k). We use a linear mapping without
-        # zero so that rank K is still better than missing.
+        # Friend preference weights:
+        # - if scores are present, use min-max normalized scores
+        # - otherwise fall back to a position-based mapping
         self._k_friend_rank = max(1, max((r.position for r in pair_prefs), default=3))
-        self._pair_u_by_key: dict[tuple[str, str, str], float] = {
-            (r.student_id_a, r.student_id_b, r.course_id): _pos_u_friend(
-                r.position, self._k_friend_rank
+        score_values = [r.score for r in pair_prefs if r.score is not None]
+        score_min = min(score_values) if score_values else None
+        score_max = max(score_values) if score_values else None
+
+        self._pair_u_by_key: dict[tuple[str, str, str], float] = {}
+        self._friend_sum_by_student_course: dict[tuple[str, str], float] = {}
+        for r in pair_prefs:
+            if r.score is not None and score_min is not None and score_max is not None:
+                weight = _score_u(r.score, score_min, score_max)
+            else:
+                weight = _pos_u_friend(r.position, self._k_friend_rank)
+            key = (r.student_id_a, r.student_id_b, r.course_id)
+            self._pair_u_by_key[key] = weight
+            sc_key = (r.student_id_a, r.course_id)
+            self._friend_sum_by_student_course[sc_key] = (
+                self._friend_sum_by_student_course.get(sc_key, 0.0) + weight
             )
-            for r in pair_prefs
-        }
 
         # Precompute sorted adjacency for deterministic iteration and faster deltas.
         self._friends_list: dict[str, tuple[str, ...]] = {
@@ -152,6 +180,14 @@ class _HbsSocialDraftEngine:
         self._followers_list: dict[str, tuple[str, ...]] = {
             s: tuple(sorted(self._followers.get(s, set()))) for s in self._students
         }
+
+        # Per-student normalization constant for reactive friend bonus.
+        self._max_friend_bonus_by_student: dict[str, float] = {}
+        for s in self._students:
+            max_sum = 0.0
+            for c in self._courses:
+                max_sum = max(max_sum, self._friend_sum_by_student_course.get((s, c), 0.0))
+            self._max_friend_bonus_by_student[s] = max_sum if max_sum > 0.0 else 1.0
 
     # ---- Utility model -------------------------------------------------
 
@@ -200,10 +236,15 @@ class _HbsSocialDraftEngine:
                 total += self._friend_preference_utility(student_id, friend_id, course_id)
         return total
 
+    def _max_friend_bonus(self, student_id: str) -> float:
+        return self._max_friend_bonus_by_student.get(student_id, 1.0)
+
     def _utility_components(self, student_id: str, course_id: str) -> tuple[float, float, float]:
         base = self._base_utility(student_id, course_id)
         friend_bonus = self._friend_bonus_reactive(student_id, course_id)
-        total = base + self._lambda_by_student.get(student_id, self._DEFAULT_LAMBDA) * friend_bonus
+        lambda_ = self._lambda_by_student.get(student_id, self._DEFAULT_LAMBDA)
+        friend_norm = friend_bonus / self._max_friend_bonus(student_id)
+        total = (1.0 - lambda_) * base + lambda_ * friend_norm
         return total, base, friend_bonus
 
     # ---- Improvement objective (order-independent) ---------------------
@@ -217,15 +258,17 @@ class _HbsSocialDraftEngine:
 
         friends = self._friends_list.get(student_id, ())
         lambda_ = self._lambda_by_student.get(student_id, self._DEFAULT_LAMBDA)
+        friend_max = self._max_friend_bonus(student_id)
         total = 0.0
         student_courses = self._alloc_set[student_id]
         for course_id in sorted(student_courses):
-            total += self._base_utility(student_id, course_id)
+            base = self._base_utility(student_id, course_id)
+            friend_sum = 0.0
             for friend_id in friends:
                 if course_id in self._alloc_set[friend_id]:
-                    total += lambda_ * self._friend_preference_utility(
-                        student_id, friend_id, course_id
-                    )
+                    friend_sum += self._friend_preference_utility(student_id, friend_id, course_id)
+            friend_norm = friend_sum / friend_max
+            total += (1.0 - lambda_) * base + lambda_ * friend_norm
         return total
 
     def _student_welfare_components(self, student_id: str) -> tuple[float, float]:
@@ -255,27 +298,20 @@ class _HbsSocialDraftEngine:
 
     def _max_possible_total_upper(self, student_id: str) -> float:
         lambda_ = self._lambda_by_student.get(student_id, self._DEFAULT_LAMBDA)
-        friends = self._friends_list.get(student_id, ())
+        friend_max = self._max_friend_bonus(student_id)
         values: list[float] = []
         for course_id in self._courses:
             base = self._base_utility(student_id, course_id)
-            friend_sum = 0.0
-            for friend_id in friends:
-                friend_sum += self._friend_preference_utility(student_id, friend_id, course_id)
-            values.append(base + lambda_ * friend_sum)
+            friend_upper = self._friend_sum_by_student_course.get((student_id, course_id), 0.0)
+            friend_norm_upper = friend_upper / friend_max
+            values.append((1.0 - lambda_) * base + lambda_ * friend_norm_upper)
         values.sort(reverse=True)
         return sum(values[: self._config.max_courses])
 
     def _max_possible_friend_upper(self, student_id: str) -> float:
-        friends = self._friends_list.get(student_id, ())
-        if not friends:
-            return 0.0
         values: list[float] = []
         for course_id in self._courses:
-            friend_sum = 0.0
-            for friend_id in friends:
-                friend_sum += self._friend_preference_utility(student_id, friend_id, course_id)
-            values.append(friend_sum)
+            values.append(self._friend_sum_by_student_course.get((student_id, course_id), 0.0))
         values.sort(reverse=True)
         return sum(values[: self._config.max_courses])
 
@@ -312,6 +348,20 @@ class _HbsSocialDraftEngine:
         self._alloc_set[s2].remove(c2)
         self._alloc_set[s2].add(c1)
 
+    def _replace_course(self, student_id: str, drop_course: str, add_course: str) -> None:
+        """
+        Replace one course for a single student (1-for-1 add/drop).
+
+        Assumes add_course has free capacity and drop_course is currently allocated.
+        """
+
+        idx = self._alloc_list[student_id].index(drop_course)
+        self._alloc_list[student_id][idx] = add_course
+        self._alloc_set[student_id].remove(drop_course)
+        self._alloc_set[student_id].add(add_course)
+        self._capacity_left[drop_course] += 1
+        self._capacity_left[add_course] -= 1
+
     def _swap_delta(self, s1: str, c1: str, s2: str, c2: str) -> float:
         """
         Compute ΔW for swapping courses c1/c2 between students s1/s2.
@@ -346,37 +396,37 @@ class _HbsSocialDraftEngine:
 
         delta = 0.0
 
-        # Base terms change only for swapped courses for s1 and s2.
-        delta += self._base_utility(s1, c2) - self._base_utility(s1, c1)
-        delta += self._base_utility(s2, c1) - self._base_utility(s2, c2)
-
-        # Friend overlap terms for s1 and s2 change only for swapped courses.
         lambda_s1 = self._lambda_by_student.get(s1, self._DEFAULT_LAMBDA)
         lambda_s2 = self._lambda_by_student.get(s2, self._DEFAULT_LAMBDA)
-        if lambda_s1 != 0.0:
-            # s1 loses c1
+        friend_scale_s1 = lambda_s1 / self._max_friend_bonus(s1)
+        friend_scale_s2 = lambda_s2 / self._max_friend_bonus(s2)
+
+        # Base terms change only for swapped courses for s1 and s2.
+        delta += (1.0 - lambda_s1) * (self._base_utility(s1, c2) - self._base_utility(s1, c1))
+        delta += (1.0 - lambda_s2) * (self._base_utility(s2, c1) - self._base_utility(s2, c2))
+
+        # Friend overlap terms for s1 and s2 change only for swapped courses.
+        if friend_scale_s1 != 0.0:
             removed = 0.0
             for f in friends_s1:
                 if c1 in alloc_set[f]:
                     removed += self._friend_preference_utility(s1, f, c1)
-            # s1 gains c2
             added = 0.0
             for f in friends_s1:
                 if _has_after(f, c2):
                     added += self._friend_preference_utility(s1, f, c2)
-            delta += lambda_s1 * (added - removed)
+            delta += friend_scale_s1 * (added - removed)
 
-            # s2 loses c2
+        if friend_scale_s2 != 0.0:
             removed = 0.0
             for f in friends_s2:
                 if c2 in alloc_set[f]:
                     removed += self._friend_preference_utility(s2, f, c2)
-            # s2 gains c1
             added = 0.0
             for f in friends_s2:
                 if _has_after(f, c1):
                     added += self._friend_preference_utility(s2, f, c1)
-            delta += lambda_s2 * (added - removed)
+            delta += friend_scale_s2 * (added - removed)
 
         # ---- Follower deltas (only overlap terms can change) -----------------
 
@@ -386,10 +436,11 @@ class _HbsSocialDraftEngine:
                 continue
             alloc_x = alloc_set[x]
             lambda_x = self._lambda_by_student.get(x, self._DEFAULT_LAMBDA)
+            follower_scale = lambda_x / self._max_friend_bonus(x)
             if c1 in alloc_x:
-                delta -= lambda_x * self._friend_preference_utility(x, s1, c1)
+                delta -= follower_scale * self._friend_preference_utility(x, s1, c1)
             if c2 in alloc_x:
-                delta += lambda_x * self._friend_preference_utility(x, s1, c2)
+                delta += follower_scale * self._friend_preference_utility(x, s1, c2)
 
         followers_s2 = self._followers_list.get(s2, ())
         for x in followers_s2:
@@ -397,10 +448,56 @@ class _HbsSocialDraftEngine:
                 continue
             alloc_x = alloc_set[x]
             lambda_x = self._lambda_by_student.get(x, self._DEFAULT_LAMBDA)
+            follower_scale = lambda_x / self._max_friend_bonus(x)
             if c2 in alloc_x:
-                delta -= lambda_x * self._friend_preference_utility(x, s2, c2)
+                delta -= follower_scale * self._friend_preference_utility(x, s2, c2)
             if c1 in alloc_x:
-                delta += lambda_x * self._friend_preference_utility(x, s2, c1)
+                delta += follower_scale * self._friend_preference_utility(x, s2, c1)
+
+        return delta
+
+    def _add_drop_delta(self, student_id: str, drop_course: str, add_course: str) -> float:
+        """
+        Compute ΔW for a 1-for-1 add/drop move for a single student.
+
+        The delta accounts for:
+          - the student's own base and friend-overlap changes
+          - follower externalities from the student leaving/entering courses
+        """
+
+        alloc_set = self._alloc_set
+        friends = self._friends_list.get(student_id, ())
+        lambda_s = self._lambda_by_student.get(student_id, self._DEFAULT_LAMBDA)
+        friend_scale_s = lambda_s / self._max_friend_bonus(student_id)
+
+        delta = (1.0 - lambda_s) * (
+            self._base_utility(student_id, add_course) - self._base_utility(student_id, drop_course)
+        )
+
+        if friend_scale_s != 0.0:
+            removed = 0.0
+            for f in friends:
+                if drop_course in alloc_set[f]:
+                    removed += self._friend_preference_utility(student_id, f, drop_course)
+            added = 0.0
+            for f in friends:
+                if add_course in alloc_set[f]:
+                    added += self._friend_preference_utility(student_id, f, add_course)
+            delta += friend_scale_s * (added - removed)
+
+        followers = self._followers_list.get(student_id, ())
+        for x in followers:
+            if x == student_id:
+                continue
+            lambda_x = self._lambda_by_student.get(x, self._DEFAULT_LAMBDA)
+            follower_scale = lambda_x / self._max_friend_bonus(x)
+            if follower_scale == 0.0:
+                continue
+            alloc_x = alloc_set[x]
+            if drop_course in alloc_x:
+                delta -= follower_scale * self._friend_preference_utility(x, student_id, drop_course)
+            if add_course in alloc_x:
+                delta += follower_scale * self._friend_preference_utility(x, student_id, add_course)
 
         return delta
 
@@ -467,6 +564,11 @@ class _HbsSocialDraftEngine:
                 improvement_iters,
                 start_iteration=draft_rounds + 1,
             )
+        elif self._config.improve_mode == "adaptive":
+            post_log = self._run_adaptive_improvement(
+                improvement_iters,
+                start_iteration=draft_rounds + 1,
+            )
         else:
             raise ValueError(f"Unknown improve_mode: {self._config.improve_mode}")
 
@@ -488,6 +590,8 @@ class _HbsSocialDraftEngine:
 
         order = self._students[:]
         self._rng.shuffle(order)
+        # Persist the seeded permutation so post-phase can reuse the same snake order.
+        self._draft_order = order[:]
 
         pick_log: list[PickLogRow] = []
 
@@ -770,6 +874,182 @@ class _HbsSocialDraftEngine:
 
         return post_log
 
+    # ---- Adaptive phase -------------------------------------------------------
+    def _run_adaptive_improvement(self, n: int, *, start_iteration: int) -> list[PostAllocLogRow]:
+        """
+        Adaptive post-phase:
+          - snake-order passes using the same seeded permutation as the draft
+          - for each student, try to pull toward any missing course
+          - if target has capacity -> 1-for-1 add/drop
+          - if target is full -> targeted swap with any holder
+          - accept only moves with ΔW_global > eps
+          - stop early if a full pass makes no changes
+        """
+
+        if n <= 0:
+            return []
+
+        if self._draft_order is None:
+            order = self._students[:]
+            self._rng.shuffle(order)
+            self._draft_order = order[:]
+
+        eps = 1e-12
+        move_count = 0
+        post_log: list[PostAllocLogRow] = []
+
+        for offset in range(n):
+            iteration = start_iteration + offset
+            if self._config.progress:
+                print(f"Iter {iteration}/{self._config.total_iters}: ADAPTIVE pass", flush=True)
+
+            base_order = self._draft_order
+            turn_order = base_order if offset % 2 == 0 else list(reversed(base_order))
+            changed_in_pass = False
+
+            for student_id in turn_order:
+                current_courses = sorted(self._alloc_set[student_id])
+                if not current_courses:
+                    continue
+
+                best_delta = 0.0
+                best_move: tuple[str, str, str, str, str] | None = None
+
+                for target_course in self._courses:
+                    if target_course in self._alloc_set[student_id]:
+                        continue
+
+                    if self._capacity_left[target_course] > 0:
+                        for drop_course in current_courses:
+                            delta = self._add_drop_delta(student_id, drop_course, target_course)
+                            move_key = ("add_drop", student_id, target_course, "", drop_course)
+                            if delta > best_delta + eps:
+                                best_delta = delta
+                                best_move = move_key
+                            elif (
+                                abs(delta - best_delta) <= eps
+                                and best_move is not None
+                                and move_key < best_move
+                            ):
+                                best_move = move_key
+                        continue
+
+                    holders = [
+                        t
+                        for t in self._students
+                        if t != student_id and target_course in self._alloc_set[t]
+                    ]
+                    holders.sort()
+                    for holder_id in holders:
+                        for drop_course in current_courses:
+                            if drop_course in self._alloc_set[holder_id]:
+                                continue
+                            delta = self._swap_delta(student_id, drop_course, holder_id, target_course)
+                            move_key = ("swap", student_id, target_course, holder_id, drop_course)
+                            if delta > best_delta + eps:
+                                best_delta = delta
+                                best_move = move_key
+                            elif (
+                                abs(delta - best_delta) <= eps
+                                and best_move is not None
+                                and move_key < best_move
+                            ):
+                                best_move = move_key
+
+                if best_move is None or best_delta <= eps:
+                    continue
+
+                move_type, s, target_course, holder_id, drop_course = best_move
+                check_delta = (
+                    self._config.delta_check_every > 0
+                    and (move_count + 1) % self._config.delta_check_every == 0
+                )
+                before = self._global_welfare() if check_delta else 0.0
+
+                if move_type == "add_drop":
+                    if self._capacity_left[target_course] <= 0:
+                        raise AssertionError(f"Adaptive add/drop capacity exhausted for {target_course}")
+                    self._replace_course(s, drop_course, target_course)
+                    self._assert_student_state(s)
+                    if self._config.sanity_checks:
+                        self._assert_course_capacity(drop_course)
+                        self._assert_course_capacity(target_course)
+                    event_type = "ADAPTIVE_ADD_DROP"
+                    log_row = PostAllocLogRow(
+                        iteration=iteration,
+                        event_type=event_type,
+                        student_id=s,
+                        dropped_courses=(drop_course,),
+                        added_courses=(target_course,),
+                        swap_student_1=None,
+                        swap_course_1=None,
+                        swap_student_2=None,
+                        swap_course_2=None,
+                        delta_utility=best_delta,
+                    )
+                else:
+                    if holder_id == "":
+                        raise AssertionError("Adaptive swap missing holder_id")
+                    self._swap_courses(s, drop_course, holder_id, target_course)
+                    self._assert_swap_invariants(s, drop_course, holder_id, target_course)
+                    event_type = "ADAPTIVE_SWAP"
+                    log_row = PostAllocLogRow(
+                        iteration=iteration,
+                        event_type=event_type,
+                        student_id=None,
+                        dropped_courses=None,
+                        added_courses=None,
+                        swap_student_1=s,
+                        swap_course_1=drop_course,
+                        swap_student_2=holder_id,
+                        swap_course_2=target_course,
+                        delta_utility=best_delta,
+                    )
+
+                if check_delta:
+                    after = self._global_welfare()
+                    actual_delta = after - before
+                    if abs(actual_delta - best_delta) > 1e-8:
+                        raise AssertionError(
+                            f"Adaptive delta mismatch: expected {best_delta:.12f}, got {actual_delta:.12f}"
+                        )
+
+                move_count += 1
+                changed_in_pass = True
+
+                if self._config.progress:
+                    print(
+                        f"Iter {iteration}/{self._config.total_iters}: ADAPTIVE {event_type} "
+                        f"Δ={best_delta:.6f}",
+                        flush=True,
+                    )
+
+                post_log.append(log_row)
+
+            if not changed_in_pass:
+                if self._config.progress:
+                    print(
+                        f"Iter {iteration}/{self._config.total_iters}: ADAPTIVE no-op (early stop)",
+                        flush=True,
+                    )
+                post_log.append(
+                    PostAllocLogRow(
+                        iteration=iteration,
+                        event_type="",
+                        student_id=None,
+                        dropped_courses=None,
+                        added_courses=None,
+                        swap_student_1=None,
+                        swap_course_1=None,
+                        swap_student_2=None,
+                        swap_course_2=None,
+                        delta_utility=None,
+                    )
+                )
+                break
+
+        return post_log
+
     # ---- Metrics -------------------------------------------------------
 
     def _compute_metrics(self) -> tuple[RunSummary, ExtendedMetrics]:
@@ -785,8 +1065,7 @@ class _HbsSocialDraftEngine:
 
         for student_id in self._students:
             base_sum, friend_sum = self._student_welfare_components(student_id)
-            lambda_ = self._lambda_by_student.get(student_id, self._DEFAULT_LAMBDA)
-            total = base_sum + lambda_ * friend_sum
+            total = self._student_welfare(student_id)
             per_student_base.append(base_sum)
             per_student_friend.append(friend_sum)
             per_student_total.append(total)
