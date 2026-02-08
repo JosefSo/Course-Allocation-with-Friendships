@@ -1,0 +1,1055 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>HBS Social Visual Lab</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Manrope:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #f7f2e7;
+      --ink: #1d2d44;
+      --panel: #fffdf8;
+      --muted: #5f6b7a;
+      --line: #d7d0c2;
+      --accent: #ef5b35;
+      --accent-2: #1f9d8b;
+      --accent-3: #f6b244;
+      --good: #2b9348;
+      --shadow: 0 10px 30px rgba(15, 33, 54, 0.14);
+      --radius: 16px;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Manrope", "Trebuchet MS", sans-serif;
+      color: var(--ink);
+      background: radial-gradient(circle at 12% 12%, #fff7da, var(--bg) 45%);
+      min-height: 100vh;
+    }
+
+    .back-shapes {
+      position: fixed;
+      inset: 0;
+      overflow: hidden;
+      pointer-events: none;
+      z-index: -1;
+    }
+
+    .blob {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(8px);
+      opacity: 0.25;
+      animation: drift 12s ease-in-out infinite;
+    }
+
+    .blob.a { width: 280px; height: 280px; left: -40px; top: 90px; background: #ffd18a; }
+    .blob.b { width: 340px; height: 340px; right: -80px; top: 130px; background: #71d3c7; animation-delay: 2s; }
+    .blob.c { width: 260px; height: 260px; left: 35%; bottom: -90px; background: #ff8f6d; animation-delay: 4s; }
+
+    @keyframes drift {
+      0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+      50% { transform: translate3d(12px, -20px, 0) scale(1.05); }
+    }
+
+    .page {
+      width: min(1180px, 94vw);
+      margin: 28px auto 44px;
+    }
+
+    .hero {
+      background: linear-gradient(120deg, #fff8e4, #fffdf6);
+      border: 1px solid #ecdcb8;
+      border-radius: 22px;
+      padding: 22px 24px;
+      box-shadow: var(--shadow);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero::after {
+      content: "";
+      position: absolute;
+      right: -60px;
+      top: -60px;
+      width: 220px;
+      height: 220px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(246, 178, 68, 0.34), rgba(246, 178, 68, 0.04));
+    }
+
+    h1 {
+      margin: 0;
+      font-family: "Bebas Neue", "Impact", sans-serif;
+      letter-spacing: 1.2px;
+      font-size: clamp(34px, 6vw, 64px);
+      line-height: 0.95;
+    }
+
+    .lead {
+      margin: 10px 0 0;
+      max-width: 80ch;
+      color: #30475e;
+      font-size: 16px;
+    }
+
+    .cards {
+      margin-top: 18px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+      gap: 12px;
+    }
+
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 14px 16px;
+    }
+
+    .kpi {
+      font-size: 28px;
+      font-weight: 800;
+      color: #0f2640;
+    }
+
+    .kpi-label {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .panel {
+      margin-top: 16px;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 14px 16px;
+      box-shadow: var(--shadow);
+    }
+
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+    }
+
+    select, button, input[type="range"] {
+      font-family: inherit;
+      font-size: 14px;
+    }
+
+    select, button {
+      border: 1px solid #c8c0b0;
+      border-radius: 10px;
+      padding: 8px 12px;
+      background: #fff;
+      color: #1f2d3f;
+    }
+
+    button {
+      cursor: pointer;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    button:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 8px 14px rgba(12, 31, 52, 0.12);
+    }
+
+    .btn-main {
+      border-color: #de6a3e;
+      background: linear-gradient(120deg, #ef5b35, #ff8f49);
+      color: #fff;
+      font-weight: 700;
+    }
+
+    .muted { color: var(--muted); }
+    .spacer { flex: 1; min-width: 12px; }
+
+    .flow {
+      margin-top: 14px;
+      display: grid;
+      grid-template-columns: repeat(5, minmax(140px, 1fr));
+      gap: 8px;
+    }
+
+    .flow-step {
+      border: 1px solid #d9d2c4;
+      border-radius: 12px;
+      background: #fff;
+      padding: 10px;
+      position: relative;
+      min-height: 74px;
+      transition: transform 0.2s ease, border-color 0.2s ease;
+    }
+
+    .flow-step strong {
+      display: block;
+      font-size: 13px;
+      margin-bottom: 5px;
+    }
+
+    .flow-step small { color: var(--muted); }
+
+    .flow-step.active {
+      border-color: var(--accent-2);
+      transform: translateY(-2px);
+      box-shadow: 0 10px 20px rgba(31, 157, 139, 0.2);
+    }
+
+    .grid {
+      margin-top: 16px;
+      display: grid;
+      grid-template-columns: 1.1fr 1fr;
+      gap: 16px;
+    }
+
+    .subgrid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .h3 {
+      margin: 0 0 9px;
+      font-size: 16px;
+      font-weight: 800;
+    }
+
+    .order-track {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 8px;
+    }
+
+    .pill {
+      border-radius: 999px;
+      padding: 5px 10px;
+      font-size: 12px;
+      font-weight: 700;
+      background: #f0eee7;
+      border: 1px solid #d6d0c2;
+    }
+
+    .pill.current {
+      background: #def7f2;
+      border-color: #55baa9;
+    }
+
+    .student-box, .course-box {
+      border: 1px solid #ddd5c7;
+      border-radius: 12px;
+      padding: 10px;
+      background: #fff;
+      margin-bottom: 8px;
+    }
+
+    .student-top {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .chip {
+      border-radius: 9px;
+      padding: 4px 8px;
+      font-size: 12px;
+      border: 1px solid #ccd6e0;
+      background: #f4f8ff;
+    }
+
+    .chip.empty {
+      background: #f7f3eb;
+      border-style: dashed;
+      color: #7d7d7d;
+    }
+
+    .cap {
+      height: 8px;
+      border-radius: 999px;
+      background: #f0ece3;
+      overflow: hidden;
+      margin-top: 7px;
+    }
+
+    .cap > span {
+      display: block;
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent-3), var(--accent));
+      width: 0%;
+      transition: width 0.25s ease;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    th, td {
+      border-bottom: 1px solid #ece5d8;
+      padding: 7px 5px;
+      text-align: left;
+    }
+
+    th { color: #41556f; }
+
+    tr.best {
+      background: #e9fbf6;
+      animation: pulse 0.8s ease;
+    }
+
+    @keyframes pulse {
+      0% { box-shadow: inset 0 0 0 0 rgba(31, 157, 139, 0.3); }
+      100% { box-shadow: inset 0 0 0 999px rgba(31, 157, 139, 0.06); }
+    }
+
+    .log {
+      max-height: 290px;
+      overflow: auto;
+      display: flex;
+      flex-direction: column-reverse;
+      gap: 8px;
+      padding-right: 4px;
+    }
+
+    .log-item {
+      border: 1px solid #e2dbc9;
+      background: #fffefa;
+      border-radius: 10px;
+      padding: 8px 10px;
+      font-size: 13px;
+      transform-origin: top;
+      animation: reveal 0.25s ease;
+    }
+
+    @keyframes reveal {
+      from { opacity: 0; transform: translateY(8px) scale(0.98); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    .formula {
+      border: 1px solid #ded6c6;
+      background: linear-gradient(180deg, #fffcf4, #fff);
+      border-radius: 10px;
+      padding: 10px;
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .formula code {
+      font-weight: 700;
+      color: #19385f;
+    }
+
+    .mode-tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    .mode-btn.active {
+      border-color: #2a9d8f;
+      background: #def7f2;
+      font-weight: 700;
+    }
+
+    .mode-box {
+      border: 1px solid #ddd4c2;
+      border-radius: 12px;
+      padding: 12px;
+      background: #fff;
+    }
+
+    .barline {
+      height: 9px;
+      border-radius: 99px;
+      background: #f0ece1;
+      overflow: hidden;
+      margin-top: 8px;
+    }
+
+    .barline span {
+      display: block;
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #1f9d8b, #ef5b35);
+      transition: width 0.4s ease;
+    }
+
+    .footnote {
+      margin-top: 14px;
+      color: #5f6e7d;
+      font-size: 12px;
+    }
+
+    @media (max-width: 1024px) {
+      .flow { grid-template-columns: repeat(2, minmax(160px, 1fr)); }
+      .grid { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 740px) {
+      .subgrid { grid-template-columns: 1fr; }
+      .hero { padding: 18px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="back-shapes">
+    <div class="blob a"></div>
+    <div class="blob b"></div>
+    <div class="blob c"></div>
+  </div>
+
+  <main class="page">
+    <section class="hero">
+      <h1>HBS Social Visual Lab</h1>
+      <p class="lead">
+        Интерактивная визуализация проекта по распределению курсов с социальными предпочтениями.
+        Ниже можно пошагово увидеть, как считается <b>Base</b>, <b>FriendBonus</b>, итоговая utility
+        и как <b>snake draft</b> формирует финальную аллокацию.
+      </p>
+      <div class="cards" id="projectStats"></div>
+    </section>
+
+    <section class="panel">
+      <div class="controls">
+        <label>Сценарий:
+          <select id="scenarioSelect"></select>
+        </label>
+        <button class="btn-main" id="resetBtn">Сбросить</button>
+        <button id="nextBtn">Следующий ход</button>
+        <button id="playBtn">Play</button>
+        <button id="pauseBtn">Pause</button>
+        <label>Скорость:
+          <input id="speedInput" type="range" min="250" max="1800" step="50" value="850">
+        </label>
+        <span class="muted" id="speedLabel">850 мс</span>
+        <div class="spacer"></div>
+        <span class="pill" id="progressPill">0 / 0 picks</span>
+      </div>
+
+      <div class="flow" id="flowSteps">
+        <article class="flow-step" data-stage="input"><strong>1. Входные таблицы</strong><small>Table1, Table2, Lambda</small></article>
+        <article class="flow-step" data-stage="utility"><strong>2. Utility модель</strong><small>Base + FriendBonus</small></article>
+        <article class="flow-step" data-stage="draft"><strong>3. Snake Draft</strong><small>Пошаговый выбор курсов</small></article>
+        <article class="flow-step" data-stage="post"><strong>4. Post-phase</strong><small>swap | add-drop | adaptive</small></article>
+        <article class="flow-step" data-stage="metrics"><strong>5. Метрики</strong><small>TotalUtility и fairness</small></article>
+      </div>
+    </section>
+
+    <section class="grid">
+      <div>
+        <article class="panel">
+          <h2 class="h3">Snake порядок и текущий ход</h2>
+          <div class="muted" id="roundLabel">Раунд: 1</div>
+          <div class="order-track" id="orderTrack"></div>
+        </article>
+
+        <div class="subgrid">
+          <article class="panel">
+            <h2 class="h3">Студенты</h2>
+            <div id="studentsCol"></div>
+          </article>
+          <article class="panel">
+            <h2 class="h3">Курсы и capacity</h2>
+            <div id="coursesCol"></div>
+          </article>
+        </div>
+
+        <article class="panel">
+          <h2 class="h3">Лог хода алгоритма</h2>
+          <div class="log" id="logBox"></div>
+        </article>
+      </div>
+
+      <div>
+        <article class="panel">
+          <h2 class="h3">Разбор utility на текущем ходе</h2>
+          <div class="formula" id="formulaBox">
+            Нажми <b>Сбросить</b> и затем <b>Следующий ход</b>, чтобы увидеть расчеты.
+          </div>
+          <div style="margin-top:10px; overflow:auto;">
+            <table>
+              <thead>
+                <tr>
+                  <th>Course</th>
+                  <th>Base</th>
+                  <th>FriendBonus</th>
+                  <th>FriendNorm</th>
+                  <th>Total U</th>
+                </tr>
+              </thead>
+              <tbody id="utilityBody"></tbody>
+            </table>
+          </div>
+        </article>
+
+        <article class="panel">
+          <h2 class="h3">Post-phase как продолжение HBS</h2>
+          <div class="mode-tabs">
+            <button class="mode-btn active" data-mode="swap">swap</button>
+            <button class="mode-btn" data-mode="add-drop">add-drop</button>
+            <button class="mode-btn" data-mode="adaptive">adaptive</button>
+          </div>
+          <div class="mode-box">
+            <div id="modeText"></div>
+            <div class="barline"><span id="modeBar"></span></div>
+          </div>
+        </article>
+
+        <article class="panel">
+          <h2 class="h3">Итоги после Draft</h2>
+          <div id="metricsBox" class="muted">Метрики появятся, когда draft завершится.</div>
+        </article>
+      </div>
+    </section>
+
+    <p class="footnote">
+      Формулы и логика синхронизированы с кодом `HBS/hbs_engine.py`: rank-to-utility,
+      reactive friend bonus, snake order и детерминированные tie-break.
+    </p>
+  </main>
+
+  <script>
+    const SCENARIOS = {
+      toy: {
+        title: "Toy example (3x3)",
+        seed: 7,
+        b: 2,
+        students: [
+          { id: "S1", lambda: 0.20 },
+          { id: "S2", lambda: 0.65 },
+          { id: "S3", lambda: 0.35 }
+        ],
+        courses: [
+          { id: "C1", cap: 2 },
+          { id: "C2", cap: 2 },
+          { id: "C3", cap: 2 }
+        ],
+        table1: [
+          { s: "S1", c: "C1", score: 5, pos: 1 }, { s: "S1", c: "C2", score: 4, pos: 2 }, { s: "S1", c: "C3", score: 1, pos: 3 },
+          { s: "S2", c: "C2", score: 5, pos: 1 }, { s: "S2", c: "C1", score: 4, pos: 2 }, { s: "S2", c: "C3", score: 1, pos: 3 },
+          { s: "S3", c: "C2", score: 5, pos: 1 }, { s: "S3", c: "C1", score: 3, pos: 2 }, { s: "S3", c: "C3", score: 2, pos: 3 }
+        ],
+        table2: [
+          { a: "S1", b: "S2", c: "C2", pos: 1, score: 5 }, { a: "S1", b: "S3", c: "C2", pos: 2, score: 5 },
+          { a: "S2", b: "S1", c: "C2", pos: 1, score: 5 }, { a: "S2", b: "S3", c: "C2", pos: 2, score: 4 },
+          { a: "S3", b: "S1", c: "C2", pos: 1, score: 4 }, { a: "S3", b: "S2", c: "C2", pos: 2, score: 5 }
+        ]
+      },
+      fallback: {
+        title: "Fallback score=None",
+        seed: 11,
+        b: 2,
+        students: [
+          { id: "S1", lambda: 0.75 },
+          { id: "S2", lambda: 0.40 },
+          { id: "S3", lambda: 0.55 },
+          { id: "S4", lambda: 0.30 }
+        ],
+        courses: [
+          { id: "C1", cap: 2 },
+          { id: "C2", cap: 2 },
+          { id: "C3", cap: 2 }
+        ],
+        table1: [
+          { s: "S1", c: "C1", score: 5, pos: 1 }, { s: "S1", c: "C2", score: 3, pos: 2 }, { s: "S1", c: "C3", score: 2, pos: 3 },
+          { s: "S2", c: "C2", score: 5, pos: 1 }, { s: "S2", c: "C1", score: 4, pos: 2 }, { s: "S2", c: "C3", score: 1, pos: 3 },
+          { s: "S3", c: "C2", score: 5, pos: 1 }, { s: "S3", c: "C3", score: 4, pos: 2 }, { s: "S3", c: "C1", score: 2, pos: 3 },
+          { s: "S4", c: "C3", score: 5, pos: 1 }, { s: "S4", c: "C2", score: 3, pos: 2 }, { s: "S4", c: "C1", score: 1, pos: 3 }
+        ],
+        table2: [
+          { a: "S1", b: "S2", c: "C2", pos: 1, score: null }, { a: "S1", b: "S3", c: "C2", pos: 2, score: null },
+          { a: "S2", b: "S1", c: "C2", pos: 1, score: null }, { a: "S2", b: "S4", c: "C1", pos: 2, score: null },
+          { a: "S3", b: "S1", c: "C2", pos: 1, score: null }, { a: "S3", b: "S4", c: "C3", pos: 2, score: null },
+          { a: "S4", b: "S3", c: "C3", pos: 1, score: null }, { a: "S4", b: "S2", c: "C1", pos: 2, score: null }
+        ]
+      }
+    };
+
+    const modeInfo = {
+      "swap": "Итеративный поиск лучшего обмена между двумя студентами. Ход принимается только если DeltaW > 0.",
+      "add-drop": "Для каждого студента рассматривается набор текущих курсов + курсы со свободными местами. Берутся top-b по utility.",
+      "adaptive": "Snake-проходы после драфта: студент пытается притянуть более выгодный курс; если курс полный, пробует swap."
+    };
+
+    const el = {
+      scenarioSelect: document.getElementById("scenarioSelect"),
+      projectStats: document.getElementById("projectStats"),
+      resetBtn: document.getElementById("resetBtn"),
+      nextBtn: document.getElementById("nextBtn"),
+      playBtn: document.getElementById("playBtn"),
+      pauseBtn: document.getElementById("pauseBtn"),
+      speedInput: document.getElementById("speedInput"),
+      speedLabel: document.getElementById("speedLabel"),
+      progressPill: document.getElementById("progressPill"),
+      orderTrack: document.getElementById("orderTrack"),
+      studentsCol: document.getElementById("studentsCol"),
+      coursesCol: document.getElementById("coursesCol"),
+      roundLabel: document.getElementById("roundLabel"),
+      utilityBody: document.getElementById("utilityBody"),
+      formulaBox: document.getElementById("formulaBox"),
+      logBox: document.getElementById("logBox"),
+      modeText: document.getElementById("modeText"),
+      modeBar: document.getElementById("modeBar"),
+      metricsBox: document.getElementById("metricsBox"),
+      flowSteps: document.querySelectorAll(".flow-step")
+    };
+
+    let state = null;
+    let autoplay = null;
+
+    class RNG {
+      constructor(seed) { this.s = seed >>> 0; }
+      next() {
+        this.s = (1664525 * this.s + 1013904223) >>> 0;
+        return this.s / 4294967296;
+      }
+    }
+
+    function makeKey(...parts) { return parts.join("|"); }
+
+    function posU(position, kCourses) {
+      if (position == null) return 0;
+      if (kCourses <= 1) return position === 1 ? 1 : 0;
+      return (kCourses - position) / (kCourses - 1);
+    }
+
+    function posUFriend(position, kFriend) {
+      if (position == null) return 0;
+      if (kFriend <= 0) return 0;
+      return (kFriend + 1 - position) / kFriend;
+    }
+
+    function scoreU(score, minV, maxV) {
+      if (score == null || minV == null || maxV == null) return 0;
+      if (maxV <= minV) return 1;
+      const v = (score - minV) / (maxV - minV);
+      return Math.max(0, Math.min(1, v));
+    }
+
+    function shuffleDet(arr, rng) {
+      const a = arr.slice();
+      for (let i = a.length - 1; i > 0; i--) {
+        const j = Math.floor(rng.next() * (i + 1));
+        [a[i], a[j]] = [a[j], a[i]];
+      }
+      return a;
+    }
+
+    function initScenarioOptions() {
+      Object.entries(SCENARIOS).forEach(([id, sc]) => {
+        const opt = document.createElement("option");
+        opt.value = id;
+        opt.textContent = sc.title;
+        el.scenarioSelect.appendChild(opt);
+      });
+    }
+
+    function resetState(scenarioId) {
+      const sc = SCENARIOS[scenarioId];
+      const rng = new RNG(sc.seed);
+
+      const students = sc.students.map(s => s.id);
+      const courses = sc.courses.map(c => c.id);
+
+      const indivByKey = new Map(sc.table1.map(r => [makeKey(r.s, r.c), r]));
+
+      const kFriend = Math.max(1, ...sc.table2.map(r => r.pos));
+      const scoreList = sc.table2.filter(r => r.score != null).map(r => r.score);
+      const scoreMin = scoreList.length ? Math.min(...scoreList) : null;
+      const scoreMax = scoreList.length ? Math.max(...scoreList) : null;
+
+      const pairUByKey = new Map();
+      const friends = new Map();
+      const friendSumBySC = new Map();
+      for (const row of sc.table2) {
+        const w = row.score != null ? scoreU(row.score, scoreMin, scoreMax) : posUFriend(row.pos, kFriend);
+        pairUByKey.set(makeKey(row.a, row.b, row.c), w);
+        if (!friends.has(row.a)) friends.set(row.a, new Set());
+        friends.get(row.a).add(row.b);
+        const scKey = makeKey(row.a, row.c);
+        friendSumBySC.set(scKey, (friendSumBySC.get(scKey) || 0) + w);
+      }
+
+      const maxFriendBonus = new Map();
+      for (const s of students) {
+        let m = 0;
+        for (const c of courses) {
+          m = Math.max(m, friendSumBySC.get(makeKey(s, c)) || 0);
+        }
+        maxFriendBonus.set(s, m > 0 ? m : 1);
+      }
+
+      const allocList = Object.fromEntries(students.map(s => [s, []]));
+      const allocSet = Object.fromEntries(students.map(s => [s, new Set()]));
+      const capLeft = Object.fromEntries(sc.courses.map(c => [c.id, c.cap]));
+      const lambdaByStudent = Object.fromEntries(sc.students.map(s => [s.id, s.lambda]));
+
+      state = {
+        scenario: sc,
+        students,
+        courses,
+        rng,
+        order: shuffleDet(students, rng),
+        round: 1,
+        turnIndex: 0,
+        picksDone: 0,
+        maxPicks: students.length * sc.b,
+        allocList,
+        allocSet,
+        capLeft,
+        indivByKey,
+        pairUByKey,
+        friends,
+        friendSumBySC,
+        maxFriendBonus,
+        lambdaByStudent,
+        log: [],
+        lastEval: null,
+        finished: false
+      };
+      stopAutoplay();
+      setStage("input");
+      renderAll();
+    }
+
+    function positionA(student, course) {
+      const row = state.indivByKey.get(makeKey(student, course));
+      return row ? row.pos : 1e9;
+    }
+
+    function scoreA(student, course) {
+      const row = state.indivByKey.get(makeKey(student, course));
+      return row ? row.score : -1e9;
+    }
+
+    function baseUtility(student, course) {
+      const row = state.indivByKey.get(makeKey(student, course));
+      return posU(row ? row.pos : null, state.courses.length);
+    }
+
+    function friendPref(student, friend, course) {
+      return state.pairUByKey.get(makeKey(student, friend, course)) || 0;
+    }
+
+    function friendBonusReactive(student, course) {
+      let total = 0;
+      const fs = state.friends.get(student);
+      if (!fs) return 0;
+      for (const f of fs) {
+        if (state.allocSet[f] && state.allocSet[f].has(course)) {
+          total += friendPref(student, f, course);
+        }
+      }
+      return total;
+    }
+
+    function utilityComponents(student, course) {
+      const base = baseUtility(student, course);
+      const bonus = friendBonusReactive(student, course);
+      const lambda = state.lambdaByStudent[student] ?? 0.5;
+      const norm = bonus / (state.maxFriendBonus.get(student) || 1);
+      const total = (1 - lambda) * base + lambda * norm;
+      return { total, base, bonus, norm, lambda };
+    }
+
+    function snakeOrderOfRound(round) {
+      return (round % 2 === 1) ? state.order.slice() : state.order.slice().reverse();
+    }
+
+    function stepDraft() {
+      if (state.finished) return false;
+      if (state.round > state.scenario.b) {
+        finishDraft();
+        return false;
+      }
+
+      const turnOrder = snakeOrderOfRound(state.round);
+      if (state.turnIndex >= turnOrder.length) {
+        state.round += 1;
+        state.turnIndex = 0;
+        return stepDraft();
+      }
+
+      setStage("draft");
+      const student = turnOrder[state.turnIndex];
+      const candidates = state.courses.filter(c => state.capLeft[c] > 0 && !state.allocSet[student].has(c));
+      if (!candidates.length) {
+        state.log.push({
+          kind: "noop",
+          text: `R${state.round}: ${student} пропускает ход (нет доступных курсов).`
+        });
+        state.lastEval = { student, rows: [] };
+        state.turnIndex += 1;
+        renderAll();
+        return true;
+      }
+
+      const scored = candidates.map(course => {
+        const comp = utilityComponents(student, course);
+        return {
+          course,
+          uBucket: Number(comp.total.toFixed(9)),
+          pos: positionA(student, course),
+          score: scoreA(student, course),
+          rand: state.rng.next(),
+          ...comp
+        };
+      });
+
+      scored.sort((a, b) => {
+        if (b.uBucket !== a.uBucket) return b.uBucket - a.uBucket;
+        if (a.pos !== b.pos) return a.pos - b.pos;
+        if (b.score !== a.score) return b.score - a.score;
+        if (b.rand !== a.rand) return b.rand - a.rand;
+        return a.course.localeCompare(b.course);
+      });
+
+      const best = scored[0];
+      state.allocList[student].push(best.course);
+      state.allocSet[student].add(best.course);
+      state.capLeft[best.course] -= 1;
+      state.picksDone += 1;
+      state.lastEval = { student, round: state.round, rows: scored, chosen: best.course };
+      state.log.push({
+        kind: "pick",
+        text: `R${state.round}: ${student} -> ${best.course} (U=${best.total.toFixed(3)}, Base=${best.base.toFixed(3)}, Bonus=${best.bonus.toFixed(3)})`
+      });
+
+      state.turnIndex += 1;
+      if (state.round > state.scenario.b || (state.round === state.scenario.b && state.turnIndex >= turnOrder.length)) {
+        const hasFuture = state.students.some(s => state.courses.some(c => state.capLeft[c] > 0 && !state.allocSet[s].has(c)));
+        if (!hasFuture || state.round === state.scenario.b) {
+          finishDraft();
+        }
+      }
+      renderAll();
+      return true;
+    }
+
+    function finishDraft() {
+      state.finished = true;
+      setStage("metrics");
+      const total = computeTotalDraftUtility();
+      const avg = state.students.length ? total / state.students.length : 0;
+      const fill = computeFillRate();
+      el.metricsBox.innerHTML =
+        `<b>Total pick utility:</b> ${total.toFixed(3)}<br>` +
+        `<b>Avg utility/student:</b> ${avg.toFixed(3)}<br>` +
+        `<b>Course fill rate mean:</b> ${(fill * 100).toFixed(1)}%<br>` +
+        `<span class="muted">Дальше можно запускать post-phase режимы (swap/add-drop/adaptive) в основном CLI/engine.</span>`;
+      stopAutoplay();
+    }
+
+    function computeTotalDraftUtility() {
+      let sum = 0;
+      for (const entry of state.log) {
+        if (entry.kind !== "pick") continue;
+        const m = entry.text.match(/U=([0-9.]+)/);
+        if (m) sum += Number(m[1]);
+      }
+      return sum;
+    }
+
+    function computeFillRate() {
+      let rates = [];
+      for (const c of state.scenario.courses) {
+        const used = c.cap - state.capLeft[c.id];
+        rates.push(used / c.cap);
+      }
+      return rates.reduce((a, b) => a + b, 0) / rates.length;
+    }
+
+    function setStage(stage) {
+      el.flowSteps.forEach(node => node.classList.toggle("active", node.dataset.stage === stage));
+    }
+
+    function renderStats() {
+      const sc = SCENARIOS[el.scenarioSelect.value];
+      const stats = [
+        { value: sc.students.length, label: "Students" },
+        { value: sc.courses.length, label: "Courses" },
+        { value: sc.table1.length, label: "Table1 rows" },
+        { value: sc.table2.length, label: "Table2 rows" }
+      ];
+      el.projectStats.innerHTML = stats.map(s =>
+        `<div class="card"><div class="kpi">${s.value}</div><div class="kpi-label">${s.label}</div></div>`
+      ).join("");
+    }
+
+    function renderOrder() {
+      const order = snakeOrderOfRound(state.round > state.scenario.b ? state.scenario.b : state.round);
+      const current = order[state.turnIndex];
+      el.roundLabel.textContent = `Раунд: ${Math.min(state.round, state.scenario.b)} / ${state.scenario.b}`;
+      el.orderTrack.innerHTML = order.map(s =>
+        `<span class="pill ${s === current && !state.finished ? "current" : ""}">${s}</span>`
+      ).join("");
+    }
+
+    function renderStudents() {
+      const html = state.students.map(s => {
+        const picks = state.allocList[s];
+        const chips = picks.length
+          ? picks.map(c => `<span class="chip">${c}</span>`).join("")
+          : `<span class="chip empty">пока пусто</span>`;
+        return `
+          <div class="student-box">
+            <div class="student-top">
+              <strong>${s}</strong>
+              <span class="pill">lambda=${(state.lambdaByStudent[s] ?? 0).toFixed(2)}</span>
+            </div>
+            <div class="chips">${chips}</div>
+          </div>
+        `;
+      }).join("");
+      el.studentsCol.innerHTML = html;
+    }
+
+    function renderCourses() {
+      const html = state.scenario.courses.map(c => {
+        const holders = state.students.filter(s => state.allocSet[s].has(c.id));
+        const used = c.cap - state.capLeft[c.id];
+        const width = (used / c.cap) * 100;
+        const chips = holders.length
+          ? holders.map(s => `<span class="chip">${s}</span>`).join("")
+          : `<span class="chip empty">нет назначений</span>`;
+        return `
+          <div class="course-box">
+            <div class="student-top">
+              <strong>${c.id}</strong>
+              <span class="pill">${used}/${c.cap}</span>
+            </div>
+            <div class="chips">${chips}</div>
+            <div class="cap"><span style="width:${width}%;"></span></div>
+          </div>
+        `;
+      }).join("");
+      el.coursesCol.innerHTML = html;
+    }
+
+    function renderUtilityTable() {
+      const last = state.lastEval;
+      if (!last || !last.rows || !last.rows.length) {
+        el.utilityBody.innerHTML = `<tr><td colspan="5" class="muted">Нет кандидатов на текущем ходе.</td></tr>`;
+        return;
+      }
+      el.utilityBody.innerHTML = last.rows.map(r => `
+        <tr class="${r.course === last.chosen ? "best" : ""}">
+          <td>${r.course}</td>
+          <td>${r.base.toFixed(3)}</td>
+          <td>${r.bonus.toFixed(3)}</td>
+          <td>${r.norm.toFixed(3)}</td>
+          <td><b>${r.total.toFixed(3)}</b></td>
+        </tr>
+      `).join("");
+    }
+
+    function renderFormula() {
+      const last = state.lastEval;
+      if (!last || !last.rows || !last.rows.length) {
+        el.formulaBox.innerHTML = "На этом ходе у студента не было доступных кандидатов.";
+        return;
+      }
+      const best = last.rows[0];
+      el.formulaBox.innerHTML =
+        `<b>Студент:</b> ${last.student}, <b>выбран курс:</b> ${best.course}<br>` +
+        `<code>U = (1 - lambda) * Base + lambda * (FriendBonus / MaxFriendBonus)</code><br>` +
+        `U = (1 - ${best.lambda.toFixed(2)}) * ${best.base.toFixed(3)} + ${best.lambda.toFixed(2)} * (${best.bonus.toFixed(3)} / ${(state.maxFriendBonus.get(last.student) || 1).toFixed(3)})<br>` +
+        `<b>Итого:</b> ${best.total.toFixed(6)}<br>` +
+        `<span class="muted">Tie-break: max utility, потом min Position, потом max Score, потом seeded random.</span>`;
+    }
+
+    function renderLog() {
+      const view = state.log.slice(-24).map(item => `<div class="log-item">${item.text}</div>`).join("");
+      el.logBox.innerHTML = view || `<div class="log-item muted">Лог пока пуст.</div>`;
+    }
+
+    function renderProgress() {
+      el.progressPill.textContent = `${state.picksDone} / ${state.maxPicks} picks`;
+    }
+
+    function renderAll() {
+      renderStats();
+      renderOrder();
+      renderStudents();
+      renderCourses();
+      renderUtilityTable();
+      renderFormula();
+      renderLog();
+      renderProgress();
+    }
+
+    function startAutoplay() {
+      stopAutoplay();
+      const speed = Number(el.speedInput.value);
+      autoplay = setInterval(() => {
+        const moved = stepDraft();
+        if (!moved || state.finished) stopAutoplay();
+      }, speed);
+    }
+
+    function stopAutoplay() {
+      if (autoplay) {
+        clearInterval(autoplay);
+        autoplay = null;
+      }
+    }
+
+    function bindEvents() {
+      el.scenarioSelect.addEventListener("change", () => {
+        setStage("utility");
+        resetState(el.scenarioSelect.value);
+      });
+      el.resetBtn.addEventListener("click", () => resetState(el.scenarioSelect.value));
+      el.nextBtn.addEventListener("click", () => stepDraft());
+      el.playBtn.addEventListener("click", () => startAutoplay());
+      el.pauseBtn.addEventListener("click", () => stopAutoplay());
+      el.speedInput.addEventListener("input", () => {
+        el.speedLabel.textContent = `${el.speedInput.value} мс`;
+        if (autoplay) startAutoplay();
+      });
+
+      document.querySelectorAll(".mode-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+          document.querySelectorAll(".mode-btn").forEach(b => b.classList.remove("active"));
+          btn.classList.add("active");
+          const mode = btn.dataset.mode;
+          el.modeText.textContent = modeInfo[mode];
+          const widths = { "swap": 45, "add-drop": 70, "adaptive": 90 };
+          el.modeBar.style.width = `${widths[mode]}%`;
+          setStage("post");
+        });
+      });
+    }
+
+    function init() {
+      initScenarioOptions();
+      el.scenarioSelect.value = "toy";
+      el.speedLabel.textContent = `${el.speedInput.value} мс`;
+      el.modeText.textContent = modeInfo["swap"];
+      el.modeBar.style.width = "45%";
+      bindEvents();
+      resetState("toy");
+    }
+
+    init();
+  </script>
+</body>
+</html>

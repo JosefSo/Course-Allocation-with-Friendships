@@ -888,7 +888,7 @@ class _HbsSocialDraftEngine:
 
         if n <= 0:
             return []
-
+        # Ensure we have a draft order to reuse.
         if self._draft_order is None:
             order = self._students[:]
             self._rng.shuffle(order)
@@ -897,35 +897,45 @@ class _HbsSocialDraftEngine:
         eps = 1e-12
         move_count = 0
         post_log: list[PostAllocLogRow] = []
-
+        # Iterate up to n passes.
         for offset in range(n):
             iteration = start_iteration + offset
+            # Print progress header.
             if self._config.progress:
                 print(f"Iter {iteration}/{self._config.total_iters}: ADAPTIVE pass", flush=True)
-
+            # Determine turn order for this pass.
             base_order = self._draft_order
+            # Snake order based on offset parity.
             turn_order = base_order if offset % 2 == 0 else list(reversed(base_order))
             changed_in_pass = False
 
+            # Iterate over students in turn order.
             for student_id in turn_order:
+                # Gather current courses.
                 current_courses = sorted(self._alloc_set[student_id])
+                # Skip students with no courses.
                 if not current_courses:
                     continue
-
+                # Search for best move (add/drop or swap).
                 best_delta = 0.0
                 best_move: tuple[str, str, str, str, str] | None = None
 
+                # Try each possible target course.
                 for target_course in self._courses:
+                    # Skip already-allocated courses.
                     if target_course in self._alloc_set[student_id]:
                         continue
-
+                    # Try add/drop if capacity is available.
                     if self._capacity_left[target_course] > 0:
+                        # Evaluate all possible drops.
                         for drop_course in current_courses:
                             delta = self._add_drop_delta(student_id, drop_course, target_course)
                             move_key = ("add_drop", student_id, target_course, "", drop_course)
+                            # Check for best move.
                             if delta > best_delta + eps:
                                 best_delta = delta
                                 best_move = move_key
+                            # Tie-breaker for equal deltas.
                             elif (
                                 abs(delta - best_delta) <= eps
                                 and best_move is not None
@@ -940,10 +950,14 @@ class _HbsSocialDraftEngine:
                         if t != student_id and target_course in self._alloc_set[t]
                     ]
                     holders.sort()
+                    # Try swaps with each holder.
                     for holder_id in holders:
+                        # Evaluate all possible drops.
                         for drop_course in current_courses:
+                            # Skip if holder already has the drop_course.
                             if drop_course in self._alloc_set[holder_id]:
                                 continue
+                            # Evaluate swap delta.
                             delta = self._swap_delta(student_id, drop_course, holder_id, target_course)
                             move_key = ("swap", student_id, target_course, holder_id, drop_course)
                             if delta > best_delta + eps:

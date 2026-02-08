@@ -55,6 +55,24 @@ class TestTieBreaks(unittest.TestCase):
         self.assertAlmostEqual(pref_1, pref_2, places=9)
         self.assertAlmostEqual(pref_1, 0.5, places=9)
 
+    def test_pref_uses_position_when_score_missing(self) -> None:
+        individual_prefs = [
+            IndividualPref(student_id="S1", course_id="C1", score=5, position=1)
+        ]
+        pair_prefs = [
+            PairPref(student_id_a="S1", student_id_b="S2", course_id="C1", position=1, score=None),
+            PairPref(student_id_a="S1", student_id_b="S3", course_id="C1", position=3, score=None),
+            PairPref(student_id_a="S2", student_id_b="S1", course_id="C1", position=1, score=None),
+            PairPref(student_id_a="S3", student_id_b="S1", course_id="C1", position=1, score=None),
+        ]
+        engine = _make_engine(individual_prefs=individual_prefs, pair_prefs=pair_prefs)
+
+        pref_rank_1 = engine._friend_preference_utility("S1", "S2", "C1")
+        pref_rank_3 = engine._friend_preference_utility("S1", "S3", "C1")
+        self.assertAlmostEqual(pref_rank_1, 1.0, places=9)
+        self.assertAlmostEqual(pref_rank_3, 1.0 / 3.0, places=9)
+        self.assertGreater(pref_rank_1, pref_rank_3)
+
     def test_course_choice_ties_by_position(self) -> None:
         individual_prefs = [
             IndividualPref(student_id="S1", course_id="C1", score=5, position=1),
