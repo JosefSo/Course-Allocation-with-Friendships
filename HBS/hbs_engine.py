@@ -699,8 +699,8 @@ class _HbsSocialDraftEngine:
 
                 # We want deterministic but tie-breakable picks:
                 #   1) max utility (bucketed to treat "similar utility" as ties)
-                #   2) min rank position (Position from table A; smaller is better)
-                #   3) max raw score (Score from table A)
+                #   2) max raw score (Score from table A)
+                #   3) min rank position (Position from table A; smaller is better)
                 #   4) seeded random (break remaining ties)
                 #   5) stable course id (as a final deterministic tie-breaker)
                 scored: list[tuple[float, int, int, float, str, float, float, float]] = []
@@ -722,7 +722,7 @@ class _HbsSocialDraftEngine:
 
                 _u_bucket, _pos, _score, _rnd, course_id_star, u, base, friend_bonus = max(
                     scored,
-                    key=lambda t: (t[0], -t[1], t[2], t[3], t[4]),
+                    key=lambda t: (t[0], t[2], -t[1], t[3], t[4]),
                 )
 
                 self._alloc_list[student_id].append(course_id_star)
@@ -895,7 +895,7 @@ class _HbsSocialDraftEngine:
                             course_id,
                         )
                     )
-                scored.sort(key=lambda t: (t[0], -t[1], t[2], t[3], t[4]), reverse=True)
+                scored.sort(key=lambda t: (t[0], t[2], -t[1], t[3], t[4]), reverse=True)
 
                 k = min(self._config.max_courses, len(scored))
                 desired_list = [item[4] for item in scored[:k]]
