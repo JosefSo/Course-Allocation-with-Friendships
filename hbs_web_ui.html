@@ -1,0 +1,424 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>HBS Social Course Allocation UI</title>
+  <style>
+    :root {
+      --bg: #f4f5f7;
+      --card: #ffffff;
+      --ink: #1a2333;
+      --line: #d7dce5;
+      --accent: #005fb8;
+      --danger: #b42318;
+      --ok: #027a48;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font: 14px/1.45 "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    }
+    .wrap {
+      width: min(1200px, 95vw);
+      margin: 20px auto 40px;
+      display: grid;
+      gap: 14px;
+    }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 14px;
+    }
+    h1 {
+      margin: 0;
+      font-size: 24px;
+    }
+    p { margin: 8px 0 0; }
+    .grid {
+      display: grid;
+      gap: 12px;
+    }
+    .grid.params {
+      grid-template-columns: repeat(auto-fill, minmax(165px, 1fr));
+    }
+    .grid.files {
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    }
+    label {
+      display: grid;
+      gap: 6px;
+      font-weight: 600;
+    }
+    input, select, button {
+      font: inherit;
+    }
+    input, select {
+      border: 1px solid #bfc7d6;
+      border-radius: 8px;
+      padding: 8px;
+      background: #fff;
+      color: var(--ink);
+    }
+    .actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 10px;
+    }
+    button {
+      border: 1px solid #0f58a5;
+      background: var(--accent);
+      color: #fff;
+      border-radius: 8px;
+      padding: 9px 12px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    button.secondary {
+      border-color: #9ca8be;
+      background: #f8f9fc;
+      color: #29364d;
+    }
+    button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+    .inline-note {
+      margin-top: 6px;
+      color: #49566f;
+      font-size: 12px;
+      word-break: break-word;
+    }
+    .status {
+      margin-top: 8px;
+      font-weight: 600;
+    }
+    .status.ok { color: var(--ok); }
+    .status.error { color: var(--danger); }
+    .output {
+      display: grid;
+      gap: 10px;
+    }
+    pre {
+      margin: 0;
+      padding: 10px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #f9fafc;
+      overflow: auto;
+      max-height: 320px;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+    th, td {
+      border: 1px solid var(--line);
+      padding: 6px 7px;
+      text-align: left;
+      vertical-align: top;
+    }
+    th {
+      background: #f0f3f9;
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <section class="card">
+      <h1>HBS Social Course Allocation UI</h1>
+      <p>Select existing CSV tables from the project folder and run allocation without terminal commands.</p>
+    </section>
+
+    <section class="card">
+      <h2>Run Parameters</h2>
+      <div class="grid params">
+        <label>cap_default
+          <input id="cap_default" type="number" value="10" min="1">
+        </label>
+        <label>b (max courses)
+          <input id="b" type="number" value="3" min="1">
+        </label>
+        <label>seed
+          <input id="seed" type="number" value="42">
+        </label>
+        <label>draft_rounds (blank = b)
+          <input id="draft_rounds" type="number" min="0" placeholder="auto">
+        </label>
+        <label>post_iters
+          <input id="post_iters" type="number" value="0" min="0">
+        </label>
+        <label>improve_mode
+          <select id="improve_mode">
+            <option value="swap">swap</option>
+            <option value="add-drop">add-drop</option>
+            <option value="adaptive">adaptive</option>
+            <option value="adaptive-global">adaptive-global</option>
+            <option value="adaptive-greedy">adaptive-greedy</option>
+          </select>
+        </label>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Input Tables</h2>
+      <div id="tables_dir" class="inline-note">Loading table list...</div>
+      <div class="grid files" style="margin-top: 10px;">
+        <label>Table 1 file (required)
+          <select id="table1_file"></select>
+        </label>
+        <label>Table 2 file (required)
+          <select id="table2_file"></select>
+        </label>
+        <label>Lambda file (optional)
+          <select id="lambda_file"></select>
+        </label>
+      </div>
+      <div class="actions">
+        <button type="button" id="run_btn">Run Allocation</button>
+        <button type="button" class="secondary" id="refresh_files_btn">Refresh File List</button>
+        <button type="button" class="secondary" id="clear_results_btn">Clear Results</button>
+      </div>
+      <div class="inline-note">Files are loaded from the server-side <code>tables/</code> folder.</div>
+      <div id="status" class="status"></div>
+    </section>
+
+    <section class="card output">
+      <h2>Results</h2>
+      <div id="download_buttons" class="actions"></div>
+
+      <h3>Summary</h3>
+      <pre id="summary_view">No run yet.</pre>
+
+      <h3>Allocation</h3>
+      <div style="overflow:auto;">
+        <table id="allocation_table">
+          <thead>
+            <tr><th>StudentID</th><th>Courses</th></tr>
+          </thead>
+          <tbody>
+            <tr><td colspan="2">No run yet.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Pick Log (JSON)</h3>
+      <pre id="picklog_view">No run yet.</pre>
+    </section>
+  </main>
+
+  <script>
+    const statusEl = document.getElementById("status");
+    const runBtn = document.getElementById("run_btn");
+    const tableEl = document.getElementById("allocation_table").querySelector("tbody");
+    const summaryEl = document.getElementById("summary_view");
+    const picklogEl = document.getElementById("picklog_view");
+    const downloadsEl = document.getElementById("download_buttons");
+    const tablesDirEl = document.getElementById("tables_dir");
+
+    function setStatus(message, kind) {
+      statusEl.textContent = message;
+      statusEl.className = "status " + (kind || "");
+    }
+
+    function readInt(id, fallback) {
+      const raw = document.getElementById(id).value.trim();
+      if (!raw) return fallback;
+      const value = Number.parseInt(raw, 10);
+      if (Number.isNaN(value)) {
+        throw new Error(id + " must be an integer");
+      }
+      return value;
+    }
+
+    function fillSelect(id, files, required) {
+      const select = document.getElementById(id);
+      const oldValue = select.value;
+      select.innerHTML = "";
+
+      if (!required) {
+        const noneOption = document.createElement("option");
+        noneOption.value = "";
+        noneOption.textContent = "(none)";
+        select.appendChild(noneOption);
+      }
+
+      files.forEach((fileName) => {
+        const option = document.createElement("option");
+        option.value = fileName;
+        option.textContent = fileName;
+        select.appendChild(option);
+      });
+
+      if (files.length === 0 && required) {
+        const emptyOption = document.createElement("option");
+        emptyOption.value = "";
+        emptyOption.textContent = "No files found";
+        select.appendChild(emptyOption);
+      }
+
+      const restoreValue = Array.from(select.options).some((opt) => opt.value === oldValue);
+      if (restoreValue) {
+        select.value = oldValue;
+      }
+    }
+
+    async function loadFiles() {
+      setStatus("Loading file list...", "");
+      try {
+        const response = await fetch("/api/tables");
+        const data = await response.json();
+        if (!response.ok || !data.ok) {
+          throw new Error(data.error || ("HTTP " + response.status));
+        }
+
+        fillSelect("table1_file", data.table1 || [], true);
+        fillSelect("table2_file", data.table2 || [], true);
+        fillSelect("lambda_file", data.lambda || [], false);
+
+        const countAll = (data.all || []).length;
+        tablesDirEl.textContent = "Tables directory: " + (data.tables_dir || "tables") + " (" + countAll + " CSV files)";
+        setStatus("File list updated.", "ok");
+      } catch (err) {
+        setStatus(err.message, "error");
+      }
+    }
+
+    function payloadFromForm() {
+      const draftRaw = document.getElementById("draft_rounds").value.trim();
+      const table1File = document.getElementById("table1_file").value;
+      const table2File = document.getElementById("table2_file").value;
+      const lambdaFile = document.getElementById("lambda_file").value;
+
+      if (!table1File) {
+        throw new Error("Select Table 1 file");
+      }
+      if (!table2File) {
+        throw new Error("Select Table 2 file");
+      }
+
+      return {
+        table1_file: table1File,
+        table2_file: table2File,
+        lambda_file: lambdaFile || null,
+        cap_default: readInt("cap_default", 10),
+        b: readInt("b", 3),
+        seed: readInt("seed", 42),
+        draft_rounds: draftRaw ? Number.parseInt(draftRaw, 10) : null,
+        post_iters: readInt("post_iters", 0),
+        improve_mode: document.getElementById("improve_mode").value
+      };
+    }
+
+    function renderAllocation(allocMap) {
+      const students = Object.keys(allocMap).sort();
+      if (students.length === 0) {
+        tableEl.innerHTML = "<tr><td colspan='2'>No allocation rows.</td></tr>";
+        return;
+      }
+
+      tableEl.innerHTML = "";
+      students.forEach((student) => {
+        const courses = allocMap[student] || [];
+        const tr = document.createElement("tr");
+        const tdStudent = document.createElement("td");
+        const tdCourses = document.createElement("td");
+        tdStudent.textContent = student;
+        tdCourses.textContent = courses.join(", ");
+        tr.appendChild(tdStudent);
+        tr.appendChild(tdCourses);
+        tableEl.appendChild(tr);
+      });
+    }
+
+    function makeDownloadButton(fileName, content) {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "secondary";
+      btn.textContent = "Download " + fileName;
+      btn.addEventListener("click", () => {
+        const blob = new Blob([content], { type: "text/csv;charset=utf-8" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = fileName;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+      });
+      return btn;
+    }
+
+    function renderDownloads(csvOutputs) {
+      downloadsEl.innerHTML = "";
+      downloadsEl.appendChild(makeDownloadButton("allocation.csv", csvOutputs.allocation || ""));
+      downloadsEl.appendChild(makeDownloadButton("post_allocation.csv", csvOutputs.post_allocation || ""));
+      downloadsEl.appendChild(makeDownloadButton("summary.csv", csvOutputs.summary || ""));
+      downloadsEl.appendChild(makeDownloadButton("metrics_extended.csv", csvOutputs.metrics_extended || ""));
+    }
+
+    async function runAllocation() {
+      let payload;
+      try {
+        payload = payloadFromForm();
+      } catch (err) {
+        setStatus(err.message, "error");
+        return;
+      }
+
+      runBtn.disabled = true;
+      setStatus("Running...", "");
+      try {
+        const response = await fetch("/api/run", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        const data = await response.json();
+        if (!response.ok || !data.ok) {
+          throw new Error(data.error || ("HTTP " + response.status));
+        }
+
+        const summaryText = [
+          "total_utility=" + data.summary.total_utility.toFixed(6),
+          "gini_total_norm=" + data.summary.gini_total_norm.toFixed(6),
+          "gini_base_norm=" + data.summary.gini_base_norm.toFixed(6),
+          "config=" + JSON.stringify(data.config)
+        ].join("\n");
+        summaryEl.textContent = summaryText;
+        renderAllocation(data.allocation || {});
+        picklogEl.textContent = JSON.stringify(data.pick_log || [], null, 2);
+        renderDownloads(data.csv_outputs || {});
+        setStatus("Completed successfully.", "ok");
+      } catch (err) {
+        setStatus(err.message, "error");
+      } finally {
+        runBtn.disabled = false;
+      }
+    }
+
+    function clearResults() {
+      summaryEl.textContent = "No run yet.";
+      picklogEl.textContent = "No run yet.";
+      tableEl.innerHTML = "<tr><td colspan='2'>No run yet.</td></tr>";
+      downloadsEl.innerHTML = "";
+      setStatus("", "");
+    }
+
+    document.getElementById("run_btn").addEventListener("click", runAllocation);
+    document.getElementById("refresh_files_btn").addEventListener("click", loadFiles);
+    document.getElementById("clear_results_btn").addEventListener("click", clearResults);
+
+    loadFiles();
+  </script>
+</body>
+</html>
