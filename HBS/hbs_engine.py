@@ -501,6 +501,87 @@ class _HbsSocialDraftEngine:
 
         return delta
 
+    def _add_drop_delta_for_student(self, student_id: str, drop_course: str, add_course: str) -> float:
+        """
+        Compute ΔU(student) for a 1-for-1 add/drop move for a single student.
+
+        This delta ignores follower externalities and only evaluates utility change
+        for the initiating student.
+        """
+
+        alloc_set = self._alloc_set
+        friends = self._friends_list.get(student_id, ())
+        lambda_s = self._lambda_by_student.get(student_id, self._DEFAULT_LAMBDA)
+        friend_scale_s = lambda_s / self._max_friend_bonus(student_id)
+
+        delta = (1.0 - lambda_s) * (
+            self._base_utility(student_id, add_course) - self._base_utility(student_id, drop_course)
+        )
+
+        if friend_scale_s != 0.0:
+            removed = 0.0
+            for f in friends:
+                if drop_course in alloc_set[f]:
+                    removed += self._friend_preference_utility(student_id, f, drop_course)
+            added = 0.0
+            for f in friends:
+                if add_course in alloc_set[f]:
+                    added += self._friend_preference_utility(student_id, f, add_course)
+            delta += friend_scale_s * (added - removed)
+
+        return delta
+
+    def _swap_delta_for_student(
+        self,
+        student_id: str,
+        drop_course: str,
+        holder_id: str,
+        target_course: str,
+    ) -> float:
+        """
+        Compute ΔU(student) for swapping one course with a holder.
+
+        This delta ignores utility changes for the holder and all followers.
+        """
+
+        alloc_set = self._alloc_set
+
+        def _has_after(friend_id: str, course_id: str) -> bool:
+            if friend_id == student_id:
+                if course_id == drop_course:
+                    return False
+                if course_id == target_course:
+                    return True
+                return course_id in alloc_set[student_id]
+            if friend_id == holder_id:
+                if course_id == target_course:
+                    return False
+                if course_id == drop_course:
+                    return True
+                return course_id in alloc_set[holder_id]
+            return course_id in alloc_set[friend_id]
+
+        friends = self._friends_list.get(student_id, ())
+        lambda_s = self._lambda_by_student.get(student_id, self._DEFAULT_LAMBDA)
+        friend_scale_s = lambda_s / self._max_friend_bonus(student_id)
+
+        delta = (1.0 - lambda_s) * (
+            self._base_utility(student_id, target_course) - self._base_utility(student_id, drop_course)
+        )
+
+        if friend_scale_s != 0.0:
+            removed = 0.0
+            for friend_id in friends:
+                if drop_course in alloc_set[friend_id]:
+                    removed += self._friend_preference_utility(student_id, friend_id, drop_course)
+            added = 0.0
+            for friend_id in friends:
+                if _has_after(friend_id, target_course):
+                    added += self._friend_preference_utility(student_id, friend_id, target_course)
+            delta += friend_scale_s * (added - removed)
+
+        return delta
+
     # ---- Draft execution ----------------------------------------------
 
     def _assert_student_state(self, student_id: str) -> None:
@@ -564,10 +645,17 @@ class _HbsSocialDraftEngine:
                 improvement_iters,
                 start_iteration=draft_rounds + 1,
             )
-        elif self._config.improve_mode == "adaptive":
+        elif self._config.improve_mode in {"adaptive", "adaptive-global"}:
             post_log = self._run_adaptive_improvement(
                 improvement_iters,
                 start_iteration=draft_rounds + 1,
+                objective="global",
+            )
+        elif self._config.improve_mode == "adaptive-greedy":
+            post_log = self._run_adaptive_improvement(
+                improvement_iters,
+                start_iteration=draft_rounds + 1,
+                objective="greedy",
             )
         else:
             raise ValueError(f"Unknown improve_mode: {self._config.improve_mode}")
@@ -875,19 +963,40 @@ class _HbsSocialDraftEngine:
         return post_log
 
     # ---- Adaptive phase -------------------------------------------------------
-    def _run_adaptive_improvement(self, n: int, *, start_iteration: int) -> list[PostAllocLogRow]:
+    def _run_adaptive_improvement(
+        self,
+        n: int,
+        *,
+        start_iteration: int,
+        objective: str,
+    ) -> list[PostAllocLogRow]:
         """
         Adaptive post-phase:
           - snake-order passes using the same seeded permutation as the draft
           - for each student, try to pull toward any missing course
           - if target has capacity -> 1-for-1 add/drop
           - if target is full -> targeted swap with any holder
-          - accept only moves with ΔW_global > eps
+          - objective="global": accept only moves with ΔW_global > eps
+          - objective="greedy": accept only moves with ΔU(student) > eps
           - stop early if a full pass makes no changes
         """
 
         if n <= 0:
             return []
+        if objective not in {"global", "greedy"}:
+            raise ValueError(f"Unknown adaptive objective: {objective}")
+
+        if objective == "global":
+            add_drop_delta_fn = self._add_drop_delta
+            swap_delta_fn = self._swap_delta
+            event_add = "ADAPTIVE_ADD_DROP"
+            event_swap = "ADAPTIVE_SWAP"
+        else:
+            add_drop_delta_fn = self._add_drop_delta_for_student
+            swap_delta_fn = self._swap_delta_for_student
+            event_add = "ADAPTIVE_GREEDY_ADD_DROP"
+            event_swap = "ADAPTIVE_GREEDY_SWAP"
+
         # Ensure we have a draft order to reuse.
         if self._draft_order is None:
             order = self._students[:]
@@ -902,7 +1011,10 @@ class _HbsSocialDraftEngine:
             iteration = start_iteration + offset
             # Print progress header.
             if self._config.progress:
-                print(f"Iter {iteration}/{self._config.total_iters}: ADAPTIVE pass", flush=True)
+                print(
+                    f"Iter {iteration}/{self._config.total_iters}: ADAPTIVE({objective}) pass",
+                    flush=True,
+                )
             # Determine turn order for this pass.
             base_order = self._draft_order
             # Snake order based on offset parity.
@@ -929,7 +1041,7 @@ class _HbsSocialDraftEngine:
                     if self._capacity_left[target_course] > 0:
                         # Evaluate all possible drops.
                         for drop_course in current_courses:
-                            delta = self._add_drop_delta(student_id, drop_course, target_course)
+                            delta = add_drop_delta_fn(student_id, drop_course, target_course)
                             move_key = ("add_drop", student_id, target_course, "", drop_course)
                             # Check for best move.
                             if delta > best_delta + eps:
@@ -958,7 +1070,7 @@ class _HbsSocialDraftEngine:
                             if drop_course in self._alloc_set[holder_id]:
                                 continue
                             # Evaluate swap delta.
-                            delta = self._swap_delta(student_id, drop_course, holder_id, target_course)
+                            delta = swap_delta_fn(student_id, drop_course, holder_id, target_course)
                             move_key = ("swap", student_id, target_course, holder_id, drop_course)
                             if delta > best_delta + eps:
                                 best_delta = delta
@@ -978,7 +1090,14 @@ class _HbsSocialDraftEngine:
                     self._config.delta_check_every > 0
                     and (move_count + 1) % self._config.delta_check_every == 0
                 )
-                before = self._global_welfare() if check_delta else 0.0
+                if check_delta:
+                    before = (
+                        self._global_welfare()
+                        if objective == "global"
+                        else self._student_welfare(s)
+                    )
+                else:
+                    before = 0.0
 
                 if move_type == "add_drop":
                     if self._capacity_left[target_course] <= 0:
@@ -988,7 +1107,7 @@ class _HbsSocialDraftEngine:
                     if self._config.sanity_checks:
                         self._assert_course_capacity(drop_course)
                         self._assert_course_capacity(target_course)
-                    event_type = "ADAPTIVE_ADD_DROP"
+                    event_type = event_add
                     log_row = PostAllocLogRow(
                         iteration=iteration,
                         event_type=event_type,
@@ -1006,7 +1125,7 @@ class _HbsSocialDraftEngine:
                         raise AssertionError("Adaptive swap missing holder_id")
                     self._swap_courses(s, drop_course, holder_id, target_course)
                     self._assert_swap_invariants(s, drop_course, holder_id, target_course)
-                    event_type = "ADAPTIVE_SWAP"
+                    event_type = event_swap
                     log_row = PostAllocLogRow(
                         iteration=iteration,
                         event_type=event_type,
@@ -1021,11 +1140,17 @@ class _HbsSocialDraftEngine:
                     )
 
                 if check_delta:
-                    after = self._global_welfare()
+                    after = (
+                        self._global_welfare()
+                        if objective == "global"
+                        else self._student_welfare(s)
+                    )
                     actual_delta = after - before
                     if abs(actual_delta - best_delta) > 1e-8:
                         raise AssertionError(
-                            f"Adaptive delta mismatch: expected {best_delta:.12f}, got {actual_delta:.12f}"
+                            "Adaptive delta mismatch "
+                            f"(objective={objective}): expected {best_delta:.12f}, "
+                            f"got {actual_delta:.12f}"
                         )
 
                 move_count += 1
@@ -1033,7 +1158,7 @@ class _HbsSocialDraftEngine:
 
                 if self._config.progress:
                     print(
-                        f"Iter {iteration}/{self._config.total_iters}: ADAPTIVE {event_type} "
+                        f"Iter {iteration}/{self._config.total_iters}: ADAPTIVE({objective}) {event_type} "
                         f"Δ={best_delta:.6f}",
                         flush=True,
                     )
@@ -1043,7 +1168,8 @@ class _HbsSocialDraftEngine:
             if not changed_in_pass:
                 if self._config.progress:
                     print(
-                        f"Iter {iteration}/{self._config.total_iters}: ADAPTIVE no-op (early stop)",
+                        f"Iter {iteration}/{self._config.total_iters}: "
+                        f"ADAPTIVE({objective}) no-op (early stop)",
                         flush=True,
                     )
                 post_log.append(

@@ -46,11 +46,11 @@ def _parse_args() -> argparse.Namespace:
     )
     p.add_argument(
         "--improve-mode",
-        choices=["swap", "add-drop", "adaptive"],
+        choices=["swap", "add-drop", "adaptive", "adaptive-global", "adaptive-greedy"],
         default="swap",
         help=(
             "Режим улучшений после драфта: swap (обмены), add-drop (HBS-style) "
-            "или adaptive (snake-order pull + swap/add-drop)"
+            "или adaptive/adaptive-global (глобальный ΔW), adaptive-greedy (локальный ΔU студента)"
         ),
     )
     p.add_argument("--seed", type=int, default=42)

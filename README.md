@@ -5,7 +5,7 @@ This repository contains the code and experiments for my master's thesis project
 ## 1.1 What the project does
 - Simulates an HBS-style snake draft course allocation.
 - Adds a reactive friend bonus to the utility function.
-- Supports optional post-draft improvement (swap or add-drop).
+- Supports optional post-draft improvement (swap, add-drop, adaptive global/greedy).
 - Exports audit logs and fairness/inequality metrics.
 
 ## 1.2 Repository layout
@@ -511,10 +511,12 @@ Example: x=[0, 1] -> Gini=0.5; x=[1, 1, 1] -> Gini=0.
 4. Optional post-phase for `post_iters` iterations:
    - `swap`: best welfare-improving swap between two students per iteration.
    - `add-drop`: HBS-style pass using only courses with spare capacity.
+   - `adaptive-global` (and legacy alias `adaptive`): snake-order per-student best move (add/drop or swap), accepted only if global `ΔW > 0`.
+   - `adaptive-greedy`: same move space as adaptive-global, accepted if current student's `ΔU > 0` (can hurt others).
 
 ## 4. Outputs
 - `allocation.csv` - draft picks only.
-- `post_allocation.csv` - post-phase events (swap/add-drop).
+- `post_allocation.csv` - post-phase events (swap/add-drop/adaptive).
 - `summary.csv` - total utility and normalized Gini metrics.
 - `metrics_extended.csv` - extended fairness and distribution metrics (Jain, Theil, Atkinson, percentiles, and more).
 
@@ -631,11 +633,13 @@ Runs the HBS snake draft with reactive friend bonus and optional post-phase.
 - `--b INT` - max courses per student (default: 3).
 - `--draft-rounds INT` - number of draft rounds (default: `b`).
 - `--post-iters INT` or `--n INT` - post-phase iterations (default: 0).
-- `--improve-mode {swap,add-drop,adaptive}` - post-phase mode (default: `swap`).
+- `--improve-mode {swap,add-drop,adaptive,adaptive-global,adaptive-greedy}` - post-phase mode (default: `swap`).
   - `swap`: best welfare-improving swap per iteration.
   - `add-drop`: HBS-style pass using only courses with spare capacity.
-  - `adaptive`: snake-order passes; each student gets 0/1 best move
+  - `adaptive` (legacy alias) and `adaptive-global`: snake-order passes; each student gets 0/1 best move
     (add/drop if target has space, otherwise swap), accepted only if global `ΔW > 0`.
+  - `adaptive-greedy`: same snake-order move search, accepted only if the current student's
+    individual `ΔU > 0` (global welfare can decrease).
 - `--seed INT` - RNG seed (default: 42).
 - `--progress` - print progress during draft/improve (flag).
 
@@ -686,7 +690,7 @@ python3 hbs_social.py \
   --log-level INFO
 ```
 
-Adaptive post-phase (snake-order pull + swap/add-drop):
+Adaptive-global post-phase (snake-order pull + swap/add-drop, global objective):
 ```bash
 python3 hbs_social.py \
   --csv-a tables/table1_200x8.csv \
@@ -696,7 +700,25 @@ python3 hbs_social.py \
   --b 3 \
   --draft-rounds 3 \
   --post-iters 10 \
-  --improve-mode adaptive \
+  --improve-mode adaptive-global \
+  --seed 11 \
+  --out-allocation results/allocation.csv \
+  --out-adddrop results/post_allocation.csv \
+  --out-summary results/summary.csv \
+  --out-metrics-extended results/metrics_extended.csv
+```
+
+Adaptive-greedy post-phase (same moves, individual objective):
+```bash
+python3 hbs_social.py \
+  --csv-a tables/table1_200x8.csv \
+  --csv-b tables/table2_200x8.csv \
+  --csv-lambda tables/table3_lambda_200x8.csv \
+  --cap-default 80 \
+  --b 3 \
+  --draft-rounds 3 \
+  --post-iters 10 \
+  --improve-mode adaptive-greedy \
   --seed 11 \
   --out-allocation results/allocation.csv \
   --out-adddrop results/post_allocation.csv \
