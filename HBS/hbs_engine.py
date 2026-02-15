@@ -645,7 +645,7 @@ class _HbsSocialDraftEngine:
                 improvement_iters,
                 start_iteration=draft_rounds + 1,
             )
-        elif self._config.improve_mode in {"adaptive", "adaptive-global"}:
+        elif self._config.improve_mode == "adaptive-global":
             post_log = self._run_adaptive_improvement(
                 improvement_iters,
                 start_iteration=draft_rounds + 1,

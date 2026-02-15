@@ -40,9 +40,9 @@ def run_hbs_social(
         raise ValueError("b must be > 0")
     if post_iters < 0:
         raise ValueError("post_iters must be >= 0")
-    if improve_mode not in {"swap", "add-drop", "adaptive", "adaptive-global", "adaptive-greedy"}:
+    if improve_mode not in {"swap", "add-drop", "adaptive-global", "adaptive-greedy"}:
         raise ValueError(
-            "improve_mode must be one of: swap, add-drop, adaptive, "
+            "improve_mode must be one of: swap, add-drop, "
             "adaptive-global, adaptive-greedy"
         )
     if delta_check_every < 0:

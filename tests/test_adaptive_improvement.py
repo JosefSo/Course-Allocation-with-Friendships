@@ -71,7 +71,7 @@ def _write_tradeoff_tables(csv_a: Path, csv_b: Path) -> None:
 
 
 class TestAdaptiveImprovement(unittest.TestCase):
-    def test_adaptive_add_drop_improves_and_stops_early(self) -> None:
+    def test_adaptive_global_add_drop_improves_and_stops_early(self) -> None:
         with TemporaryDirectory() as tmp:
             workdir = Path(tmp)
             csv_a = workdir / "table1.csv"
@@ -86,7 +86,7 @@ class TestAdaptiveImprovement(unittest.TestCase):
                 seed=5,  # Ensures S1 drafts before S2/S3.
                 draft_rounds=1,
                 post_iters=5,
-                improve_mode="adaptive",
+                improve_mode="adaptive-global",
                 delta_check_every=1,
             )
 
@@ -97,39 +97,6 @@ class TestAdaptiveImprovement(unittest.TestCase):
             # Early stop: post_log should contain a no-op row and be shorter than post_iters.
             self.assertLess(len(result.post_log), 5)
             self.assertEqual(result.post_log[-1].event_type, "")
-
-    def test_adaptive_alias_matches_adaptive_global(self) -> None:
-        with TemporaryDirectory() as tmp:
-            workdir = Path(tmp)
-            csv_a = workdir / "table1.csv"
-            csv_b = workdir / "table2.csv"
-            _write_tables(csv_a, csv_b)
-
-            result_alias = run_hbs_social(
-                csv_a,
-                csv_b,
-                cap_default=3,
-                b=1,
-                seed=5,
-                draft_rounds=1,
-                post_iters=5,
-                improve_mode="adaptive",
-                delta_check_every=1,
-            )
-            result_global = run_hbs_social(
-                csv_a,
-                csv_b,
-                cap_default=3,
-                b=1,
-                seed=5,
-                draft_rounds=1,
-                post_iters=5,
-                improve_mode="adaptive-global",
-                delta_check_every=1,
-            )
-
-            self.assertEqual(result_alias.alloc, result_global.alloc)
-            self.assertEqual(result_alias.post_log, result_global.post_log)
 
     def test_adaptive_greedy_accepts_student_gain_when_global_is_not_positive(self) -> None:
         with TemporaryDirectory() as tmp:

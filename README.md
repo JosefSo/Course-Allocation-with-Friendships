@@ -511,12 +511,12 @@ Example: x=[0, 1] -> Gini=0.5; x=[1, 1, 1] -> Gini=0.
 4. Optional post-phase for `post_iters` iterations:
    - `swap`: best welfare-improving swap between two students per iteration.
    - `add-drop`: HBS-style pass using only courses with spare capacity.
-   - `adaptive-global` (and legacy alias `adaptive`): snake-order per-student best move (add/drop or swap), accepted only if global `ΔW > 0`.
+   - `adaptive-global`: snake-order per-student best move (add/drop or swap), accepted only if global `ΔW > 0`.
    - `adaptive-greedy`: same move space as adaptive-global, accepted if current student's `ΔU > 0` (can hurt others).
 
 ## 4. Outputs
 - `allocation.csv` - draft picks only.
-- `post_allocation.csv` - post-phase events (swap/add-drop/adaptive).
+- `post_allocation.csv` - post-phase events (swap/add-drop/adaptive-global/adaptive-greedy).
 - `summary.csv` - total utility and normalized Gini metrics.
 - `metrics_extended.csv` - extended fairness and distribution metrics (Jain, Theil, Atkinson, percentiles, and more).
 
@@ -633,10 +633,10 @@ Runs the HBS snake draft with reactive friend bonus and optional post-phase.
 - `--b INT` - max courses per student (default: 3).
 - `--draft-rounds INT` - number of draft rounds (default: `b`).
 - `--post-iters INT` or `--n INT` - post-phase iterations (default: 0).
-- `--improve-mode {swap,add-drop,adaptive,adaptive-global,adaptive-greedy}` - post-phase mode (default: `swap`).
+- `--improve-mode {swap,add-drop,adaptive-global,adaptive-greedy}` - post-phase mode (default: `swap`).
   - `swap`: best welfare-improving swap per iteration.
   - `add-drop`: HBS-style pass using only courses with spare capacity.
-  - `adaptive` (legacy alias) and `adaptive-global`: snake-order passes; each student gets 0/1 best move
+  - `adaptive-global`: snake-order passes; each student gets 0/1 best move
     (add/drop if target has space, otherwise swap), accepted only if global `ΔW > 0`.
   - `adaptive-greedy`: same snake-order move search, accepted only if the current student's
     individual `ΔU > 0` (global welfare can decrease).

@@ -77,7 +77,7 @@ class TestInputValidation(unittest.TestCase):
             _write_table_1(csv_a)
             _write_table_2(csv_b)
 
-            for mode in ("adaptive", "adaptive-global", "adaptive-greedy"):
+            for mode in ("adaptive-global", "adaptive-greedy"):
                 result = run_hbs_social(
                     csv_a,
                     csv_b,
@@ -89,6 +89,26 @@ class TestInputValidation(unittest.TestCase):
                     improve_mode=mode,
                 )
                 self.assertIn("S1", result.alloc)
+
+    def test_improve_mode_adaptive_alias_rejected(self) -> None:
+        with TemporaryDirectory() as tmp:
+            workdir = Path(tmp)
+            csv_a = workdir / "table1.csv"
+            csv_b = workdir / "table2.csv"
+            _write_table_1(csv_a)
+            _write_table_2(csv_b)
+
+            with self.assertRaises(ValueError):
+                run_hbs_social(
+                    csv_a,
+                    csv_b,
+                    cap_default=1,
+                    b=1,
+                    seed=1,
+                    draft_rounds=1,
+                    post_iters=0,
+                    improve_mode="adaptive",
+                )
 
     def test_improve_mode_invalid_value_rejected(self) -> None:
         with TemporaryDirectory() as tmp:
