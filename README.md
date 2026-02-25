@@ -17,6 +17,7 @@ A deterministic snake-draft course allocation engine with **reactive social pref
 - [CLI Reference](#cli-reference)
   - [Data Generator](#data-generator-generategenerate_tablespy)
   - [Allocator](#allocator-hbs_socialpy)
+  - [Web UI](#web-ui-hbs_webpy--hbs_web_uihtml)
 - [Mathematical Model](#mathematical-model)
   - [Base Utility](#base-utility-table-1)
   - [Friend Preference](#friend-preference-table-2)
@@ -45,6 +46,7 @@ A deterministic snake-draft course allocation engine with **reactive social pref
 - **Deterministic tie-breaking** chain: utility (within tau) &rarr; score &rarr; position &rarr; seeded random &rarr; course ID.
 - **Comprehensive fairness metrics:** Gini, Jain, Theil, Atkinson indices; percentile distributions; friend overlap statistics.
 - **Audit trail:** every pick and post-phase move is logged with full utility decomposition.
+- **Local web UI** for browser-based runs with CSV selection and one-click downloads.
 - **Interactive visualization** (HTML/Canvas) with animated bipartite graph, step-by-step playback, and utility breakdown charts.
 
 ---
@@ -61,6 +63,8 @@ A deterministic snake-draft course allocation engine with **reactive social pref
 ```
 .
 ├── hbs_social.py                  # CLI entrypoint
+├── hbs_web.py                     # Web UI entrypoint (local HTTP server)
+├── hbs_web_ui.html                # Browser UI for running allocations
 ├── hbs_visualization.html         # Interactive browser visualization
 ├── HBS/
 │   ├── __init__.py
@@ -70,7 +74,8 @@ A deterministic snake-draft course allocation engine with **reactive social pref
 │   ├── hbs_domain.py              # Data model (7 frozen dataclasses)
 │   ├── hbs_engine.py              # Core allocation engine (~1270 LOC)
 │   ├── hbs_io.py                  # CSV readers/writers with schema validation
-│   └── hbs_metrics.py             # Gini, Jain, Theil, Atkinson computations
+│   ├── hbs_metrics.py             # Gini, Jain, Theil, Atkinson computations
+│   └── hbs_web.py                 # HTTP handlers and /api/run endpoint
 ├── generate/
 │   └── generate_tables.py         # Synthetic data generator
 └── tests/
@@ -116,13 +121,21 @@ python hbs_social.py \
   --seed 11 --progress
 ```
 
-**4. Run tests:**
+**4. Or run everything from a browser (instead of CLI runs):**
+
+```bash
+python hbs_web.py --host 127.0.0.1 --port 8000
+```
+
+Then open `http://127.0.0.1:8000` and run allocations from the UI.
+
+**5. Run tests:**
 
 ```bash
 python tests/run_all_tests.py
 ```
 
-**5. Open the visualization:**
+**6. Open the visualization:**
 
 Open `hbs_visualization.html` in a browser. Select a scenario, press **Play** or step through with **Следующий ход**.
 
@@ -244,6 +257,47 @@ python hbs_social.py \
 | `--sanity-checks` | Enable allocation invariant checks |
 | `--delta-check-every N` | Validate move deltas every N moves (0 = off) |
 | `--log-level` | `CRITICAL` / `ERROR` / `WARNING` / `INFO` / `DEBUG` |
+
+### Web UI (`hbs_web.py` + `hbs_web_ui.html`)
+
+You can run allocation from a browser instead of repeatedly typing CLI commands.
+
+```bash
+python hbs_web.py --host 127.0.0.1 --port 8000
+```
+
+Open `http://127.0.0.1:8000`.
+
+The web UI calls the same `run_hbs_social(...)` backend as CLI, so allocation logic and determinism are identical.
+
+**Browser workflow:**
+
+1. Click **Refresh File List**.
+2. Select **Table 1 file (required)** and **Table 2 file (required)**.
+3. Select **Lambda file (optional)** or leave `(none)` to use default `LambdaFriend=0.5`.
+4. Set run parameters (`cap_default`, `b`, `seed`, `draft_rounds`, `post_iters`, `improve_mode`).
+5. Click **Run Allocation**.
+6. Inspect **Summary**, **Allocation**, **Pick Log**, then download CSV outputs.
+
+**What can be selected in browser:**
+
+- File-based input (UI): choose CSVs found in `tables/` (`table1_*`, `table2_*`, `table3_*` / `*lambda*`).
+- Optional lambda: if omitted, per-student social weight defaults to `0.5`.
+- `draft_rounds`: leave blank to auto-use `b`.
+- `improve_mode`: choose one of `swap`, `add-drop`, `adaptive-global`, `adaptive-greedy`.
+
+**Adaptive mode choice in browser:**
+
+| Mode | Objective | Acceptance rule | Typical use |
+|------|-----------|------------------|-------------|
+| `adaptive-global` | Global welfare | apply move only if `ΔW_global > 0` | prioritize overall system welfare |
+| `adaptive-greedy` | Current student's welfare | apply move if `ΔU_student > 0` | allow local student gains, even when global gain is not positive |
+
+**Notes:**
+
+- The file selectors only expose CSV files inside `tables/`.
+- After adding new CSVs to `tables/`, click **Refresh File List**.
+- The UI provides download buttons for `allocation.csv`, `post_allocation.csv`, `summary.csv`, `metrics_extended.csv`.
 
 ---
 
@@ -388,6 +442,13 @@ Snake-order passes reusing the draft permutation. For each student:
 Early stop when a full pass produces no changes.
 
 *Code:* `HBS/hbs_engine.py:878` (`_run_adaptive_improvement`)
+
+**Global vs Greedy objective:**
+
+| Variant | Objective used for delta | Event types in `post_allocation.csv` |
+|---------|---------------------------|--------------------------------------|
+| `adaptive-global` | `ΔW_global` (all students) | `ADAPTIVE_ADD_DROP`, `ADAPTIVE_SWAP` |
+| `adaptive-greedy` | `ΔU_student` (current student only) | `ADAPTIVE_GREEDY_ADD_DROP`, `ADAPTIVE_GREEDY_SWAP` |
 
 ---
 
