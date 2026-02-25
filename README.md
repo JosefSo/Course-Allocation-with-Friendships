@@ -4,6 +4,7 @@ A deterministic snake-draft course allocation engine with **reactive social pref
 
 **Key properties:** zero external dependencies, fully deterministic (seeded RNG), reproducible results, extensive fairness metrics.
 
+
 ---
 
 ## Table of Contents
