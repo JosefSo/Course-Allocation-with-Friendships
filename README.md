@@ -1,6 +1,6 @@
 # HBS Social: Course Allocation with Friendships
 
-A deterministic snake-draft course allocation engine with **reactive social preferences**. Built as a master's thesis project, the system extends the classic HBS (Harvard Business School) draft mechanism by incorporating directed friendship preferences into the utility model, with three post-draft improvement strategies.
+A deterministic snake-draft course allocation engine with **reactive social preferences**. Built as a master's thesis project, the system extends the classic HBS (Harvard Business School) draft mechanism by incorporating directed friendship preferences into the utility model, with four post-draft improvement strategies.
 
 **Key properties:** zero external dependencies, fully deterministic (seeded RNG), reproducible results, extensive fairness metrics.
 
@@ -27,7 +27,7 @@ A deterministic snake-draft course allocation engine with **reactive social pref
 - [Post-Draft Improvement](#post-draft-improvement)
   - [Swap Mode](#swap-mode)
   - [Add-Drop Mode](#add-drop-mode)
-  - [Adaptive Mode](#adaptive-mode)
+  - [Adaptive Modes](#adaptive-modes)
 - [Fairness Metrics](#fairness-metrics)
 - [Output Files](#output-files)
 - [Testing](#testing)
@@ -41,8 +41,8 @@ A deterministic snake-draft course allocation engine with **reactive social pref
 - **Snake draft allocation** with configurable number of rounds and per-student course limits.
 - **Reactive friend bonus** that rewards overlap with friends who are *already* allocated to the same course, avoiding circular dependencies.
 - **Per-student social weight** (lambda) controlling the base vs. friend trade-off.
-- **Three post-draft improvement modes:** swap, add-drop, adaptive.
-- **Deterministic tie-breaking** chain: utility (within tau) &rarr; position &rarr; score &rarr; seeded random &rarr; course ID.
+- **Four post-draft improvement modes:** swap, add-drop, adaptive-global, adaptive-greedy.
+- **Deterministic tie-breaking** chain: utility (within tau) &rarr; score &rarr; position &rarr; seeded random &rarr; course ID.
 - **Comprehensive fairness metrics:** Gini, Jain, Theil, Atkinson indices; percentile distributions; friend overlap statistics.
 - **Audit trail:** every pick and post-phase move is logged with full utility decomposition.
 - **Interactive visualization** (HTML/Canvas) with animated bipartite graph, step-by-step playback, and utility breakdown charts.
@@ -81,7 +81,8 @@ A deterministic snake-draft course allocation engine with **reactive social pref
     ├── test_tie_breaks.py         # Tie-breaking logic tests
     ├── test_reproducibility.py    # Determinism / seed tests
     ├── test_input_validation.py   # Input validation tests
-    └── test_adaptive_improvement.py  # Adaptive mode tests
+    ├── test_adaptive_improvement.py  # Adaptive mode tests
+    └── test_web_api.py               # Local web API payload/validation tests
 ```
 
 ---
@@ -111,7 +112,7 @@ python hbs_social.py \
   --csv-b tables/table2_pair.csv \
   --csv-lambda tables/table3_lambda.csv \
   --cap-default 80 --b 3 --draft-rounds 3 \
-  --post-iters 10 --improve-mode adaptive \
+  --post-iters 10 --improve-mode adaptive-global \
   --seed 11 --progress
 ```
 
@@ -203,7 +204,7 @@ python hbs_social.py \
   --csv-lambda TABLE3.csv \
   --cap-default 80 --b 3 \
   --draft-rounds 3 --post-iters 10 \
-  --improve-mode adaptive --seed 42 \
+  --improve-mode adaptive-global --seed 42 \
   --progress --sanity-checks
 ```
 
@@ -223,7 +224,7 @@ python hbs_social.py \
 | `--b` | 3 | Max courses per student |
 | `--draft-rounds` | b | Number of snake-draft rounds |
 | `--post-iters` / `--n` | 0 | Post-phase iterations |
-| `--improve-mode` | swap | `swap`, `add-drop`, or `adaptive` |
+| `--improve-mode` | swap | `swap`, `add-drop`, `adaptive-global`, or `adaptive-greedy` |
 | `--seed` | 42 | RNG seed for reproducibility |
 
 **Output flags:**
@@ -325,16 +326,16 @@ The chosen course maximizes $U(s,c)$ with a deterministic tie-breaking chain for
 
 ```
 1. max U(s,c)           -- highest utility
-2. min PositionA(s,c)   -- best rank from Table 1
-3. max ScoreA(s,c)      -- highest raw score
+2. max ScoreA(s,c)      -- highest raw score
+3. min PositionA(s,c)   -- best rank from Table 1
 4. max rnd              -- seeded random
 5. min CourseID          -- stable alphabetic tie-breaker
 ```
 
 ```mermaid
 flowchart LR
-    A["Utility<br/>(within tau)"] --> B["Position<br/>(lower)"]
-    B --> C["Score<br/>(higher)"]
+    A["Utility<br/>(within tau)"] --> B["Score<br/>(higher)"]
+    B --> C["Position<br/>(lower)"]
     C --> D["rnd<br/>(seeded)"]
     D --> E["CourseID<br/>(stable)"]
     E --> Z["Select"]
@@ -355,7 +356,7 @@ Given a seeded permutation $\pi$ of students:
 
 ## Post-Draft Improvement
 
-After the initial draft, the allocation can be improved for `post_iters` iterations. All modes accept a move only if it **strictly improves** global welfare $W = \sum_s W_s$.
+After the initial draft, the allocation can be improved for `post_iters` iterations. `swap`, `add-drop`, and `adaptive-global` accept a move only if it **strictly improves** global welfare $W = \sum_s W_s$, while `adaptive-greedy` accepts moves by local student gain $\Delta U_s > 0$.
 
 ### Swap Mode
 
@@ -375,12 +376,14 @@ HBS-style pass: for each student in a shuffled order, rebuild their top-$b$ cour
 
 *Code:* `HBS/hbs_engine.py:767` (`_run_add_drop_improvement`)
 
-### Adaptive Mode
+### Adaptive Modes
 
 Snake-order passes reusing the draft permutation. For each student:
 1. If a target course has **spare capacity** &rarr; try 1-for-1 add/drop.
 2. If a target course is **full** &rarr; try swap with any current holder.
-3. Accept the best move only if $\Delta W_{\text{global}} > 0$.
+3. Accept the best move by objective:
+   - `adaptive-global`: $\Delta W_{\text{global}} > 0$
+   - `adaptive-greedy`: $\Delta U_{\text{student}} > 0$
 
 Early stop when a full pass produces no changes.
 
@@ -428,7 +431,7 @@ Iteration,EventType,StudentID,DroppedCourses,AddedCourses,SwapStudent1,SwapCours
 5,,,,,,,,,
 ```
 
-Event types: `SWAP`, `ADD_DROP`, `ADAPTIVE_ADD_DROP`, `ADAPTIVE_SWAP`, or empty (no improving move found).
+Event types: `SWAP`, `ADD_DROP`, `ADAPTIVE_ADD_DROP`, `ADAPTIVE_SWAP`, `ADAPTIVE_GREEDY_ADD_DROP`, `ADAPTIVE_GREEDY_SWAP`, or empty (no improving move found).
 
 ### summary.csv
 Single-row summary:
@@ -457,6 +460,7 @@ python tests/run_all_tests.py
 | `test_reproducibility.py` | Same seed produces identical allocation and metrics |
 | `test_input_validation.py` | Rejection of invalid parameters (draft_rounds > b, lambda out of range) |
 | `test_adaptive_improvement.py` | Adaptive mode correctness and early stop |
+| `test_web_api.py` | `/api/run` payload handling, file mode, and path safety checks |
 
 ---
 
