@@ -135,20 +135,19 @@
   <main class="wrap">
     <section class="card">
       <h1>HBS Social Course Allocation UI</h1>
-      <p>Select existing CSV tables from the project folder and run allocation without terminal commands.</p>
     </section>
 
     <section class="card">
       <h2>Run Parameters</h2>
       <div class="grid params">
         <label>cap_default
-          <input id="cap_default" type="number" value="10" min="1">
+          <input id="cap_default" type="number" value="80" min="1">
         </label>
         <label>b (max courses)
           <input id="b" type="number" value="3" min="1">
         </label>
         <label>seed
-          <input id="seed" type="number" value="42">
+          <input id="seed" type="number" value="11">
         </label>
         <label>draft_rounds (blank = b)
           <input id="draft_rounds" type="number" min="0" placeholder="auto">
@@ -169,7 +168,6 @@
 
     <section class="card">
       <h2>Input Tables</h2>
-      <div id="tables_dir" class="inline-note">Loading table list...</div>
       <div class="grid files" style="margin-top: 10px;">
         <label>Table 1 file (required)
           <select id="table1_file"></select>
@@ -186,7 +184,6 @@
         <button type="button" class="secondary" id="refresh_files_btn">Refresh File List</button>
         <button type="button" class="secondary" id="clear_results_btn">Clear Results</button>
       </div>
-      <div class="inline-note">Files are loaded from the server-side <code>tables/</code> folder.</div>
       <div id="status" class="status"></div>
     </section>
 
@@ -221,7 +218,6 @@
     const summaryEl = document.getElementById("summary_view");
     const picklogEl = document.getElementById("picklog_view");
     const downloadsEl = document.getElementById("download_buttons");
-    const tablesDirEl = document.getElementById("tables_dir");
 
     function setStatus(message, kind) {
       statusEl.textContent = message;
@@ -283,8 +279,6 @@
         fillSelect("table2_file", data.table2 || [], true);
         fillSelect("lambda_file", data.lambda || [], false);
 
-        const countAll = (data.all || []).length;
-        tablesDirEl.textContent = "Tables directory: " + (data.tables_dir || "tables") + " (" + countAll + " CSV files)";
         setStatus("File list updated.", "ok");
       } catch (err) {
         setStatus(err.message, "error");
@@ -308,9 +302,9 @@
         table1_file: table1File,
         table2_file: table2File,
         lambda_file: lambdaFile || null,
-        cap_default: readInt("cap_default", 10),
+        cap_default: readInt("cap_default", 80),
         b: readInt("b", 3),
-        seed: readInt("seed", 42),
+        seed: readInt("seed", 11),
         draft_rounds: draftRaw ? Number.parseInt(draftRaw, 10) : null,
         post_iters: readInt("post_iters", 0),
         improve_mode: document.getElementById("improve_mode").value
