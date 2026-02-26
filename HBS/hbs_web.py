@@ -3,13 +3,15 @@ from __future__ import annotations
 import argparse
 import json
 import logging
+import sqlite3
 import tempfile
 from dataclasses import asdict
+from datetime import datetime, timezone
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any
-from urllib.parse import urlparse
+from urllib.parse import parse_qs, urlparse
 
 from .hbs_api import run_hbs_social
 from .hbs_domain import PickLogRow, PostAllocLogRow
@@ -23,6 +25,7 @@ from .hbs_io import (
 LOG = logging.getLogger(__name__)
 UI_PATH = Path(__file__).resolve().parents[1] / "hbs_web_ui.html"
 TABLES_DIR = Path(__file__).resolve().parents[1] / "tables"
+HISTORY_DB_PATH = Path(tempfile.gettempdir()) / "hbs_social_web_history.sqlite3"
 
 
 def _to_int(payload: dict[str, Any], key: str, default: int | None = None) -> int:
@@ -140,6 +143,149 @@ def _list_table_files() -> dict[str, Any]:
     }
 
 
+def _init_history_db(db_path: Path = HISTORY_DB_PATH) -> None:
+    db_path.parent.mkdir(parents=True, exist_ok=True)
+    with sqlite3.connect(db_path, timeout=5) as conn:
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS run_history (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                created_at TEXT NOT NULL,
+                table1_ref TEXT NOT NULL,
+                table2_ref TEXT NOT NULL,
+                lambda_ref TEXT,
+                cap_default INTEGER NOT NULL,
+                b INTEGER NOT NULL,
+                seed INTEGER NOT NULL,
+                draft_rounds INTEGER NOT NULL,
+                post_iters INTEGER NOT NULL,
+                improve_mode TEXT NOT NULL,
+                total_utility REAL NOT NULL,
+                gini_total_norm REAL NOT NULL,
+                gini_base_norm REAL NOT NULL
+            )
+            """
+        )
+        conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_run_history_created_at ON run_history(created_at DESC)"
+        )
+        conn.commit()
+
+
+def _history_ref(payload: dict[str, Any], file_key: str) -> str | None:
+    raw = payload.get(file_key)
+    if raw is None:
+        return None
+    if not isinstance(raw, str):
+        return None
+    cleaned = raw.strip()
+    if cleaned == "":
+        return None
+    return cleaned
+
+
+def _append_run_history(
+    *,
+    table1_ref: str,
+    table2_ref: str,
+    lambda_ref: str | None,
+    cap_default: int,
+    b: int,
+    seed: int,
+    draft_rounds: int,
+    post_iters: int,
+    improve_mode: str,
+    total_utility: float,
+    gini_total_norm: float,
+    gini_base_norm: float,
+    db_path: Path = HISTORY_DB_PATH,
+) -> int:
+    _init_history_db(db_path)
+    created_at = datetime.now(timezone.utc).isoformat(timespec="seconds")
+    with sqlite3.connect(db_path, timeout=5) as conn:
+        cursor = conn.execute(
+            """
+            INSERT INTO run_history (
+                created_at, table1_ref, table2_ref, lambda_ref, cap_default, b, seed,
+                draft_rounds, post_iters, improve_mode, total_utility, gini_total_norm, gini_base_norm
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                created_at,
+                table1_ref,
+                table2_ref,
+                lambda_ref,
+                cap_default,
+                b,
+                seed,
+                draft_rounds,
+                post_iters,
+                improve_mode,
+                total_utility,
+                gini_total_norm,
+                gini_base_norm,
+            ),
+        )
+        conn.commit()
+        return int(cursor.lastrowid)
+
+
+def _list_run_history(limit: int = 200, db_path: Path = HISTORY_DB_PATH) -> dict[str, Any]:
+    if limit <= 0:
+        raise ValueError("limit must be > 0")
+    safe_limit = min(limit, 1000)
+    _init_history_db(db_path)
+    with sqlite3.connect(db_path, timeout=5) as conn:
+        conn.row_factory = sqlite3.Row
+        rows = conn.execute(
+            """
+            SELECT
+                id, created_at, table1_ref, table2_ref, lambda_ref,
+                cap_default, b, seed, draft_rounds, post_iters, improve_mode,
+                total_utility, gini_total_norm, gini_base_norm
+            FROM run_history
+            ORDER BY id DESC
+            LIMIT ?
+            """,
+            (safe_limit,),
+        ).fetchall()
+
+    items: list[dict[str, Any]] = []
+    for row in rows:
+        lambda_part = f", lambda={row['lambda_ref']}" if row["lambda_ref"] else ""
+        summary_line = (
+            f"tables: {row['table1_ref']}, {row['table2_ref']}{lambda_part} | "
+            f"params: cap={row['cap_default']}, b={row['b']}, seed={row['seed']}, "
+            f"draft={row['draft_rounds']}, post={row['post_iters']}, mode={row['improve_mode']} | "
+            f"metrics: U={row['total_utility']:.6f}, "
+            f"G_total={row['gini_total_norm']:.6f}, G_base={row['gini_base_norm']:.6f}"
+        )
+        items.append(
+            {
+                "id": row["id"],
+                "created_at": row["created_at"],
+                "table1_ref": row["table1_ref"],
+                "table2_ref": row["table2_ref"],
+                "lambda_ref": row["lambda_ref"],
+                "cap_default": row["cap_default"],
+                "b": row["b"],
+                "seed": row["seed"],
+                "draft_rounds": row["draft_rounds"],
+                "post_iters": row["post_iters"],
+                "improve_mode": row["improve_mode"],
+                "total_utility": row["total_utility"],
+                "gini_total_norm": row["gini_total_norm"],
+                "gini_base_norm": row["gini_base_norm"],
+                "summary_line": summary_line,
+            }
+        )
+
+    return {
+        "ok": True,
+        "items": items,
+    }
+
+
 def _serialize_pick_log(rows: list[PickLogRow]) -> list[dict[str, Any]]:
     return [asdict(row) for row in rows]
 
@@ -185,6 +331,9 @@ def _run_payload(payload: dict[str, Any]) -> dict[str, Any]:
     draft_rounds = _optional_int(payload, "draft_rounds")
     post_iters = _to_int(payload, "post_iters", default=0)
     improve_mode = str(payload.get("improve_mode", "swap"))
+    table1_ref = _history_ref(payload, "table1_file") or "[inline-table1]"
+    table2_ref = _history_ref(payload, "table2_file") or "[inline-table2]"
+    lambda_ref = _history_ref(payload, "lambda_file")
 
     with tempfile.TemporaryDirectory() as tmp:
         tmp_dir = Path(tmp)
@@ -231,9 +380,24 @@ def _run_payload(payload: dict[str, Any]) -> dict[str, Any]:
             summary=result.summary,
         )
         _write_metrics_extended_csv(metrics_path, metrics=result.metrics_extended)
+        history_id = _append_run_history(
+            table1_ref=table1_ref,
+            table2_ref=table2_ref,
+            lambda_ref=lambda_ref,
+            cap_default=cap_default,
+            b=b,
+            seed=seed,
+            draft_rounds=resolved_draft_rounds,
+            post_iters=post_iters,
+            improve_mode=improve_mode,
+            total_utility=result.summary.total_utility,
+            gini_total_norm=result.summary.gini_total_norm,
+            gini_base_norm=result.summary.gini_base_norm,
+        )
 
         return {
             "ok": True,
+            "run_history_id": history_id,
             "config": {
                 "cap_default": cap_default,
                 "b": b,
@@ -260,12 +424,32 @@ class _HbsWebHandler(BaseHTTPRequestHandler):
     server_version = "HbsSocialWeb/1.0"
 
     def do_GET(self) -> None:
-        path = urlparse(self.path).path
+        parsed = urlparse(self.path)
+        path = parsed.path
         if path in {"/", "/index.html"}:
             self._serve_ui()
             return
         if path == "/api/tables":
             self._send_json(HTTPStatus.OK, _list_table_files())
+            return
+        if path == "/api/history":
+            query = parse_qs(parsed.query)
+            limit_raw = query.get("limit", ["200"])[0]
+            try:
+                limit = int(limit_raw)
+            except ValueError:
+                self._send_json(
+                    HTTPStatus.BAD_REQUEST,
+                    {"ok": False, "error": "limit must be an integer"},
+                )
+                return
+            if limit <= 0:
+                self._send_json(
+                    HTTPStatus.BAD_REQUEST,
+                    {"ok": False, "error": "limit must be > 0"},
+                )
+                return
+            self._send_json(HTTPStatus.OK, _list_run_history(limit=limit))
             return
         self._send_json(
             HTTPStatus.NOT_FOUND,
@@ -358,6 +542,7 @@ class _HbsWebHandler(BaseHTTPRequestHandler):
 
 
 def serve_web_app(host: str, port: int) -> int:
+    _init_history_db()
     with ThreadingHTTPServer((host, port), _HbsWebHandler) as server:
         print(f"HBS web app: http://{host}:{port}")
         print("Press Ctrl+C to stop.")

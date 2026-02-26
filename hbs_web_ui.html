@@ -209,6 +209,23 @@
       <h3>Pick Log (JSON)</h3>
       <pre id="picklog_view">No run yet.</pre>
     </section>
+
+    <section class="card">
+      <h2>Run History</h2>
+      <div class="actions" style="margin-top: 0;">
+        <button type="button" class="secondary" id="refresh_history_btn">Refresh History</button>
+      </div>
+      <div style="overflow:auto; margin-top: 8px;">
+        <table id="history_table">
+          <thead>
+            <tr><th>Time (UTC)</th><th>Run Summary</th></tr>
+          </thead>
+          <tbody>
+            <tr><td colspan="2">No runs yet.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
   </main>
 
   <script>
@@ -218,6 +235,7 @@
     const summaryEl = document.getElementById("summary_view");
     const picklogEl = document.getElementById("picklog_view");
     const downloadsEl = document.getElementById("download_buttons");
+    const historyEl = document.getElementById("history_table").querySelector("tbody");
 
     function setStatus(message, kind) {
       statusEl.textContent = message;
@@ -311,8 +329,23 @@
       };
     }
 
-    function renderAllocation(allocMap) {
-      const students = Object.keys(allocMap).sort();
+    function renderAllocation(allocMap, pickLog) {
+      const studentsFromAlloc = Object.keys(allocMap);
+      const studentsFromPickLog = [];
+      const seen = new Set();
+
+      (pickLog || []).forEach((pick) => {
+        const studentId = pick && pick.student_id;
+        if (!studentId || seen.has(studentId)) {
+          return;
+        }
+        seen.add(studentId);
+        studentsFromPickLog.push(studentId);
+      });
+
+      const students = studentsFromPickLog.concat(
+        studentsFromAlloc.filter((studentId) => !seen.has(studentId))
+      );
       if (students.length === 0) {
         tableEl.innerHTML = "<tr><td colspan='2'>No allocation rows.</td></tr>";
         return;
@@ -359,6 +392,38 @@
       downloadsEl.appendChild(makeDownloadButton("metrics_extended.csv", csvOutputs.metrics_extended || ""));
     }
 
+    function renderHistory(items) {
+      if (!Array.isArray(items) || items.length === 0) {
+        historyEl.innerHTML = "<tr><td colspan='2'>No runs yet.</td></tr>";
+        return;
+      }
+
+      historyEl.innerHTML = "";
+      items.forEach((item) => {
+        const tr = document.createElement("tr");
+        const tdTime = document.createElement("td");
+        const tdSummary = document.createElement("td");
+        tdTime.textContent = item.created_at || "";
+        tdSummary.textContent = item.summary_line || "";
+        tr.appendChild(tdTime);
+        tr.appendChild(tdSummary);
+        historyEl.appendChild(tr);
+      });
+    }
+
+    async function loadHistory() {
+      try {
+        const response = await fetch("/api/history?limit=200");
+        const data = await response.json();
+        if (!response.ok || !data.ok) {
+          throw new Error(data.error || ("HTTP " + response.status));
+        }
+        renderHistory(data.items || []);
+      } catch (err) {
+        historyEl.innerHTML = "<tr><td colspan='2'>Failed to load run history.</td></tr>";
+      }
+    }
+
     async function runAllocation() {
       let payload;
       try {
@@ -388,9 +453,10 @@
           "config=" + JSON.stringify(data.config)
         ].join("\n");
         summaryEl.textContent = summaryText;
-        renderAllocation(data.allocation || {});
+        renderAllocation(data.allocation || {}, data.pick_log || []);
         picklogEl.textContent = JSON.stringify(data.pick_log || [], null, 2);
         renderDownloads(data.csv_outputs || {});
+        await loadHistory();
         setStatus("Completed successfully.", "ok");
       } catch (err) {
         setStatus(err.message, "error");
@@ -410,8 +476,10 @@
     document.getElementById("run_btn").addEventListener("click", runAllocation);
     document.getElementById("refresh_files_btn").addEventListener("click", loadFiles);
     document.getElementById("clear_results_btn").addEventListener("click", clearResults);
+    document.getElementById("refresh_history_btn").addEventListener("click", loadHistory);
 
     loadFiles();
+    loadHistory();
   </script>
 </body>
 </html>
