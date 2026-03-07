@@ -4,7 +4,13 @@ import argparse
 import logging
 from pathlib import Path
 
-from .hbs_api import run_hbs_social
+from .hbs_api import (
+    CANONICAL_MOVE_TYPES,
+    CANONICAL_OBJECTIVE_SCOPES,
+    CANONICAL_IMPROVE_MODES,
+    normalize_improve_mode,
+    run_hbs_social,
+)
 from .hbs_io import (
     _write_allocation_csv,
     _write_metrics_extended_csv,
@@ -46,11 +52,27 @@ def _parse_args() -> argparse.Namespace:
     )
     p.add_argument(
         "--improve-mode",
-        choices=["swap", "add-drop", "adaptive-global", "adaptive-greedy"],
-        default="swap",
+        type=normalize_improve_mode,
+        choices=CANONICAL_IMPROVE_MODES,
+        default=None,
         help=(
-            "Режим улучшений после драфта: swap (обмены), add-drop (HBS-style) "
-            "или adaptive-global (глобальный ΔW), adaptive-greedy (локальный ΔU студента)"
+            "Совместимый shortcut режима: swap-global, swap-personal, drop-add-global, "
+            "drop-add-personal, hybrid-global, hybrid-personal"
+        ),
+    )
+    p.add_argument(
+        "--move-type",
+        choices=CANONICAL_MOVE_TYPES,
+        default=None,
+        help="Тип post-phase хода (по умолчанию: swap, если improve-mode не задан).",
+    )
+    p.add_argument(
+        "--objective-scope",
+        choices=CANONICAL_OBJECTIVE_SCOPES,
+        default=None,
+        help=(
+            "Критерий принятия хода: global (глобальный ΔW) или personal "
+            "(локальный ΔU текущего студента); по умолчанию global, если improve-mode не задан"
         ),
     )
     p.add_argument("--seed", type=int, default=42)
@@ -113,6 +135,8 @@ def main() -> int:
         draft_rounds=args.draft_rounds,
         post_iters=(args.post_iters if args.post_iters is not None else 0),
         improve_mode=args.improve_mode,
+        move_type=args.move_type,
+        objective_scope=args.objective_scope,
         seed=args.seed,
         progress=args.progress,
         sanity_checks=args.sanity_checks,

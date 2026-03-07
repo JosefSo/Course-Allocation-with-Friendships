@@ -7,7 +7,13 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.append(str(ROOT))
 
 import HBS.hbs_web as hbs_web
-from HBS.hbs_web import _list_run_history, _list_table_files, _run_payload
+from HBS.hbs_web import (
+    _build_run_history_stats,
+    _list_run_history,
+    _list_table_files,
+    _reset_run_history,
+    _run_payload,
+)
 
 
 class TestWebApi(unittest.TestCase):
@@ -39,6 +45,9 @@ class TestWebApi(unittest.TestCase):
         result = _run_payload(payload)
         self.assertTrue(result["ok"])
         self.assertEqual(result["config"]["seed"], 7)
+        self.assertEqual(result["config"]["move_type"], "swap")
+        self.assertEqual(result["config"]["objective_scope"], "global")
+        self.assertEqual(result["config"]["improve_mode"], "swap-global")
         self.assertIn("S1", result["allocation"])
         self.assertIn("RoundPicked,StudentID,CourseID", result["csv_outputs"]["allocation"])
         self.assertIsInstance(result["run_history_id"], int)
@@ -146,7 +155,153 @@ class TestWebApi(unittest.TestCase):
         latest = history["items"][0]
         self.assertEqual(latest["seed"], 13)
         self.assertEqual(latest["cap_default"], 2)
+        self.assertEqual(latest["move_type"], "swap")
+        self.assertEqual(latest["objective_scope"], "global")
         self.assertIn("metrics:", latest["summary_line"])
+
+    def test_build_run_history_stats_empty(self) -> None:
+        stats = _build_run_history_stats(limit=10)
+        self.assertTrue(stats["ok"])
+        self.assertEqual(stats["trend"], [])
+        self.assertEqual(stats["by_mode"], [])
+        self.assertEqual(stats["overall"]["runs_total"], 0)
+        self.assertIsNone(stats["overall"]["best_utility"])
+        self.assertIsNone(stats["overall"]["best_fairness_g_total"])
+        self.assertIsNone(stats["overall"]["best_fairness_g_base"])
+
+    def test_build_run_history_stats_grouping_and_extrema(self) -> None:
+        table1_csv = (
+            "StudentID,CourseID,Score,Position\n"
+            "S1,C1,100,1\n"
+            "S2,C1,90,1\n"
+        )
+        table2_csv = "StudentID_A,StudentID_B,CourseID,Position,Score\n"
+
+        payloads = [
+            {
+                "table1_csv": table1_csv,
+                "table2_csv": table2_csv,
+                "cap_default": 1,
+                "b": 1,
+                "seed": 21,
+                "draft_rounds": 1,
+                "post_iters": 0,
+                "improve_mode": "swap",
+            },
+            {
+                "table1_csv": table1_csv,
+                "table2_csv": table2_csv,
+                "cap_default": 2,
+                "b": 1,
+                "seed": 22,
+                "draft_rounds": 1,
+                "post_iters": 0,
+                "improve_mode": "drop-add",
+            },
+            {
+                "table1_csv": table1_csv,
+                "table2_csv": table2_csv,
+                "cap_default": 1,
+                "b": 1,
+                "seed": 23,
+                "draft_rounds": 1,
+                "post_iters": 0,
+                "improve_mode": "swap",
+            },
+        ]
+        for payload in payloads:
+            _run_payload(payload)
+
+        stats = _build_run_history_stats(limit=10)
+        self.assertTrue(stats["ok"])
+        trend = stats["trend"]
+        self.assertEqual(len(trend), 3)
+        self.assertEqual([point["run_index"] for point in trend], [1, 2, 3])
+        self.assertEqual(
+            [point["improve_mode"] for point in trend],
+            ["swap-global", "drop-add-global", "swap-global"],
+        )
+        self.assertEqual([point["move_type"] for point in trend], ["swap", "drop-add", "swap"])
+        self.assertEqual(
+            [point["objective_scope"] for point in trend],
+            ["global", "global", "global"],
+        )
+
+        by_mode_map = {row["improve_mode"]: row for row in stats["by_mode"]}
+        self.assertEqual(by_mode_map["swap-global"]["runs"], 2)
+        self.assertEqual(by_mode_map["drop-add-global"]["runs"], 1)
+
+        best_utility = max(trend, key=lambda p: p["total_utility"])
+        self.assertEqual(stats["overall"]["best_utility"]["run_index"], best_utility["run_index"])
+        self.assertAlmostEqual(stats["overall"]["best_utility"]["value"], best_utility["total_utility"])
+
+        best_g_total = min(trend, key=lambda p: p["gini_total_norm"])
+        self.assertEqual(
+            stats["overall"]["best_fairness_g_total"]["run_index"],
+            best_g_total["run_index"],
+        )
+        self.assertAlmostEqual(
+            stats["overall"]["best_fairness_g_total"]["value"],
+            best_g_total["gini_total_norm"],
+        )
+
+        best_g_base = min(trend, key=lambda p: p["gini_base_norm"])
+        self.assertEqual(
+            stats["overall"]["best_fairness_g_base"]["run_index"],
+            best_g_base["run_index"],
+        )
+        self.assertAlmostEqual(
+            stats["overall"]["best_fairness_g_base"]["value"],
+            best_g_base["gini_base_norm"],
+        )
+
+    def test_reset_run_history_clears_all_rows(self) -> None:
+        payload = {
+            "table1_csv": (
+                "StudentID,CourseID,Score,Position\n"
+                "S1,C1,100,1\n"
+                "S2,C1,90,1\n"
+            ),
+            "table2_csv": "StudentID_A,StudentID_B,CourseID,Position,Score\n",
+            "cap_default": 2,
+            "b": 1,
+            "seed": 15,
+            "draft_rounds": 1,
+            "post_iters": 0,
+            "improve_mode": "swap",
+        }
+        _run_payload(payload)
+        before_reset = _list_run_history(limit=10)
+        self.assertGreaterEqual(len(before_reset["items"]), 1)
+
+        reset_result = _reset_run_history()
+        self.assertTrue(reset_result["ok"])
+        self.assertEqual(reset_result["items"], [])
+
+        after_reset = _list_run_history(limit=10)
+        self.assertEqual(after_reset["items"], [])
+
+    def test_stats_after_reset_is_empty(self) -> None:
+        payload = {
+            "table1_csv": (
+                "StudentID,CourseID,Score,Position\n"
+                "S1,C1,100,1\n"
+                "S2,C1,90,1\n"
+            ),
+            "table2_csv": "StudentID_A,StudentID_B,CourseID,Position,Score\n",
+            "cap_default": 2,
+            "b": 1,
+            "seed": 16,
+            "draft_rounds": 1,
+            "post_iters": 0,
+            "improve_mode": "swap",
+        }
+        _run_payload(payload)
+        _reset_run_history()
+        stats = _build_run_history_stats(limit=10)
+        self.assertEqual(stats["overall"]["runs_total"], 0)
+        self.assertEqual(stats["trend"], [])
+        self.assertEqual(stats["by_mode"], [])
 
 
 if __name__ == "__main__":

@@ -362,6 +362,112 @@ class _HbsSocialDraftEngine:
         self._capacity_left[drop_course] += 1
         self._capacity_left[add_course] -= 1
 
+    def _compose_event_type(
+        self,
+        move_type: str,
+        objective_scope: str,
+        *,
+        submove: str | None = None,
+    ) -> str:
+        prefix = f"{move_type}_{objective_scope}".upper().replace("-", "_")
+        if submove is None:
+            return prefix
+        return f"{prefix}_{submove.upper().replace('-', '_')}"
+
+    def _measure_objective(self, objective_scope: str, student_id: str | None = None) -> float:
+        if objective_scope == "global":
+            return self._global_welfare()
+        if objective_scope == "personal":
+            if student_id is None:
+                raise ValueError("student_id is required for personal objective")
+            return self._student_welfare(student_id)
+        raise ValueError(f"Unknown objective_scope: {objective_scope}")
+
+    def _build_desired_rebuild_list(self, student_id: str) -> list[str]:
+        current_set = self._alloc_set[student_id]
+        candidates: set[str] = set(current_set)
+        for course_id in self._courses:
+            if self._capacity_left[course_id] > 0:
+                candidates.add(course_id)
+        if not candidates:
+            return []
+
+        scored: list[tuple[float, int, int, float, str]] = []
+        for course_id in candidates:
+            u, _base, _friend_bonus = self._utility_components(student_id, course_id)
+            u_bucket = round(u, 9)
+            scored.append(
+                (
+                    u_bucket,
+                    self._position_a(student_id, course_id),
+                    self._score_a(student_id, course_id),
+                    self._rng.random(),
+                    course_id,
+                )
+            )
+        scored.sort(key=lambda t: (t[0], t[2], -t[1], t[3], t[4]), reverse=True)
+
+        k = min(self._config.max_courses, len(scored))
+        return [item[4] for item in scored[:k]]
+
+    def _apply_student_rebuild(self, student_id: str, desired_list: list[str]) -> tuple[list[str], list[str]]:
+        desired_set = set(desired_list)
+        current_set = self._alloc_set[student_id]
+        dropped = sorted(current_set - desired_set)
+        added = sorted(desired_set - current_set)
+        if not dropped and not added:
+            return (dropped, added)
+
+        for course_id in added:
+            if self._capacity_left[course_id] <= 0:
+                raise AssertionError(f"Add/drop capacity exhausted for {course_id}")
+
+        for course_id in dropped:
+            self._capacity_left[course_id] += 1
+        for course_id in added:
+            self._capacity_left[course_id] -= 1
+
+        old_list = self._alloc_list[student_id]
+        kept = [course_id for course_id in old_list if course_id in desired_set]
+        added_in_order = [course_id for course_id in desired_list if course_id not in old_list]
+        self._alloc_list[student_id] = kept + added_in_order
+        self._alloc_set[student_id] = desired_set
+
+        self._assert_student_state(student_id)
+        if self._config.sanity_checks:
+            for course_id in dropped + added:
+                self._assert_course_capacity(course_id)
+        return (dropped, added)
+
+    def _simulate_student_rebuild(
+        self,
+        student_id: str,
+        desired_list: list[str],
+        objective_scope: str,
+    ) -> tuple[float, list[str], list[str]]:
+        desired_set = set(desired_list)
+        current_set = self._alloc_set[student_id]
+        dropped = sorted(current_set - desired_set)
+        added = sorted(desired_set - current_set)
+        if not dropped and not added:
+            return (0.0, dropped, added)
+
+        affected_courses = set(current_set) | desired_set
+        old_list = self._alloc_list[student_id][:]
+        old_set = set(current_set)
+        old_capacity = {course_id: self._capacity_left[course_id] for course_id in affected_courses}
+
+        before = self._measure_objective(objective_scope, student_id)
+        self._apply_student_rebuild(student_id, desired_list)
+        after = self._measure_objective(objective_scope, student_id)
+
+        self._alloc_list[student_id] = old_list
+        self._alloc_set[student_id] = old_set
+        for course_id, value in old_capacity.items():
+            self._capacity_left[course_id] = value
+
+        return (after - before, dropped, added)
+
     def _swap_delta(self, s1: str, c1: str, s2: str, c2: str) -> float:
         """
         Compute ΔW for swapping courses c1/c2 between students s1/s2.
@@ -635,30 +741,28 @@ class _HbsSocialDraftEngine:
             )
 
         pick_log = self._run_initial_draft(draft_rounds)
-        if self._config.improve_mode == "swap":
-            post_log = self._run_iterative_improvement(
+        move_type = self._config.move_type
+        objective_scope = self._config.objective_scope
+        if move_type == "swap":
+            post_log = self._run_swap_improvement(
                 improvement_iters,
                 start_iteration=draft_rounds + 1,
+                objective=objective_scope,
             )
-        elif self._config.improve_mode == "add-drop":
-            post_log = self._run_add_drop_improvement(
+        elif move_type == "drop-add":
+            post_log = self._run_drop_add_improvement(
                 improvement_iters,
                 start_iteration=draft_rounds + 1,
+                objective=objective_scope,
             )
-        elif self._config.improve_mode == "adaptive-global":
-            post_log = self._run_adaptive_improvement(
+        elif move_type == "hybrid":
+            post_log = self._run_hybrid_improvement(
                 improvement_iters,
                 start_iteration=draft_rounds + 1,
-                objective="global",
-            )
-        elif self._config.improve_mode == "adaptive-greedy":
-            post_log = self._run_adaptive_improvement(
-                improvement_iters,
-                start_iteration=draft_rounds + 1,
-                objective="greedy",
+                objective=objective_scope,
             )
         else:
-            raise ValueError(f"Unknown improve_mode: {self._config.improve_mode}")
+            raise ValueError(f"Unknown move_type: {move_type}")
 
         summary, metrics_extended = self._compute_metrics()
 
@@ -743,28 +847,28 @@ class _HbsSocialDraftEngine:
         return pick_log
 
     # ---- swap moves phase (optional) -------------------------------------------------------
-    def _run_iterative_improvement(self, n: int, *, start_iteration: int) -> list[PostAllocLogRow]:
-        """
-        Phase B: deterministic local search for exactly n iterations.
-
-        Each iteration performs one improvement attempt cycle:
-          - enumerate feasible swap moves in a deterministic order
-          - compute ΔW = W(after) - W(before)
-          - apply the best move if it strictly improves global welfare
-          - otherwise keep the allocation unchanged and continue
-        """
-
+    def _run_swap_improvement(
+        self,
+        n: int,
+        *,
+        start_iteration: int,
+        objective: str,
+    ) -> list[PostAllocLogRow]:
         if n <= 0:
             return []
+        if objective not in {"global", "personal"}:
+            raise ValueError(f"Unknown swap objective: {objective}")
 
         eps = 1e-12
+        event_type = self._compose_event_type("swap", objective)
         improvement_log: list[PostAllocLogRow] = []
-        swap_count = 0
+        move_count = 0
 
         for offset in range(n):
             iteration = start_iteration + offset
             best_delta = 0.0
-            best_move: tuple[str, str, str, str, str] | None = None
+            best_move: tuple[str, str, str, str] | None = None
+            best_tie_key: tuple[str, ...] | None = None
 
             for i, s1 in enumerate(self._students):
                 alloc1 = sorted(self._alloc_set[s1])
@@ -783,25 +887,66 @@ class _HbsSocialDraftEngine:
                             if c1 in self._alloc_set[s2]:
                                 continue
 
-                            delta = self._swap_delta(s1, c1, s2, c2)
-                            move_key = ("swap", s1, s2, c1, c2)
+                            if objective == "global":
+                                delta = self._swap_delta(s1, c1, s2, c2)
+                                tie_key = (s1, s2, c1, c2)
+                                candidate = (s1, c1, s2, c2)
+                                if delta > best_delta + eps:
+                                    best_delta = delta
+                                    best_move = candidate
+                                    best_tie_key = tie_key
+                                elif (
+                                    abs(delta - best_delta) <= eps
+                                    and best_move is not None
+                                    and best_tie_key is not None
+                                    and tie_key < best_tie_key
+                                ):
+                                    best_move = candidate
+                                    best_tie_key = tie_key
+                                continue
 
-                            if delta > best_delta + eps:
-                                best_delta = delta
-                                best_move = move_key
-                            elif abs(delta - best_delta) <= eps and best_move is not None and move_key < best_move:
-                                best_move = move_key
+                            delta_1 = self._swap_delta_for_student(s1, c1, s2, c2)
+                            tie_key_1 = (s1, c2, s2, c1)
+                            candidate_1 = (s1, c1, s2, c2)
+                            if delta_1 > best_delta + eps:
+                                best_delta = delta_1
+                                best_move = candidate_1
+                                best_tie_key = tie_key_1
+                            elif (
+                                abs(delta_1 - best_delta) <= eps
+                                and best_move is not None
+                                and best_tie_key is not None
+                                and tie_key_1 < best_tie_key
+                            ):
+                                best_move = candidate_1
+                                best_tie_key = tie_key_1
+
+                            delta_2 = self._swap_delta_for_student(s2, c2, s1, c1)
+                            tie_key_2 = (s2, c1, s1, c2)
+                            candidate_2 = (s2, c2, s1, c1)
+                            if delta_2 > best_delta + eps:
+                                best_delta = delta_2
+                                best_move = candidate_2
+                                best_tie_key = tie_key_2
+                            elif (
+                                abs(delta_2 - best_delta) <= eps
+                                and best_move is not None
+                                and best_tie_key is not None
+                                and tie_key_2 < best_tie_key
+                            ):
+                                best_move = candidate_2
+                                best_tie_key = tie_key_2
 
             if best_move is not None and best_delta > eps:
-                _tag, s1, s2, c1, c2 = best_move
+                s1, c1, s2, c2 = best_move
                 check_delta = (
                     self._config.delta_check_every > 0
-                    and (swap_count + 1) % self._config.delta_check_every == 0
+                    and (move_count + 1) % self._config.delta_check_every == 0
                 )
                 if check_delta:
-                    before = self._global_welfare()
+                    before = self._measure_objective(objective, s1)
                     self._swap_courses(s1, c1, s2, c2)
-                    after = self._global_welfare()
+                    after = self._measure_objective(objective, s1)
                     actual_delta = after - before
                     if abs(actual_delta - best_delta) > 1e-8:
                         raise AssertionError(
@@ -809,18 +954,18 @@ class _HbsSocialDraftEngine:
                         )
                 else:
                     self._swap_courses(s1, c1, s2, c2)
-                swap_count += 1
+                move_count += 1
                 self._assert_swap_invariants(s1, c1, s2, c2)
                 if self._config.progress:
                     print(
-                        f"Iter {iteration}/{self._config.total_iters}: IMPROVE swap "
+                        f"Iter {iteration}/{self._config.total_iters}: {event_type} "
                         f"({s1}:{c1}) <-> ({s2}:{c2}) Δ={best_delta:.6f}",
                         flush=True,
                     )
                 improvement_log.append(
                     PostAllocLogRow(
                         iteration=iteration,
-                        event_type="SWAP",
+                        event_type=event_type,
                         student_id=None,
                         dropped_courses=None,
                         added_courses=None,
@@ -833,7 +978,7 @@ class _HbsSocialDraftEngine:
                 )
             else:
                 if self._config.progress:
-                    print(f"Iter {iteration}/{self._config.total_iters}: IMPROVE no-op", flush=True)
+                    print(f"Iter {iteration}/{self._config.total_iters}: {event_type} no-op", flush=True)
                 improvement_log.append(
                     PostAllocLogRow(
                         iteration=iteration,
@@ -852,85 +997,72 @@ class _HbsSocialDraftEngine:
         return improvement_log
     
     # ---- ADD/DROP phase -------------------------------------------------------
-    def _run_add_drop_improvement(self, n: int, *, start_iteration: int) -> list[PostAllocLogRow]:
-        """
-        Phase B (HBS-style): add/drop passes over students using only courses with spare capacity.
-
-        Each iteration is a single pass over students in a new random order.
-        """
-
+    def _run_drop_add_improvement(
+        self,
+        n: int,
+        *,
+        start_iteration: int,
+        objective: str,
+    ) -> list[PostAllocLogRow]:
         if n <= 0:
             return []
+        if objective not in {"global", "personal"}:
+            raise ValueError(f"Unknown drop-add objective: {objective}")
 
+        eps = 1e-12
+        event_type = self._compose_event_type("drop-add", objective)
         post_log: list[PostAllocLogRow] = []
+        move_count = 0
 
         for offset in range(n):
             iteration = start_iteration + offset
             if self._config.progress:
-                print(f"Iter {iteration}/{self._config.total_iters}: ADD_DROP pass", flush=True)
+                print(
+                    f"Iter {iteration}/{self._config.total_iters}: {event_type} pass",
+                    flush=True,
+                )
 
             order = self._students[:]
             self._rng.shuffle(order)
             changed_in_pass = False
 
             for student_id in order:
-                current_set = self._alloc_set[student_id]
-                candidates: set[str] = set(current_set)
-                for course_id in self._courses:
-                    if self._capacity_left[course_id] > 0:
-                        candidates.add(course_id)
-                if not candidates:
+                desired_list = self._build_desired_rebuild_list(student_id)
+                if not desired_list:
                     continue
 
-                scored: list[tuple[float, int, int, float, str]] = []
-                for course_id in candidates:
-                    u, _base, _friend_bonus = self._utility_components(student_id, course_id)
-                    u_bucket = round(u, 9)
-                    scored.append(
-                        (
-                            u_bucket,
-                            self._position_a(student_id, course_id),
-                            self._score_a(student_id, course_id),
-                            self._rng.random(),
-                            course_id,
-                        )
-                    )
-                scored.sort(key=lambda t: (t[0], t[2], -t[1], t[3], t[4]), reverse=True)
-
-                k = min(self._config.max_courses, len(scored))
-                desired_list = [item[4] for item in scored[:k]]
-                desired_set = set(desired_list)
-
-                dropped = sorted(current_set - desired_set)
-                added = sorted(desired_set - current_set)
+                delta, dropped, added = self._simulate_student_rebuild(
+                    student_id,
+                    desired_list,
+                    objective,
+                )
                 if not dropped and not added:
                     continue
+                if delta <= eps:
+                    continue
 
-                for course_id in added:
-                    if self._capacity_left[course_id] <= 0:
-                        raise AssertionError(f"Add/drop capacity exhausted for {course_id}")
+                check_delta = (
+                    self._config.delta_check_every > 0
+                    and (move_count + 1) % self._config.delta_check_every == 0
+                )
+                if check_delta:
+                    before = self._measure_objective(objective, student_id)
+                    self._apply_student_rebuild(student_id, desired_list)
+                    after = self._measure_objective(objective, student_id)
+                    actual_delta = after - before
+                    if abs(actual_delta - delta) > 1e-8:
+                        raise AssertionError(
+                            f"Drop-add delta mismatch: expected {delta:.12f}, got {actual_delta:.12f}"
+                        )
+                else:
+                    self._apply_student_rebuild(student_id, desired_list)
 
-                for course_id in dropped:
-                    self._capacity_left[course_id] += 1
-                for course_id in added:
-                    self._capacity_left[course_id] -= 1
-
-                old_list = self._alloc_list[student_id]
-                kept = [c for c in old_list if c in desired_set]
-                added_in_order = [c for c in desired_list if c not in old_list]
-                self._alloc_list[student_id] = kept + added_in_order
-                self._alloc_set[student_id] = desired_set
-
-                self._assert_student_state(student_id)
-                if self._config.sanity_checks:
-                    for course_id in dropped + added:
-                        self._assert_course_capacity(course_id)
-
+                move_count += 1
                 changed_in_pass = True
                 post_log.append(
                     PostAllocLogRow(
                         iteration=iteration,
-                        event_type="ADD_DROP",
+                        event_type=event_type,
                         student_id=student_id,
                         dropped_courses=tuple(dropped),
                         added_courses=tuple(added),
@@ -938,13 +1070,13 @@ class _HbsSocialDraftEngine:
                         swap_course_1=None,
                         swap_student_2=None,
                         swap_course_2=None,
-                        delta_utility=None,
+                        delta_utility=delta,
                     )
                 )
 
             if not changed_in_pass:
                 if self._config.progress:
-                    print(f"Iter {iteration}/{self._config.total_iters}: ADD_DROP no-op", flush=True)
+                    print(f"Iter {iteration}/{self._config.total_iters}: {event_type} no-op", flush=True)
                 post_log.append(
                     PostAllocLogRow(
                         iteration=iteration,
@@ -962,8 +1094,8 @@ class _HbsSocialDraftEngine:
 
         return post_log
 
-    # ---- Adaptive phase -------------------------------------------------------
-    def _run_adaptive_improvement(
+    # ---- Hybrid phase -------------------------------------------------------
+    def _run_hybrid_improvement(
         self,
         n: int,
         *,
@@ -971,31 +1103,31 @@ class _HbsSocialDraftEngine:
         objective: str,
     ) -> list[PostAllocLogRow]:
         """
-        Adaptive post-phase:
+        Hybrid post-phase:
           - snake-order passes using the same seeded permutation as the draft
           - for each student, try to pull toward any missing course
           - if target has capacity -> 1-for-1 add/drop
           - if target is full -> targeted swap with any holder
           - objective="global": accept only moves with ΔW_global > eps
-          - objective="greedy": accept only moves with ΔU(student) > eps
+          - objective="personal": accept only moves with ΔU(student) > eps
           - stop early if a full pass makes no changes
         """
 
         if n <= 0:
             return []
-        if objective not in {"global", "greedy"}:
-            raise ValueError(f"Unknown adaptive objective: {objective}")
+        if objective not in {"global", "personal"}:
+            raise ValueError(f"Unknown hybrid objective: {objective}")
 
         if objective == "global":
             add_drop_delta_fn = self._add_drop_delta
             swap_delta_fn = self._swap_delta
-            event_add = "ADAPTIVE_ADD_DROP"
-            event_swap = "ADAPTIVE_SWAP"
+            event_add = self._compose_event_type("hybrid", objective, submove="drop-add")
+            event_swap = self._compose_event_type("hybrid", objective, submove="swap")
         else:
             add_drop_delta_fn = self._add_drop_delta_for_student
             swap_delta_fn = self._swap_delta_for_student
-            event_add = "ADAPTIVE_GREEDY_ADD_DROP"
-            event_swap = "ADAPTIVE_GREEDY_SWAP"
+            event_add = self._compose_event_type("hybrid", objective, submove="drop-add")
+            event_swap = self._compose_event_type("hybrid", objective, submove="swap")
 
         # Ensure we have a draft order to reuse.
         if self._draft_order is None:
@@ -1012,7 +1144,7 @@ class _HbsSocialDraftEngine:
             # Print progress header.
             if self._config.progress:
                 print(
-                    f"Iter {iteration}/{self._config.total_iters}: ADAPTIVE({objective}) pass",
+                    f"Iter {iteration}/{self._config.total_iters}: HYBRID({objective}) pass",
                     flush=True,
                 )
             # Determine turn order for this pass.
@@ -1091,17 +1223,13 @@ class _HbsSocialDraftEngine:
                     and (move_count + 1) % self._config.delta_check_every == 0
                 )
                 if check_delta:
-                    before = (
-                        self._global_welfare()
-                        if objective == "global"
-                        else self._student_welfare(s)
-                    )
+                    before = self._measure_objective(objective, s)
                 else:
                     before = 0.0
 
                 if move_type == "add_drop":
                     if self._capacity_left[target_course] <= 0:
-                        raise AssertionError(f"Adaptive add/drop capacity exhausted for {target_course}")
+                        raise AssertionError(f"Hybrid add/drop capacity exhausted for {target_course}")
                     self._replace_course(s, drop_course, target_course)
                     self._assert_student_state(s)
                     if self._config.sanity_checks:
@@ -1122,7 +1250,7 @@ class _HbsSocialDraftEngine:
                     )
                 else:
                     if holder_id == "":
-                        raise AssertionError("Adaptive swap missing holder_id")
+                        raise AssertionError("Hybrid swap missing holder_id")
                     self._swap_courses(s, drop_course, holder_id, target_course)
                     self._assert_swap_invariants(s, drop_course, holder_id, target_course)
                     event_type = event_swap
@@ -1140,15 +1268,11 @@ class _HbsSocialDraftEngine:
                     )
 
                 if check_delta:
-                    after = (
-                        self._global_welfare()
-                        if objective == "global"
-                        else self._student_welfare(s)
-                    )
+                    after = self._measure_objective(objective, s)
                     actual_delta = after - before
                     if abs(actual_delta - best_delta) > 1e-8:
                         raise AssertionError(
-                            "Adaptive delta mismatch "
+                            "Hybrid delta mismatch "
                             f"(objective={objective}): expected {best_delta:.12f}, "
                             f"got {actual_delta:.12f}"
                         )
@@ -1158,7 +1282,7 @@ class _HbsSocialDraftEngine:
 
                 if self._config.progress:
                     print(
-                        f"Iter {iteration}/{self._config.total_iters}: ADAPTIVE({objective}) {event_type} "
+                        f"Iter {iteration}/{self._config.total_iters}: HYBRID({objective}) {event_type} "
                         f"Δ={best_delta:.6f}",
                         flush=True,
                     )
@@ -1169,7 +1293,7 @@ class _HbsSocialDraftEngine:
                 if self._config.progress:
                     print(
                         f"Iter {iteration}/{self._config.total_iters}: "
-                        f"ADAPTIVE({objective}) no-op (early stop)",
+                        f"HYBRID({objective}) no-op (early stop)",
                         flush=True,
                     )
                 post_log.append(
@@ -1189,6 +1313,25 @@ class _HbsSocialDraftEngine:
                 break
 
         return post_log
+
+    def _run_iterative_improvement(self, n: int, *, start_iteration: int) -> list[PostAllocLogRow]:
+        return self._run_swap_improvement(n, start_iteration=start_iteration, objective="global")
+
+    def _run_add_drop_improvement(self, n: int, *, start_iteration: int) -> list[PostAllocLogRow]:
+        return self._run_drop_add_improvement(n, start_iteration=start_iteration, objective="global")
+
+    def _run_adaptive_improvement(
+        self,
+        n: int,
+        *,
+        start_iteration: int,
+        objective: str,
+    ) -> list[PostAllocLogRow]:
+        return self._run_hybrid_improvement(
+            n,
+            start_iteration=start_iteration,
+            objective=objective,
+        )
 
     # ---- Metrics -------------------------------------------------------
 

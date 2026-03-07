@@ -23,7 +23,9 @@ def _make_engine(
         draft_rounds=1,
         post_iters=0,
         total_iters=1,
-        improve_mode="swap",
+        move_type="swap",
+        objective_scope="global",
+        effective_improve_mode="swap-global",
         progress=False,
         seed=1,
         sanity_checks=False,
@@ -114,9 +116,7 @@ class TestTieBreaks(unittest.TestCase):
             student_lambdas={"S1": 1.0},
         )
 
-        post_log = engine._run_add_drop_improvement(1, start_iteration=1)
-        self.assertEqual(len(post_log), 1)
-        self.assertEqual(engine._alloc_list["S1"], ["C2"])
+        self.assertEqual(engine._build_desired_rebuild_list("S1"), ["C2"])
 
 
 if __name__ == "__main__":

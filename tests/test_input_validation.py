@@ -5,7 +5,7 @@ from tempfile import TemporaryDirectory
 
 sys.path.append(str(Path(__file__).resolve().parents[1]))
 
-from HBS.hbs_api import run_hbs_social
+from HBS.hbs_api import normalize_improvement_config, run_hbs_social
 
 
 def _write_table_1(path: Path) -> None:
@@ -77,7 +77,7 @@ class TestInputValidation(unittest.TestCase):
             _write_table_1(csv_a)
             _write_table_2(csv_b)
 
-            for mode in ("adaptive-global", "adaptive-greedy"):
+            for mode in ("hybrid-global", "hybrid-personal"):
                 result = run_hbs_social(
                     csv_a,
                     csv_b,
@@ -89,6 +89,35 @@ class TestInputValidation(unittest.TestCase):
                     improve_mode=mode,
                 )
                 self.assertIn("S1", result.alloc)
+
+    def test_two_axis_inputs_are_accepted(self) -> None:
+        with TemporaryDirectory() as tmp:
+            workdir = Path(tmp)
+            csv_a = workdir / "table1.csv"
+            csv_b = workdir / "table2.csv"
+            _write_table_1(csv_a)
+            _write_table_2(csv_b)
+
+            result = run_hbs_social(
+                csv_a,
+                csv_b,
+                cap_default=1,
+                b=1,
+                seed=1,
+                draft_rounds=1,
+                post_iters=0,
+                move_type="swap",
+                objective_scope="personal",
+            )
+            self.assertIn("S1", result.alloc)
+
+    def test_normalization_rejects_conflicting_inputs(self) -> None:
+        with self.assertRaises(ValueError):
+            normalize_improvement_config(
+                improve_mode="hybrid-global",
+                move_type="swap",
+                objective_scope="personal",
+            )
 
     def test_improve_mode_adaptive_alias_rejected(self) -> None:
         with TemporaryDirectory() as tmp:
@@ -127,7 +156,7 @@ class TestInputValidation(unittest.TestCase):
                     seed=1,
                     draft_rounds=1,
                     post_iters=0,
-                    improve_mode="adaptive-unknown",
+                    improve_mode="hybrid-unknown",
                 )
 
 

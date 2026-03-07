@@ -13,7 +13,7 @@ from pathlib import Path
 from typing import Any
 from urllib.parse import parse_qs, urlparse
 
-from .hbs_api import run_hbs_social
+from .hbs_api import normalize_improvement_config, run_hbs_social
 from .hbs_domain import PickLogRow, PostAllocLogRow
 from .hbs_io import (
     _write_allocation_csv,
@@ -25,7 +25,7 @@ from .hbs_io import (
 LOG = logging.getLogger(__name__)
 UI_PATH = Path(__file__).resolve().parents[1] / "hbs_web_ui.html"
 TABLES_DIR = Path(__file__).resolve().parents[1] / "tables"
-HISTORY_DB_PATH = Path(tempfile.gettempdir()) / "hbs_social_web_history.sqlite3"
+HISTORY_DB_PATH = Path(__file__).resolve().parents[1] / "results" / "hbs_social_web_history.sqlite3"
 
 
 def _to_int(payload: dict[str, Any], key: str, default: int | None = None) -> int:
@@ -50,6 +50,18 @@ def _optional_int(payload: dict[str, Any], key: str) -> int | None:
         return int(raw)
     except (TypeError, ValueError) as exc:
         raise ValueError(f"{key} must be an integer or null") from exc
+
+
+def _optional_str(payload: dict[str, Any], key: str) -> str | None:
+    if key not in payload:
+        return None
+    raw = payload[key]
+    if raw is None:
+        return None
+    text = str(raw).strip()
+    if text == "":
+        return None
+    return text
 
 
 def _to_csv_text(payload: dict[str, Any], key: str, required: bool) -> str | None:
@@ -143,7 +155,12 @@ def _list_table_files() -> dict[str, Any]:
     }
 
 
-def _init_history_db(db_path: Path = HISTORY_DB_PATH) -> None:
+def _resolve_history_db_path(db_path: Path | None) -> Path:
+    return HISTORY_DB_PATH if db_path is None else db_path
+
+
+def _init_history_db(db_path: Path | None = None) -> None:
+    db_path = _resolve_history_db_path(db_path)
     db_path.parent.mkdir(parents=True, exist_ok=True)
     with sqlite3.connect(db_path, timeout=5) as conn:
         conn.execute(
@@ -159,6 +176,8 @@ def _init_history_db(db_path: Path = HISTORY_DB_PATH) -> None:
                 seed INTEGER NOT NULL,
                 draft_rounds INTEGER NOT NULL,
                 post_iters INTEGER NOT NULL,
+                move_type TEXT,
+                objective_scope TEXT,
                 improve_mode TEXT NOT NULL,
                 total_utility REAL NOT NULL,
                 gini_total_norm REAL NOT NULL,
@@ -166,6 +185,33 @@ def _init_history_db(db_path: Path = HISTORY_DB_PATH) -> None:
             )
             """
         )
+        columns = {
+            str(row[1])
+            for row in conn.execute("PRAGMA table_info(run_history)").fetchall()
+        }
+        if "move_type" not in columns:
+            conn.execute("ALTER TABLE run_history ADD COLUMN move_type TEXT")
+        if "objective_scope" not in columns:
+            conn.execute("ALTER TABLE run_history ADD COLUMN objective_scope TEXT")
+        rows_to_backfill = conn.execute(
+            """
+            SELECT id, improve_mode
+            FROM run_history
+            WHERE move_type IS NULL OR objective_scope IS NULL
+            """
+        ).fetchall()
+        for row_id, improve_mode in rows_to_backfill:
+            move_type, objective_scope, effective_mode = normalize_improvement_config(
+                improve_mode=str(improve_mode)
+            )
+            conn.execute(
+                """
+                UPDATE run_history
+                SET move_type = ?, objective_scope = ?, improve_mode = ?
+                WHERE id = ?
+                """,
+                (move_type, objective_scope, effective_mode, int(row_id)),
+            )
         conn.execute(
             "CREATE INDEX IF NOT EXISTS idx_run_history_created_at ON run_history(created_at DESC)"
         )
@@ -194,12 +240,15 @@ def _append_run_history(
     seed: int,
     draft_rounds: int,
     post_iters: int,
+    move_type: str,
+    objective_scope: str,
     improve_mode: str,
     total_utility: float,
     gini_total_norm: float,
     gini_base_norm: float,
-    db_path: Path = HISTORY_DB_PATH,
+    db_path: Path | None = None,
 ) -> int:
+    db_path = _resolve_history_db_path(db_path)
     _init_history_db(db_path)
     created_at = datetime.now(timezone.utc).isoformat(timespec="seconds")
     with sqlite3.connect(db_path, timeout=5) as conn:
@@ -207,8 +256,9 @@ def _append_run_history(
             """
             INSERT INTO run_history (
                 created_at, table1_ref, table2_ref, lambda_ref, cap_default, b, seed,
-                draft_rounds, post_iters, improve_mode, total_utility, gini_total_norm, gini_base_norm
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                draft_rounds, post_iters, move_type, objective_scope, improve_mode,
+                total_utility, gini_total_norm, gini_base_norm
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 created_at,
@@ -220,6 +270,8 @@ def _append_run_history(
                 seed,
                 draft_rounds,
                 post_iters,
+                move_type,
+                objective_scope,
                 improve_mode,
                 total_utility,
                 gini_total_norm,
@@ -230,7 +282,8 @@ def _append_run_history(
         return int(cursor.lastrowid)
 
 
-def _list_run_history(limit: int = 200, db_path: Path = HISTORY_DB_PATH) -> dict[str, Any]:
+def _list_run_history(limit: int = 200, db_path: Path | None = None) -> dict[str, Any]:
+    db_path = _resolve_history_db_path(db_path)
     if limit <= 0:
         raise ValueError("limit must be > 0")
     safe_limit = min(limit, 1000)
@@ -241,7 +294,8 @@ def _list_run_history(limit: int = 200, db_path: Path = HISTORY_DB_PATH) -> dict
             """
             SELECT
                 id, created_at, table1_ref, table2_ref, lambda_ref,
-                cap_default, b, seed, draft_rounds, post_iters, improve_mode,
+                cap_default, b, seed, draft_rounds, post_iters, move_type, objective_scope,
+                improve_mode,
                 total_utility, gini_total_norm, gini_base_norm
             FROM run_history
             ORDER BY id DESC
@@ -272,6 +326,8 @@ def _list_run_history(limit: int = 200, db_path: Path = HISTORY_DB_PATH) -> dict
                 "seed": row["seed"],
                 "draft_rounds": row["draft_rounds"],
                 "post_iters": row["post_iters"],
+                "move_type": row["move_type"],
+                "objective_scope": row["objective_scope"],
                 "improve_mode": row["improve_mode"],
                 "total_utility": row["total_utility"],
                 "gini_total_norm": row["gini_total_norm"],
@@ -283,6 +339,160 @@ def _list_run_history(limit: int = 200, db_path: Path = HISTORY_DB_PATH) -> dict
     return {
         "ok": True,
         "items": items,
+    }
+
+
+def _build_run_history_stats(limit: int = 200, db_path: Path | None = None) -> dict[str, Any]:
+    db_path = _resolve_history_db_path(db_path)
+    if limit <= 0:
+        raise ValueError("limit must be > 0")
+    safe_limit = min(limit, 1000)
+    _init_history_db(db_path)
+    with sqlite3.connect(db_path, timeout=5) as conn:
+        conn.row_factory = sqlite3.Row
+        rows = conn.execute(
+            """
+            SELECT
+                id, move_type, objective_scope, improve_mode,
+                total_utility, gini_total_norm, gini_base_norm
+            FROM run_history
+            ORDER BY id ASC
+            LIMIT ?
+            """,
+            (safe_limit,),
+        ).fetchall()
+
+    trend: list[dict[str, Any]] = []
+    mode_acc: dict[str, dict[str, Any]] = {}
+
+    best_utility: dict[str, Any] | None = None
+    best_fairness_g_total: dict[str, Any] | None = None
+    best_fairness_g_base: dict[str, Any] | None = None
+
+    for idx, row in enumerate(rows, start=1):
+        run_id = int(row["id"])
+        move_type = str(row["move_type"]) if row["move_type"] is not None else ""
+        objective_scope = (
+            str(row["objective_scope"]) if row["objective_scope"] is not None else ""
+        )
+        mode = str(row["improve_mode"])
+        total_utility = float(row["total_utility"])
+        gini_total_norm = float(row["gini_total_norm"])
+        gini_base_norm = float(row["gini_base_norm"])
+
+        trend_point = {
+            "run_index": idx,
+            "id": run_id,
+            "move_type": move_type,
+            "objective_scope": objective_scope,
+            "improve_mode": mode,
+            "total_utility": total_utility,
+            "gini_total_norm": gini_total_norm,
+            "gini_base_norm": gini_base_norm,
+        }
+        trend.append(trend_point)
+
+        if mode not in mode_acc:
+            mode_acc[mode] = {
+                "improve_mode": mode,
+                "move_type": move_type,
+                "objective_scope": objective_scope,
+                "runs": 0,
+                "sum_total_utility": 0.0,
+                "best_total_utility": total_utility,
+                "sum_gini_total_norm": 0.0,
+                "min_gini_total_norm": gini_total_norm,
+                "sum_gini_base_norm": 0.0,
+                "min_gini_base_norm": gini_base_norm,
+            }
+        bucket = mode_acc[mode]
+        bucket["runs"] += 1
+        bucket["sum_total_utility"] += total_utility
+        bucket["best_total_utility"] = max(bucket["best_total_utility"], total_utility)
+        bucket["sum_gini_total_norm"] += gini_total_norm
+        bucket["min_gini_total_norm"] = min(bucket["min_gini_total_norm"], gini_total_norm)
+        bucket["sum_gini_base_norm"] += gini_base_norm
+        bucket["min_gini_base_norm"] = min(bucket["min_gini_base_norm"], gini_base_norm)
+
+        utility_candidate = {
+            "run_index": idx,
+            "id": run_id,
+            "move_type": move_type,
+            "objective_scope": objective_scope,
+            "improve_mode": mode,
+            "value": total_utility,
+        }
+        if best_utility is None or utility_candidate["value"] > best_utility["value"]:
+            best_utility = utility_candidate
+
+        fairness_total_candidate = {
+            "run_index": idx,
+            "id": run_id,
+            "move_type": move_type,
+            "objective_scope": objective_scope,
+            "improve_mode": mode,
+            "value": gini_total_norm,
+        }
+        if (
+            best_fairness_g_total is None
+            or fairness_total_candidate["value"] < best_fairness_g_total["value"]
+        ):
+            best_fairness_g_total = fairness_total_candidate
+
+        fairness_base_candidate = {
+            "run_index": idx,
+            "id": run_id,
+            "move_type": move_type,
+            "objective_scope": objective_scope,
+            "improve_mode": mode,
+            "value": gini_base_norm,
+        }
+        if (
+            best_fairness_g_base is None
+            or fairness_base_candidate["value"] < best_fairness_g_base["value"]
+        ):
+            best_fairness_g_base = fairness_base_candidate
+
+    by_mode: list[dict[str, Any]] = []
+    for mode in sorted(mode_acc.keys()):
+        bucket = mode_acc[mode]
+        runs = int(bucket["runs"])
+        by_mode.append(
+            {
+                "improve_mode": mode,
+                "move_type": str(bucket["move_type"]),
+                "objective_scope": str(bucket["objective_scope"]),
+                "runs": runs,
+                "avg_total_utility": (bucket["sum_total_utility"] / runs if runs > 0 else 0.0),
+                "best_total_utility": float(bucket["best_total_utility"]),
+                "avg_gini_total_norm": (bucket["sum_gini_total_norm"] / runs if runs > 0 else 0.0),
+                "min_gini_total_norm": float(bucket["min_gini_total_norm"]),
+                "avg_gini_base_norm": (bucket["sum_gini_base_norm"] / runs if runs > 0 else 0.0),
+                "min_gini_base_norm": float(bucket["min_gini_base_norm"]),
+            }
+        )
+
+    return {
+        "ok": True,
+        "trend": trend,
+        "by_mode": by_mode,
+        "overall": {
+            "runs_total": len(trend),
+            "best_utility": best_utility,
+            "best_fairness_g_total": best_fairness_g_total,
+            "best_fairness_g_base": best_fairness_g_base,
+        },
+    }
+
+
+def _reset_run_history(db_path: Path | None = None) -> dict[str, Any]:
+    db_path = _resolve_history_db_path(db_path)
+    if db_path.exists():
+        db_path.unlink()
+    _init_history_db(db_path)
+    return {
+        "ok": True,
+        "items": [],
     }
 
 
@@ -330,7 +540,14 @@ def _run_payload(payload: dict[str, Any]) -> dict[str, Any]:
     seed = _to_int(payload, "seed", default=42)
     draft_rounds = _optional_int(payload, "draft_rounds")
     post_iters = _to_int(payload, "post_iters", default=0)
-    improve_mode = str(payload.get("improve_mode", "swap"))
+    raw_improve_mode = _optional_str(payload, "improve_mode")
+    raw_move_type = _optional_str(payload, "move_type")
+    raw_objective_scope = _optional_str(payload, "objective_scope")
+    move_type, objective_scope, improve_mode = normalize_improvement_config(
+        improve_mode=raw_improve_mode,
+        move_type=raw_move_type,
+        objective_scope=raw_objective_scope,
+    )
     table1_ref = _history_ref(payload, "table1_file") or "[inline-table1]"
     table2_ref = _history_ref(payload, "table2_file") or "[inline-table2]"
     lambda_ref = _history_ref(payload, "lambda_file")
@@ -355,7 +572,9 @@ def _run_payload(payload: dict[str, Any]) -> dict[str, Any]:
             b=b,
             draft_rounds=draft_rounds,
             post_iters=post_iters,
-            improve_mode=improve_mode,
+            improve_mode=raw_improve_mode,
+            move_type=move_type,
+            objective_scope=objective_scope,
             seed=seed,
             progress=False,
             sanity_checks=False,
@@ -389,6 +608,8 @@ def _run_payload(payload: dict[str, Any]) -> dict[str, Any]:
             seed=seed,
             draft_rounds=resolved_draft_rounds,
             post_iters=post_iters,
+            move_type=move_type,
+            objective_scope=objective_scope,
             improve_mode=improve_mode,
             total_utility=result.summary.total_utility,
             gini_total_norm=result.summary.gini_total_norm,
@@ -404,6 +625,8 @@ def _run_payload(payload: dict[str, Any]) -> dict[str, Any]:
                 "seed": seed,
                 "draft_rounds": resolved_draft_rounds,
                 "post_iters": post_iters,
+                "move_type": move_type,
+                "objective_scope": objective_scope,
                 "improve_mode": improve_mode,
             },
             "summary": asdict(result.summary),
@@ -451,6 +674,32 @@ class _HbsWebHandler(BaseHTTPRequestHandler):
                 return
             self._send_json(HTTPStatus.OK, _list_run_history(limit=limit))
             return
+        if path == "/api/history/stats":
+            query = parse_qs(parsed.query)
+            limit_raw = query.get("limit", ["200"])[0]
+            try:
+                limit = int(limit_raw)
+            except ValueError:
+                self._send_json(
+                    HTTPStatus.BAD_REQUEST,
+                    {"ok": False, "error": "limit must be an integer"},
+                )
+                return
+            if limit <= 0:
+                self._send_json(
+                    HTTPStatus.BAD_REQUEST,
+                    {"ok": False, "error": "limit must be > 0"},
+                )
+                return
+            try:
+                self._send_json(HTTPStatus.OK, _build_run_history_stats(limit=limit))
+            except Exception as exc:  # pragma: no cover - defensive fallback
+                LOG.exception("Unexpected error during /api/history/stats")
+                self._send_json(
+                    HTTPStatus.INTERNAL_SERVER_ERROR,
+                    {"ok": False, "error": f"Unexpected server error: {exc}"},
+                )
+            return
         self._send_json(
             HTTPStatus.NOT_FOUND,
             {"ok": False, "error": f"Unknown route: {path}"},
@@ -458,6 +707,17 @@ class _HbsWebHandler(BaseHTTPRequestHandler):
 
     def do_POST(self) -> None:
         path = urlparse(self.path).path
+        if path == "/api/history/reset":
+            try:
+                self._send_json(HTTPStatus.OK, _reset_run_history())
+            except Exception as exc:  # pragma: no cover - defensive fallback
+                LOG.exception("Unexpected error during /api/history/reset")
+                self._send_json(
+                    HTTPStatus.INTERNAL_SERVER_ERROR,
+                    {"ok": False, "error": f"Unexpected server error: {exc}"},
+                )
+            return
+
         if path != "/api/run":
             self._send_json(
                 HTTPStatus.NOT_FOUND,

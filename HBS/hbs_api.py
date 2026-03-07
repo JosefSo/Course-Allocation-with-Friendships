@@ -7,6 +7,81 @@ from .hbs_domain import RunResult
 from .hbs_engine import _HbsSocialDraftEngine
 from .hbs_io import _read_table_1, _read_table_2, _read_table_lambda
 
+CANONICAL_MOVE_TYPES = ("swap", "drop-add", "hybrid")
+CANONICAL_OBJECTIVE_SCOPES = ("global", "personal")
+CANONICAL_IMPROVE_MODES = (
+    "swap-global",
+    "swap-personal",
+    "drop-add-global",
+    "drop-add-personal",
+    "hybrid-global",
+    "hybrid-personal",
+)
+_IMPROVE_MODE_ALIASES = {
+    "swap": "swap-global",
+    "add-drop": "drop-add-global",
+    "drop-add": "drop-add-global",
+    "adaptive-global": "hybrid-global",
+    "adaptive-personal": "hybrid-personal",
+    "adaptive-greedy": "hybrid-personal",
+}
+
+
+def compose_improve_mode(move_type: str, objective_scope: str) -> str:
+    return f"{move_type}-{objective_scope}"
+
+
+def normalize_improve_mode(improve_mode: str) -> str:
+    return _IMPROVE_MODE_ALIASES.get(improve_mode, improve_mode)
+
+
+def _parse_effective_mode(improve_mode: str) -> tuple[str, str, str]:
+    effective_mode = normalize_improve_mode(improve_mode)
+    if effective_mode not in CANONICAL_IMPROVE_MODES:
+        allowed = ", ".join(CANONICAL_IMPROVE_MODES)
+        raise ValueError(f"improve_mode must be one of: {allowed}")
+    move_type, objective_scope = effective_mode.rsplit("-", 1)
+    return move_type, objective_scope, effective_mode
+
+
+def normalize_improvement_config(
+    *,
+    improve_mode: str | None = None,
+    move_type: str | None = None,
+    objective_scope: str | None = None,
+) -> tuple[str, str, str]:
+    if move_type is None and objective_scope is None and improve_mode is None:
+        move_type = "swap"
+        objective_scope = "global"
+
+    if (move_type is None) != (objective_scope is None):
+        raise ValueError("move_type and objective_scope must be provided together")
+
+    effective_from_axes: str | None = None
+    if move_type is not None and objective_scope is not None:
+        if move_type not in CANONICAL_MOVE_TYPES:
+            allowed = ", ".join(CANONICAL_MOVE_TYPES)
+            raise ValueError(f"move_type must be one of: {allowed}")
+        if objective_scope not in CANONICAL_OBJECTIVE_SCOPES:
+            allowed = ", ".join(CANONICAL_OBJECTIVE_SCOPES)
+            raise ValueError(f"objective_scope must be one of: {allowed}")
+        effective_from_axes = compose_improve_mode(move_type, objective_scope)
+
+    if improve_mode is None:
+        if effective_from_axes is None:
+            raise ValueError("Either improve_mode or both move_type/objective_scope must be provided")
+        return move_type, objective_scope, effective_from_axes
+
+    mode_move_type, mode_objective_scope, effective_from_mode = _parse_effective_mode(improve_mode)
+    if effective_from_axes is None:
+        return mode_move_type, mode_objective_scope, effective_from_mode
+    if effective_from_axes != effective_from_mode:
+        raise ValueError(
+            "improve_mode conflicts with move_type/objective_scope: "
+            f"{effective_from_mode} != {effective_from_axes}"
+        )
+    return move_type, objective_scope, effective_from_axes
+
 
 def run_hbs_social(
     csv_a: Path,
@@ -18,7 +93,9 @@ def run_hbs_social(
     seed: int,
     draft_rounds: int | None = None,
     post_iters: int = 0,
-    improve_mode: str = "swap",
+    improve_mode: str | None = None,
+    move_type: str | None = None,
+    objective_scope: str | None = None,
     progress: bool = False,
     sanity_checks: bool = False,
     delta_check_every: int = 0,
@@ -40,11 +117,11 @@ def run_hbs_social(
         raise ValueError("b must be > 0")
     if post_iters < 0:
         raise ValueError("post_iters must be >= 0")
-    if improve_mode not in {"swap", "add-drop", "adaptive-global", "adaptive-greedy"}:
-        raise ValueError(
-            "improve_mode must be one of: swap, add-drop, "
-            "adaptive-global, adaptive-greedy"
-        )
+    move_type, objective_scope, effective_improve_mode = normalize_improvement_config(
+        improve_mode=improve_mode,
+        move_type=move_type,
+        objective_scope=objective_scope,
+    )
     if delta_check_every < 0:
         raise ValueError("delta_check_every must be >= 0")
     if draft_rounds is None:
@@ -74,7 +151,9 @@ def run_hbs_social(
         draft_rounds=draft_rounds,
         post_iters=post_iters,
         total_iters=total_iters,
-        improve_mode=improve_mode,
+        move_type=move_type,
+        objective_scope=objective_scope,
+        effective_improve_mode=effective_improve_mode,
         progress=progress,
         seed=seed,
         sanity_checks=sanity_checks,

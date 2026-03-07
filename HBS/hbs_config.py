@@ -14,7 +14,9 @@ class _RunConfig:
     draft_rounds: int
     post_iters: int
     total_iters: int
-    improve_mode: str
+    move_type: str
+    objective_scope: str
+    effective_improve_mode: str
     progress: bool
     seed: int
     sanity_checks: bool

@@ -18,6 +18,7 @@ A deterministic snake-draft course allocation engine with **reactive social pref
   - [Data Generator](#data-generator-generategenerate_tablespy)
   - [Allocator](#allocator-hbs_socialpy)
   - [Web UI](#web-ui-hbs_webpy--hbs_web_uihtml)
+  - [Experiment Sweep](#experiment-sweep-hbs_experimentspy)
 - [Mathematical Model](#mathematical-model)
   - [Base Utility](#base-utility-table-1)
   - [Friend Preference](#friend-preference-table-2)
@@ -27,8 +28,8 @@ A deterministic snake-draft course allocation engine with **reactive social pref
   - [Snake Draft Order](#snake-draft-order)
 - [Post-Draft Improvement](#post-draft-improvement)
   - [Swap Mode](#swap-mode)
-  - [Add-Drop Mode](#add-drop-mode)
-  - [Adaptive Modes](#adaptive-modes)
+  - [Drop-Add Mode](#drop-add-mode)
+  - [Hybrid Modes](#hybrid-modes)
 - [Fairness Metrics](#fairness-metrics)
 - [Output Files](#output-files)
 - [Testing](#testing)
@@ -42,7 +43,7 @@ A deterministic snake-draft course allocation engine with **reactive social pref
 - **Snake draft allocation** with configurable number of rounds and per-student course limits.
 - **Reactive friend bonus** that rewards overlap with friends who are *already* allocated to the same course, avoiding circular dependencies.
 - **Per-student social weight** (lambda) controlling the base vs. friend trade-off.
-- **Four post-draft improvement modes:** swap, add-drop, adaptive-global, adaptive-greedy.
+- **Six post-draft improvement variants (3x2):** `swap`, `drop-add`, `hybrid` x `global`/`personal`.
 - **Deterministic tie-breaking** chain: utility (within tau) &rarr; score &rarr; position &rarr; seeded random &rarr; course ID.
 - **Comprehensive fairness metrics:** Gini, Jain, Theil, Atkinson indices; percentile distributions; friend overlap statistics.
 - **Audit trail:** every pick and post-phase move is logged with full utility decomposition.
@@ -86,7 +87,7 @@ A deterministic snake-draft course allocation engine with **reactive social pref
     ├── test_tie_breaks.py         # Tie-breaking logic tests
     ├── test_reproducibility.py    # Determinism / seed tests
     ├── test_input_validation.py   # Input validation tests
-    ├── test_adaptive_improvement.py  # Adaptive mode tests
+    ├── test_adaptive_improvement.py  # Hybrid mode tests
     └── test_web_api.py               # Local web API payload/validation tests
 ```
 
@@ -117,7 +118,7 @@ python hbs_social.py \
   --csv-b tables/table2_pair.csv \
   --csv-lambda tables/table3_lambda.csv \
   --cap-default 80 --b 3 --draft-rounds 3 \
-  --post-iters 10 --improve-mode adaptive-global \
+  --post-iters 10 --move-type hybrid --objective-scope global \
   --seed 11 --progress
 ```
 
@@ -217,7 +218,7 @@ python hbs_social.py \
   --csv-lambda TABLE3.csv \
   --cap-default 80 --b 3 \
   --draft-rounds 3 --post-iters 10 \
-  --improve-mode adaptive-global --seed 42 \
+  --move-type hybrid --objective-scope global --seed 42 \
   --progress --sanity-checks
 ```
 
@@ -237,7 +238,9 @@ python hbs_social.py \
 | `--b` | 3 | Max courses per student |
 | `--draft-rounds` | b | Number of snake-draft rounds |
 | `--post-iters` / `--n` | 0 | Post-phase iterations |
-| `--improve-mode` | swap | `swap`, `add-drop`, `adaptive-global`, or `adaptive-greedy` |
+| `--move-type` | swap | `swap`, `drop-add`, or `hybrid` |
+| `--objective-scope` | global | `global` or `personal` |
+| `--improve-mode` | (compat) | Legacy/shortcut combined mode alias such as `swap-global` or `hybrid-personal` |
 | `--seed` | 42 | RNG seed for reproducibility |
 
 **Output flags:**
@@ -275,7 +278,7 @@ The web UI calls the same `run_hbs_social(...)` backend as CLI, so allocation lo
 1. Click **Refresh File List**.
 2. Select **Table 1 file (required)** and **Table 2 file (required)**.
 3. Select **Lambda file (optional)** or leave `(none)` to use default `LambdaFriend=0.5`.
-4. Set run parameters (`cap_default`, `b`, `seed`, `draft_rounds`, `post_iters`, `improve_mode`).
+4. Set run parameters (`cap_default`, `b`, `seed`, `draft_rounds`, `post_iters`, `move_type`, `objective_scope`).
 5. Click **Run Allocation**.
 6. Inspect **Summary**, **Allocation**, **Pick Log**, then download CSV outputs.
 
@@ -284,20 +287,47 @@ The web UI calls the same `run_hbs_social(...)` backend as CLI, so allocation lo
 - File-based input (UI): choose CSVs found in `tables/` (`table1_*`, `table2_*`, `table3_*` / `*lambda*`).
 - Optional lambda: if omitted, per-student social weight defaults to `0.5`.
 - `draft_rounds`: leave blank to auto-use `b`.
-- `improve_mode`: choose one of `swap`, `add-drop`, `adaptive-global`, `adaptive-greedy`.
+- `move_type`: choose one of `swap`, `drop-add`, `hybrid`.
+- `objective_scope`: choose `global` or `personal`.
+- `improve_mode`: optional compatibility alias (for example `swap-global`, `drop-add-personal`, `hybrid-global`).
 
-**Adaptive mode choice in browser:**
+**Improvement matrix in browser (2x3):**
 
-| Mode | Objective | Acceptance rule | Typical use |
-|------|-----------|------------------|-------------|
-| `adaptive-global` | Global welfare | apply move only if `ΔW_global > 0` | prioritize overall system welfare |
-| `adaptive-greedy` | Current student's welfare | apply move if `ΔU_student > 0` | allow local student gains, even when global gain is not positive |
+| Objective \ Move type | `swap` | `drop-add` | `hybrid` |
+|-----------------------|--------|------------|----------|
+| `global` | `swap-global` | `drop-add-global` | `hybrid-global` |
+| `personal` | `swap-personal` | `drop-add-personal` | `hybrid-personal` |
 
 **Notes:**
 
 - The file selectors only expose CSV files inside `tables/`.
 - After adding new CSVs to `tables/`, click **Refresh File List**.
 - The UI provides download buttons for `allocation.csv`, `post_allocation.csv`, `summary.csv`, `metrics_extended.csv`.
+
+### Experiment Sweep (`hbs_experiments.py`)
+
+For large-scale mode/seed sweeps with persistence and stability analysis:
+
+```bash
+python hbs_experiments.py \
+  --out-dir results/experiments \
+  --db-path results/experiments/experiments.sqlite \
+  --seed-start 11 \
+  --seed-count 10 \
+  --post-grid 0,1,5,10,20 \
+  --modes swap-global,swap-personal,drop-add-global,drop-add-personal,hybrid-global,hybrid-personal \
+  --progress
+```
+
+Default matrix (900 runs): 3 scenarios (`200x8`, `200x10`, `200x12`) x 6 modes x 10 seeds x 5 `post_iters`.
+
+Outputs:
+
+- `results/experiments/experiments.sqlite`: runs, normalized post events, and stability checks.
+- `results/experiments/runs_flat.csv`: one row per run.
+- `results/experiments/mode_post_agg.csv`: mean/std/median by scenario+mode+post.
+- `results/experiments/stability_by_seed.csv`: per-seed stability threshold and classification.
+- `results/experiments/report.md`: summary and ranked findings.
 
 ---
 
@@ -410,11 +440,17 @@ Given a seeded permutation $\pi$ of students:
 
 ## Post-Draft Improvement
 
-After the initial draft, the allocation can be improved for `post_iters` iterations. `swap`, `add-drop`, and `adaptive-global` accept a move only if it **strictly improves** global welfare $W = \sum_s W_s$, while `adaptive-greedy` accepts moves by local student gain $\Delta U_s > 0$.
+After the initial draft, the allocation can be improved for `post_iters` iterations. Each post move is defined by two axes:
+- move type: `swap`, `drop-add`, `hybrid`
+- objective scope: `global` or `personal`
+
+Global variants accept only **strict global welfare gain** $W = \sum_s W_s$; personal variants accept by **current student gain** $\Delta U_s > 0$.
 
 ### Swap Mode
 
-Each iteration finds the single best welfare-improving swap across all pairs $(s_1, c_1) \leftrightarrow (s_2, c_2)$ and applies it. Stops early if no improving swap exists.
+Each iteration attempts one best swap across feasible pairs $(s_1, c_1) \leftrightarrow (s_2, c_2)$:
+- `swap-global`: optimize `ΔW_global`
+- `swap-personal`: optimize `ΔU_current_student` over oriented swap candidates
 
 $$
 \Delta W = W_{\text{after}} - W_{\text{before}} > 0
@@ -422,33 +458,39 @@ $$
 
 Delta computation accounts for both participants and their followers (students who list them as friends).
 
-*Code:* `HBS/hbs_engine.py:658` (`_run_iterative_improvement`)
+*Code:* `HBS/hbs_engine.py` (`_run_swap_improvement`)
 
-### Add-Drop Mode
+### Drop-Add Mode
 
-HBS-style pass: for each student in a shuffled order, rebuild their top-$b$ course set from `{current courses} + {courses with spare capacity}`. Drop removed courses, add new ones.
+HBS-style pass: for each student in a shuffled order, rebuild top-$b$ from `{current courses} + {courses with spare capacity}` and evaluate full rebuild exactly:
+- `drop-add-global`: accept if `ΔW_global > 0`
+- `drop-add-personal`: accept if `ΔU_current_student > 0`
 
-*Code:* `HBS/hbs_engine.py:767` (`_run_add_drop_improvement`)
+*Code:* `HBS/hbs_engine.py` (`_run_drop_add_improvement`)
 
-### Adaptive Modes
+### Hybrid Modes
 
 Snake-order passes reusing the draft permutation. For each student:
 1. If a target course has **spare capacity** &rarr; try 1-for-1 add/drop.
 2. If a target course is **full** &rarr; try swap with any current holder.
 3. Accept the best move by objective:
-   - `adaptive-global`: $\Delta W_{\text{global}} > 0$
-   - `adaptive-greedy`: $\Delta U_{\text{student}} > 0$
+   - `hybrid-global`: $\Delta W_{\text{global}} > 0$
+   - `hybrid-personal`: $\Delta U_{\text{student}} > 0$
 
 Early stop when a full pass produces no changes.
 
-*Code:* `HBS/hbs_engine.py:878` (`_run_adaptive_improvement`)
+*Code:* `HBS/hbs_engine.py` (`_run_hybrid_improvement`)
 
-**Global vs Greedy objective:**
+**All 6 variants:**
 
 | Variant | Objective used for delta | Event types in `post_allocation.csv` |
 |---------|---------------------------|--------------------------------------|
-| `adaptive-global` | `ΔW_global` (all students) | `ADAPTIVE_ADD_DROP`, `ADAPTIVE_SWAP` |
-| `adaptive-greedy` | `ΔU_student` (current student only) | `ADAPTIVE_GREEDY_ADD_DROP`, `ADAPTIVE_GREEDY_SWAP` |
+| `swap-global` | `ΔW_global` | `SWAP_GLOBAL` |
+| `swap-personal` | `ΔU_current_student` | `SWAP_PERSONAL` |
+| `drop-add-global` | `ΔW_global` | `DROP_ADD_GLOBAL` |
+| `drop-add-personal` | `ΔU_current_student` | `DROP_ADD_PERSONAL` |
+| `hybrid-global` | `ΔW_global` (all students) | `HYBRID_GLOBAL_DROP_ADD`, `HYBRID_GLOBAL_SWAP` |
+| `hybrid-personal` | `ΔU_student` (current student only) | `HYBRID_PERSONAL_DROP_ADD`, `HYBRID_PERSONAL_SWAP` |
 
 ---
 
@@ -488,11 +530,11 @@ RoundPicked,StudentID,CourseID
 Post-phase events with move details:
 ```
 Iteration,EventType,StudentID,DroppedCourses,AddedCourses,SwapStudent1,SwapCourse1,SwapStudent2,SwapCourse2,DeltaUtility
-4,SWAP,,,,S1,C1,S2,C3,0.034500
+4,SWAP_GLOBAL,,,,S1,C1,S2,C3,0.034500
 5,,,,,,,,,
 ```
 
-Event types: `SWAP`, `ADD_DROP`, `ADAPTIVE_ADD_DROP`, `ADAPTIVE_SWAP`, `ADAPTIVE_GREEDY_ADD_DROP`, `ADAPTIVE_GREEDY_SWAP`, or empty (no improving move found).
+Event types: `SWAP_GLOBAL`, `SWAP_PERSONAL`, `DROP_ADD_GLOBAL`, `DROP_ADD_PERSONAL`, `HYBRID_GLOBAL_DROP_ADD`, `HYBRID_GLOBAL_SWAP`, `HYBRID_PERSONAL_DROP_ADD`, `HYBRID_PERSONAL_SWAP`, or empty (no improving move found).
 
 ### summary.csv
 Single-row summary:
@@ -520,7 +562,7 @@ python tests/run_all_tests.py
 | `test_tie_breaks.py` | Score-driven vs. position-driven tie-breaking |
 | `test_reproducibility.py` | Same seed produces identical allocation and metrics |
 | `test_input_validation.py` | Rejection of invalid parameters (draft_rounds > b, lambda out of range) |
-| `test_adaptive_improvement.py` | Adaptive mode correctness and early stop |
+| `test_adaptive_improvement.py` | Hybrid mode correctness and early stop |
 | `test_web_api.py` | `/api/run` payload handling, file mode, and path safety checks |
 
 ---

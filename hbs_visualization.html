@@ -448,7 +448,7 @@
         <article class="flow-step" data-stage="input"><strong>1. Входные таблицы</strong><small>Table1, Table2, Lambda</small></article>
         <article class="flow-step" data-stage="utility"><strong>2. Utility модель</strong><small>Base + FriendBonus</small></article>
         <article class="flow-step" data-stage="draft"><strong>3. Snake Draft</strong><small>Пошаговый выбор курсов</small></article>
-        <article class="flow-step" data-stage="post"><strong>4. Post-phase</strong><small>swap | add-drop | adaptive</small></article>
+        <article class="flow-step" data-stage="post"><strong>4. Post-phase</strong><small>swap | drop-add | hybrid</small></article>
         <article class="flow-step" data-stage="metrics"><strong>5. Метрики</strong><small>TotalUtility и fairness</small></article>
       </div>
     </section>
@@ -504,8 +504,8 @@
           <h2 class="h3">Post-phase как продолжение HBS</h2>
           <div class="mode-tabs">
             <button class="mode-btn active" data-mode="swap">swap</button>
-            <button class="mode-btn" data-mode="add-drop">add-drop</button>
-            <button class="mode-btn" data-mode="adaptive">adaptive</button>
+            <button class="mode-btn" data-mode="drop-add">drop-add</button>
+            <button class="mode-btn" data-mode="hybrid">hybrid</button>
           </div>
           <div class="mode-box">
             <div id="modeText"></div>
@@ -585,8 +585,8 @@
 
     const modeInfo = {
       "swap": "Итеративный поиск лучшего обмена между двумя студентами. Ход принимается только если DeltaW > 0.",
-      "add-drop": "Для каждого студента рассматривается набор текущих курсов + курсы со свободными местами. Берутся top-b по utility.",
-      "adaptive": "Snake-проходы после драфта: студент пытается притянуть более выгодный курс; если курс полный, пробует swap."
+      "drop-add": "Для каждого студента рассматривается набор текущих курсов + курсы со свободными местами. Берутся top-b по utility.",
+      "hybrid": "Snake-проходы после драфта: студент пытается притянуть более выгодный курс; если курс полный, пробует swap."
     };
 
     const el = {
@@ -854,7 +854,7 @@
         `<b>Total pick utility:</b> ${total.toFixed(3)}<br>` +
         `<b>Avg utility/student:</b> ${avg.toFixed(3)}<br>` +
         `<b>Course fill rate mean:</b> ${(fill * 100).toFixed(1)}%<br>` +
-        `<span class="muted">Дальше можно запускать post-phase режимы (swap/add-drop/adaptive) в основном CLI/engine.</span>`;
+        `<span class="muted">Дальше можно запускать post-phase режимы (swap/drop-add/hybrid) в основном CLI/engine.</span>`;
       stopAutoplay();
     }
 
@@ -1032,7 +1032,7 @@
           btn.classList.add("active");
           const mode = btn.dataset.mode;
           el.modeText.textContent = modeInfo[mode];
-          const widths = { "swap": 45, "add-drop": 70, "adaptive": 90 };
+          const widths = { "swap": 45, "drop-add": 70, "hybrid": 90 };
           el.modeBar.style.width = `${widths[mode]}%`;
           setStage("post");
         });
