@@ -3,8 +3,10 @@ from __future__ import annotations
 import argparse
 import json
 import logging
+import math
 import sqlite3
 import tempfile
+from concurrent.futures import ProcessPoolExecutor
 from dataclasses import asdict
 from datetime import datetime, timezone
 from http import HTTPStatus
@@ -13,7 +15,7 @@ from pathlib import Path
 from typing import Any
 from urllib.parse import parse_qs, urlparse
 
-from .hbs_api import normalize_improvement_config, run_hbs_social
+from .hbs_api import CANONICAL_IMPROVE_MODES, normalize_improvement_config, run_hbs_social
 from .hbs_domain import PickLogRow, PostAllocLogRow
 from .hbs_io import (
     _write_allocation_csv,
@@ -512,6 +514,54 @@ def _serialize_post_log(rows: list[PostAllocLogRow]) -> list[dict[str, Any]]:
     return out
 
 
+def _mean(values: list[float]) -> float:
+    return sum(values) / len(values) if values else 0.0
+
+
+def _stddev(values: list[float]) -> float:
+    if len(values) <= 1:
+        return 0.0
+    mean = _mean(values)
+    return math.sqrt(sum((value - mean) ** 2 for value in values) / len(values))
+
+
+def _run_mode_comparison_task(task: dict[str, Any]) -> dict[str, Any]:
+    result = run_hbs_social(
+        Path(str(task["csv_a"])),
+        Path(str(task["csv_b"])),
+        csv_lambda=(Path(str(task["csv_lambda"])) if task["csv_lambda"] is not None else None),
+        cap_default=int(task["cap_default"]),
+        b=int(task["b"]),
+        draft_rounds=task["draft_rounds"],
+        post_iters=int(task["post_iters"]),
+        improve_mode=str(task["improve_mode"]),
+        seed=int(task["seed"]),
+        progress=False,
+        sanity_checks=False,
+        delta_check_every=0,
+    )
+    return {
+        "improve_mode": str(task["improve_mode"]),
+        "seed": int(task["seed"]),
+        "total_utility": float(result.summary.total_utility),
+        "gini_total_norm": float(result.summary.gini_total_norm),
+        "gini_base_norm": float(result.summary.gini_base_norm),
+    }
+
+
+def _run_mode_comparison_tasks(
+    tasks: list[dict[str, Any]],
+    *,
+    parallel_workers: int,
+) -> tuple[list[dict[str, Any]], int, str | None]:
+    try:
+        with ProcessPoolExecutor(max_workers=parallel_workers) as executor:
+            return list(executor.map(_run_mode_comparison_task, tasks)), parallel_workers, None
+    except PermissionError as exc:
+        LOG.debug("Parallel mode comparison blocked by the environment: %s", exc)
+        return [_run_mode_comparison_task(task) for task in tasks], 1, str(exc)
+
+
 def _run_payload(payload: dict[str, Any]) -> dict[str, Any]:
     if not isinstance(payload, dict):
         raise ValueError("JSON payload must be an object")
@@ -643,6 +693,173 @@ def _run_payload(payload: dict[str, Any]) -> dict[str, Any]:
         }
 
 
+def _run_mode_comparison_payload(payload: dict[str, Any]) -> dict[str, Any]:
+    if not isinstance(payload, dict):
+        raise ValueError("JSON payload must be an object")
+
+    table1_csv = _read_csv_from_payload(
+        payload,
+        text_key="table1_csv",
+        file_key="table1_file",
+        required=True,
+    )
+    table2_csv = _read_csv_from_payload(
+        payload,
+        text_key="table2_csv",
+        file_key="table2_file",
+        required=True,
+    )
+    table_lambda_csv = _read_csv_from_payload(
+        payload,
+        text_key="lambda_csv",
+        file_key="lambda_file",
+        required=False,
+    )
+
+    cap_default = _to_int(payload, "cap_default", default=10)
+    b = _to_int(payload, "b", default=3)
+    base_seed = _to_int(payload, "seed", default=42)
+    draft_rounds = _optional_int(payload, "draft_rounds")
+    post_iters = _to_int(payload, "post_iters", default=0)
+    batch_size = _to_int(payload, "batch_size", default=30)
+    if batch_size <= 0:
+        raise ValueError("batch_size must be > 0")
+    if batch_size > 200:
+        raise ValueError("batch_size must be <= 200")
+    table1_ref = _history_ref(payload, "table1_file") or "[inline-table1]"
+    table2_ref = _history_ref(payload, "table2_file") or "[inline-table2]"
+    lambda_ref = _history_ref(payload, "lambda_file")
+    resolved_draft_rounds = b if draft_rounds is None else draft_rounds
+
+    with tempfile.TemporaryDirectory() as tmp:
+        tmp_dir = Path(tmp)
+        csv_a = tmp_dir / "table1.csv"
+        csv_b = tmp_dir / "table2.csv"
+        csv_lambda: Path | None = None
+        csv_a.write_text(table1_csv, encoding="utf-8")
+        csv_b.write_text(table2_csv, encoding="utf-8")
+
+        if table_lambda_csv is not None:
+            csv_lambda = tmp_dir / "lambda.csv"
+            csv_lambda.write_text(table_lambda_csv, encoding="utf-8")
+
+        tasks: list[dict[str, Any]] = []
+        mode_meta: dict[str, tuple[str, str]] = {}
+        history_ids: list[int] = []
+        for mode in CANONICAL_IMPROVE_MODES:
+            move_type, objective_scope, improve_mode = normalize_improvement_config(
+                improve_mode=mode
+            )
+            mode_meta[improve_mode] = (move_type, objective_scope)
+            for offset in range(batch_size):
+                tasks.append(
+                    {
+                        "csv_a": str(csv_a),
+                        "csv_b": str(csv_b),
+                        "csv_lambda": (str(csv_lambda) if csv_lambda is not None else None),
+                        "cap_default": cap_default,
+                        "b": b,
+                        "draft_rounds": draft_rounds,
+                        "post_iters": post_iters,
+                        "improve_mode": improve_mode,
+                        "seed": base_seed + offset,
+                    }
+                )
+
+        parallel_workers = 6
+        task_results, effective_parallel_workers, parallel_fallback_reason = (
+            _run_mode_comparison_tasks(tasks, parallel_workers=parallel_workers)
+        )
+
+        grouped_results: dict[str, list[dict[str, Any]]] = {
+            mode: [] for mode in CANONICAL_IMPROVE_MODES
+        }
+        for row in task_results:
+            improve_mode = str(row["improve_mode"])
+            move_type, objective_scope = mode_meta[improve_mode]
+            grouped_results[improve_mode].append(row)
+            history_ids.append(
+                _append_run_history(
+                    table1_ref=table1_ref,
+                    table2_ref=table2_ref,
+                    lambda_ref=lambda_ref,
+                    cap_default=cap_default,
+                    b=b,
+                    seed=int(row["seed"]),
+                    draft_rounds=resolved_draft_rounds,
+                    post_iters=post_iters,
+                    move_type=move_type,
+                    objective_scope=objective_scope,
+                    improve_mode=improve_mode,
+                    total_utility=float(row["total_utility"]),
+                    gini_total_norm=float(row["gini_total_norm"]),
+                    gini_base_norm=float(row["gini_base_norm"]),
+                )
+            )
+
+        by_mode: list[dict[str, Any]] = []
+        for mode in CANONICAL_IMPROVE_MODES:
+            move_type, objective_scope = mode_meta[mode]
+            rows = grouped_results[mode]
+            total_values: list[float] = []
+            g_total_values: list[float] = []
+            g_base_values: list[float] = []
+            seeds: list[int] = []
+            for row in rows:
+                seeds.append(int(row["seed"]))
+                total_values.append(float(row["total_utility"]))
+                g_total_values.append(float(row["gini_total_norm"]))
+                g_base_values.append(float(row["gini_base_norm"]))
+
+            by_mode.append(
+                {
+                    "improve_mode": mode,
+                    "move_type": move_type,
+                    "objective_scope": objective_scope,
+                    "runs": batch_size,
+                    "seed_start": seeds[0],
+                    "seed_end": seeds[-1],
+                    "avg_total_utility": _mean(total_values),
+                    "best_total_utility": max(total_values),
+                    "std_total_utility": _stddev(total_values),
+                    "avg_gini_total_norm": _mean(g_total_values),
+                    "min_gini_total_norm": min(g_total_values),
+                    "std_gini_total_norm": _stddev(g_total_values),
+                    "avg_gini_base_norm": _mean(g_base_values),
+                    "min_gini_base_norm": min(g_base_values),
+                    "std_gini_base_norm": _stddev(g_base_values),
+                }
+            )
+
+    best_utility = max(by_mode, key=lambda row: row["avg_total_utility"]) if by_mode else None
+    best_fairness = min(by_mode, key=lambda row: row["avg_gini_total_norm"]) if by_mode else None
+    return {
+        "ok": True,
+        "run_history_ids": history_ids,
+        "config": {
+            "cap_default": cap_default,
+            "b": b,
+            "base_seed": base_seed,
+            "seed_start": base_seed,
+            "seed_end": base_seed + batch_size - 1,
+            "batch_size": batch_size,
+            "parallel_workers": parallel_workers,
+            "effective_parallel_workers": effective_parallel_workers,
+            "parallel_fallback_reason": parallel_fallback_reason,
+            "draft_rounds": resolved_draft_rounds,
+            "post_iters": post_iters,
+            "modes": list(CANONICAL_IMPROVE_MODES),
+        },
+        "by_mode": by_mode,
+        "overall": {
+            "mode_count": len(by_mode),
+            "runs_total": len(by_mode) * batch_size,
+            "best_avg_utility_mode": best_utility,
+            "best_avg_fairness_mode": best_fairness,
+        },
+    }
+
+
 class _HbsWebHandler(BaseHTTPRequestHandler):
     server_version = "HbsSocialWeb/1.0"
 
@@ -718,7 +935,7 @@ class _HbsWebHandler(BaseHTTPRequestHandler):
                 )
             return
 
-        if path != "/api/run":
+        if path not in {"/api/run", "/api/compare-modes"}:
             self._send_json(
                 HTTPStatus.NOT_FOUND,
                 {"ok": False, "error": f"Unknown route: {path}"},
@@ -761,7 +978,10 @@ class _HbsWebHandler(BaseHTTPRequestHandler):
             return
 
         try:
-            response = _run_payload(payload)
+            if path == "/api/compare-modes":
+                response = _run_mode_comparison_payload(payload)
+            else:
+                response = _run_payload(payload)
         except ValueError as exc:
             self._send_json(
                 HTTPStatus.BAD_REQUEST,

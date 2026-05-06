@@ -12,6 +12,7 @@ from HBS.hbs_web import (
     _list_run_history,
     _list_table_files,
     _reset_run_history,
+    _run_mode_comparison_payload,
     _run_payload,
 )
 
@@ -302,6 +303,58 @@ class TestWebApi(unittest.TestCase):
         self.assertEqual(stats["overall"]["runs_total"], 0)
         self.assertEqual(stats["trend"], [])
         self.assertEqual(stats["by_mode"], [])
+
+    def test_run_mode_comparison_payload_groups_all_modes(self) -> None:
+        payload = {
+            "table1_csv": (
+                "StudentID,CourseID,Score,Position\n"
+                "S1,C1,100,1\n"
+                "S1,C2,80,2\n"
+                "S2,C1,90,1\n"
+                "S2,C2,70,2\n"
+            ),
+            "table2_csv": "StudentID_A,StudentID_B,CourseID,Position,Score\n",
+            "cap_default": 2,
+            "b": 1,
+            "seed": 31,
+            "draft_rounds": 1,
+            "post_iters": 0,
+            "batch_size": 2,
+        }
+
+        result = _run_mode_comparison_payload(payload)
+
+        self.assertTrue(result["ok"])
+        self.assertEqual(result["config"]["batch_size"], 2)
+        self.assertEqual(result["config"]["parallel_workers"], 6)
+        self.assertIn(result["config"]["effective_parallel_workers"], {1, 6})
+        self.assertEqual(result["config"]["seed_start"], 31)
+        self.assertEqual(result["config"]["seed_end"], 32)
+        self.assertEqual(result["overall"]["runs_total"], 12)
+        self.assertEqual(len(result["run_history_ids"]), 12)
+        self.assertEqual(len(result["by_mode"]), 6)
+        for row in result["by_mode"]:
+            self.assertEqual(row["runs"], 2)
+            self.assertEqual(row["seed_start"], 31)
+            self.assertEqual(row["seed_end"], 32)
+            self.assertIn("avg_total_utility", row)
+            self.assertIn("avg_gini_total_norm", row)
+            self.assertIn("avg_gini_base_norm", row)
+
+        history = _list_run_history(limit=20)
+        self.assertEqual(len(history["items"]), 12)
+        modes = {item["improve_mode"] for item in history["items"]}
+        self.assertEqual(
+            modes,
+            {
+                "swap-global",
+                "swap-personal",
+                "drop-add-global",
+                "drop-add-personal",
+                "hybrid-global",
+                "hybrid-personal",
+            },
+        )
 
 
 if __name__ == "__main__":

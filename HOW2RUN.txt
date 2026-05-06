@@ -1,0 +1,55 @@
+Course Allocation with Friendships — шпаргалка запуска
+
+1. Быстрый старт
+
+Маленький пример:
+python generate/generate_tables.py --students 40 --courses 4 --seed 11
+python hbs_social.py --csv-a tables/table1_individual.csv --csv-b tables/table2_pair.csv --csv-lambda tables/table3_lambda.csv --cap-default 20 --b 3 --seed 11
+
+Средний пример:
+python generate/generate_tables.py --students 120 --courses 6 --seed 11
+python hbs_social.py --csv-a tables/table1_individual.csv --csv-b tables/table2_pair.csv --csv-lambda tables/table3_lambda.csv --cap-default 50 --b 3 --seed 11
+
+Большой пример:
+python generate/generate_tables.py --students 200 --courses 8 --seed 11
+python hbs_social.py --csv-a tables/table1_individual.csv --csv-b tables/table2_pair.csv --csv-lambda tables/table3_lambda.csv --cap-default 80 --b 3 --seed 11
+
+2. Запуск через терминал
+
+Обычный запуск:
+python hbs_social.py --csv-a tables/table1_individual.csv --csv-b tables/table2_pair.csv --csv-lambda tables/table3_lambda.csv --cap-default 80 --b 3 --seed 11
+
+С post-phase:
+python hbs_social.py --csv-a tables/table1_individual.csv --csv-b tables/table2_pair.csv --csv-lambda tables/table3_lambda.csv --cap-default 80 --b 3 --draft-rounds 3 --post-iters 10 --move-type hybrid --objective-scope global --seed 11 --progress
+
+Что появляется после запуска:
+allocation.csv
+post_allocation.csv
+summary.csv
+metrics_extended.csv
+
+3. Запуск через веб
+
+Поднять локальный сервер:
+python hbs_web.py --host 127.0.0.1 --port 8000
+
+Открыть в браузере:
+http://127.0.0.1:8000
+
+4. Запуск тестов
+
+Все тесты:
+python tests/run_all_tests.py
+
+Один тестовый файл:
+python tests/test_web_api.py
+python tests/test_friend_bonus.py
+
+5. Полезно помнить
+
+Запускать всё из корня проекта.
+
+Основные входные CSV:
+tables/table1_individual.csv
+tables/table2_pair.csv
+tables/table3_lambda.csv

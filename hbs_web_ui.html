@@ -245,6 +245,9 @@
         <label>post_iters
           <input id="post_iters" type="number" value="0" min="0">
         </label>
+        <label>batch_size
+          <input id="batch_size" type="number" value="30" min="1" max="200">
+        </label>
         <div class="matrix-block">
           <div><strong>Improvement selector</strong></div>
           <table class="mode-matrix">
@@ -325,6 +328,7 @@
       <div class="actions" style="margin-top: 0;">
         <button type="button" class="secondary" id="refresh_history_btn">Refresh History</button>
         <button type="button" class="secondary" id="show_stats_btn">Show Statistics</button>
+        <button type="button" id="run_compare_btn">Run Mode Comparison</button>
       </div>
       <div style="overflow:auto; margin-top: 8px;">
         <table id="history_table">
@@ -343,16 +347,16 @@
         <div id="stats_overview" class="stats-grid"></div>
 
         <div class="chart-wrap">
-          <div class="chart-title">Utility Trend</div>
+          <div class="chart-title" id="utility_chart_title">Utility Trend</div>
           <div id="utility_chart" class="chart-area"></div>
-          <div class="inline-note">X-axis: run index, Y-axis: total_utility</div>
+          <div class="inline-note" id="utility_chart_note">X-axis: run index, Y-axis: total_utility</div>
         </div>
 
         <div class="chart-wrap">
-          <div class="chart-title">Fairness Trend</div>
+          <div class="chart-title" id="fairness_chart_title">Fairness Trend</div>
           <div id="fairness_chart" class="chart-area"></div>
           <div id="fairness_legend" class="chart-legend"></div>
-          <div class="inline-note">X-axis: run index, Y-axis: gini values</div>
+          <div class="inline-note" id="fairness_chart_note">X-axis: run index, Y-axis: gini values</div>
         </div>
 
         <div style="overflow:auto;">
@@ -387,11 +391,16 @@
     const downloadsEl = document.getElementById("download_buttons");
     const historyEl = document.getElementById("history_table").querySelector("tbody");
     const showStatsBtn = document.getElementById("show_stats_btn");
+    const runCompareBtn = document.getElementById("run_compare_btn");
     const statsPanelEl = document.getElementById("stats_panel");
     const statsEmptyEl = document.getElementById("stats_empty");
     const statsOverviewEl = document.getElementById("stats_overview");
     const utilityChartEl = document.getElementById("utility_chart");
+    const utilityChartTitleEl = document.getElementById("utility_chart_title");
+    const utilityChartNoteEl = document.getElementById("utility_chart_note");
     const fairnessChartEl = document.getElementById("fairness_chart");
+    const fairnessChartTitleEl = document.getElementById("fairness_chart_title");
+    const fairnessChartNoteEl = document.getElementById("fairness_chart_note");
     const fairnessLegendEl = document.getElementById("fairness_legend");
     const statsModeTableEl = document.getElementById("stats_mode_table").querySelector("tbody");
     let statsVisible = false;
@@ -498,7 +507,11 @@
     function updateModePreview() {
       const selectedMode = document.querySelector("input[name='improve_choice']:checked");
       const preview = document.getElementById("mode_preview");
-      preview.textContent = "Selected mode: " + (selectedMode ? selectedMode.value : "(none)");
+      const postIters = readInt("post_iters", 0);
+      const modeText = "Selected mode: " + (selectedMode ? selectedMode.value : "(none)");
+      preview.textContent = postIters === 0
+        ? modeText + " | post_iters=0, so all post-phase modes behave like draft-only."
+        : modeText;
     }
 
     function renderAllocation(allocMap, pickLog) {
@@ -592,6 +605,10 @@
     function resetStatsView(message) {
       statsEmptyEl.textContent = message || "No statistics yet.";
       statsOverviewEl.innerHTML = "";
+      utilityChartTitleEl.textContent = "Utility Trend";
+      utilityChartNoteEl.textContent = "X-axis: run index, Y-axis: total_utility";
+      fairnessChartTitleEl.textContent = "Fairness Trend";
+      fairnessChartNoteEl.textContent = "X-axis: run index, Y-axis: gini values";
       utilityChartEl.innerHTML = "";
       fairnessChartEl.innerHTML = "";
       fairnessLegendEl.innerHTML = "";
@@ -766,6 +783,151 @@
       container.appendChild(svg);
     }
 
+    function renderModePointChartSvg(container, rows, lineDefs, options) {
+      const width = 880;
+      const height = 300;
+      const margin = { top: 16, right: 22, bottom: 78, left: 62 };
+      const innerW = width - margin.left - margin.right;
+      const innerH = height - margin.top - margin.bottom;
+
+      if (!Array.isArray(rows) || rows.length === 0) {
+        container.innerHTML = "<div class='inline-note'>No batch statistics yet.</div>";
+        return;
+      }
+
+      let minY = Infinity;
+      let maxY = -Infinity;
+      lineDefs.forEach((line) => {
+        rows.forEach((row) => {
+          const value = Number(row[line.key]);
+          if (Number.isFinite(value)) {
+            minY = Math.min(minY, value);
+            maxY = Math.max(maxY, value);
+          }
+        });
+      });
+      if (!Number.isFinite(minY) || !Number.isFinite(maxY)) {
+        container.innerHTML = "<div class='inline-note'>No batch statistics yet.</div>";
+        return;
+      }
+      if (Math.abs(maxY - minY) < 1e-12) {
+        const delta = Math.max(1e-6, Math.abs(maxY) * 0.05);
+        minY -= delta;
+        maxY += delta;
+      } else {
+        const pad = (maxY - minY) * 0.08;
+        minY = Math.max(0, minY - pad);
+        maxY += pad;
+      }
+
+      const ns = "http://www.w3.org/2000/svg";
+      const svg = document.createElementNS(ns, "svg");
+      svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
+      svg.setAttribute("width", "100%");
+      svg.setAttribute("height", String(height));
+
+      const axisColor = "#7d8aa1";
+      const gridColor = "#e8edf5";
+      const yScale = (value) => margin.top + ((maxY - value) / (maxY - minY)) * innerH;
+      const xScale = (idx) => {
+        if (rows.length === 1) return margin.left + innerW / 2;
+        return margin.left + (idx / (rows.length - 1)) * innerW;
+      };
+
+      for (let i = 0; i <= 4; i += 1) {
+        const yValue = minY + ((maxY - minY) * i) / 4;
+        const y = yScale(yValue);
+        const grid = document.createElementNS(ns, "line");
+        grid.setAttribute("x1", String(margin.left));
+        grid.setAttribute("x2", String(margin.left + innerW));
+        grid.setAttribute("y1", String(y));
+        grid.setAttribute("y2", String(y));
+        grid.setAttribute("stroke", gridColor);
+        grid.setAttribute("stroke-width", "1");
+        svg.appendChild(grid);
+
+        const label = document.createElementNS(ns, "text");
+        label.setAttribute("x", String(margin.left - 8));
+        label.setAttribute("y", String(y + 4));
+        label.setAttribute("text-anchor", "end");
+        label.setAttribute("font-size", "11");
+        label.setAttribute("fill", "#607089");
+        label.textContent = yValue.toFixed(4);
+        svg.appendChild(label);
+      }
+
+      const xAxis = document.createElementNS(ns, "line");
+      xAxis.setAttribute("x1", String(margin.left));
+      xAxis.setAttribute("x2", String(margin.left + innerW));
+      xAxis.setAttribute("y1", String(margin.top + innerH));
+      xAxis.setAttribute("y2", String(margin.top + innerH));
+      xAxis.setAttribute("stroke", axisColor);
+      xAxis.setAttribute("stroke-width", "1.2");
+      svg.appendChild(xAxis);
+
+      const yAxis = document.createElementNS(ns, "line");
+      yAxis.setAttribute("x1", String(margin.left));
+      yAxis.setAttribute("x2", String(margin.left));
+      yAxis.setAttribute("y1", String(margin.top));
+      yAxis.setAttribute("y2", String(margin.top + innerH));
+      yAxis.setAttribute("stroke", axisColor);
+      yAxis.setAttribute("stroke-width", "1.2");
+      svg.appendChild(yAxis);
+
+      rows.forEach((row, rowIndex) => {
+        const label = document.createElementNS(ns, "text");
+        label.setAttribute("x", String(xScale(rowIndex)));
+        label.setAttribute("y", String(margin.top + innerH + 18));
+        label.setAttribute("text-anchor", "end");
+        label.setAttribute("font-size", "11");
+        label.setAttribute("fill", "#607089");
+        label.setAttribute(
+          "transform",
+          `rotate(-28 ${xScale(rowIndex)} ${margin.top + innerH + 18})`
+        );
+        label.textContent = row.improve_mode;
+        svg.appendChild(label);
+      });
+
+      lineDefs.forEach((line) => {
+        const coords = rows
+          .map((row, idx) => `${xScale(idx)},${yScale(Number(row[line.key]))}`)
+          .join(" ");
+        if (coords.length > 0) {
+          const polyline = document.createElementNS(ns, "polyline");
+          polyline.setAttribute("fill", "none");
+          polyline.setAttribute("stroke", line.color);
+          polyline.setAttribute("stroke-width", "2");
+          polyline.setAttribute("points", coords);
+          svg.appendChild(polyline);
+        }
+
+        rows.forEach((row, idx) => {
+          const value = Number(row[line.key]);
+          const dot = document.createElementNS(ns, "circle");
+          dot.setAttribute("cx", String(xScale(idx)));
+          dot.setAttribute("cy", String(yScale(value)));
+          dot.setAttribute("r", "4");
+          dot.setAttribute("fill", line.color);
+          const title = document.createElementNS(ns, "title");
+          title.textContent = `${row.improve_mode} | ${line.label}=${value.toFixed(6)} | runs=${row.runs}`;
+          dot.appendChild(title);
+          svg.appendChild(dot);
+        });
+      });
+
+      const yLabel = document.createElementNS(ns, "text");
+      yLabel.setAttribute("transform", `translate(15 ${margin.top + innerH / 2}) rotate(-90)`);
+      yLabel.setAttribute("text-anchor", "middle");
+      yLabel.setAttribute("font-size", "12");
+      yLabel.setAttribute("fill", "#425068");
+      yLabel.textContent = options && options.yLabel ? options.yLabel : "Value";
+      svg.appendChild(yLabel);
+
+      container.innerHTML = "";
+      container.appendChild(svg);
+    }
+
     function renderStats(stats) {
       const trend = Array.isArray(stats.trend) ? stats.trend : [];
       const byMode = Array.isArray(stats.by_mode) ? stats.by_mode : [];
@@ -868,6 +1030,106 @@
       });
     }
 
+    function renderModeComparisonStats(stats) {
+      const byMode = Array.isArray(stats.by_mode) ? stats.by_mode : [];
+      const overall = stats.overall || {};
+      const config = stats.config || {};
+
+      if (byMode.length === 0) {
+        resetStatsView("No batch statistics yet.");
+        return;
+      }
+
+      statsEmptyEl.textContent = "";
+      statsOverviewEl.innerHTML = "";
+      utilityChartTitleEl.textContent = "Avg Utility By Mode";
+      utilityChartNoteEl.textContent = "X-axis: mode, Y-axis: average total_utility across the batch";
+      fairnessChartTitleEl.textContent = "Fairness By Mode";
+      fairnessChartNoteEl.textContent = "X-axis: mode, Y-axis: average gini across the batch";
+
+      const overviewItems = [
+        { label: "Batch Size", value: String(config.batch_size || 0) + " runs per mode" },
+        { label: "Seeds", value: `${config.seed_start} - ${config.seed_end}` },
+        {
+          label: "Workers",
+          value: String(config.effective_parallel_workers || config.parallel_workers || 1)
+        },
+        {
+          label: "Best Avg Utility",
+          value: overall.best_avg_utility_mode
+            ? `${overall.best_avg_utility_mode.improve_mode} = ${format6(overall.best_avg_utility_mode.avg_total_utility)}`
+            : "-"
+        },
+        {
+          label: "Lowest Avg G_total (Best)",
+          value: overall.best_avg_fairness_mode
+            ? `${overall.best_avg_fairness_mode.improve_mode} = ${format6(overall.best_avg_fairness_mode.avg_gini_total_norm)}`
+            : "-"
+        }
+      ];
+      overviewItems.forEach((item) => {
+        const card = document.createElement("div");
+        card.className = "stats-card";
+        const label = document.createElement("div");
+        label.className = "label";
+        label.textContent = item.label;
+        const value = document.createElement("div");
+        value.className = "value";
+        value.textContent = item.value;
+        card.appendChild(label);
+        card.appendChild(value);
+        statsOverviewEl.appendChild(card);
+      });
+
+      renderModePointChartSvg(
+        utilityChartEl,
+        byMode,
+        [{ key: "avg_total_utility", label: "Avg U", color: "#1f6feb" }],
+        { yLabel: "avg_total_utility" }
+      );
+      renderModePointChartSvg(
+        fairnessChartEl,
+        byMode,
+        [
+          { key: "avg_gini_total_norm", label: "Avg G_total", color: "#d73a49" },
+          { key: "avg_gini_base_norm", label: "Avg G_base", color: "#2da44e" }
+        ],
+        { yLabel: "avg_gini" }
+      );
+
+      fairnessLegendEl.innerHTML = "";
+      [
+        { label: "Avg G_total", color: "#d73a49" },
+        { label: "Avg G_base", color: "#2da44e" }
+      ].forEach((item) => {
+        const span = document.createElement("span");
+        span.className = "legend-item";
+        span.innerHTML = `<span class="legend-dot" style="background:${item.color}"></span>${item.label}`;
+        fairnessLegendEl.appendChild(span);
+      });
+
+      statsModeTableEl.innerHTML = "";
+      byMode.forEach((row) => {
+        const tr = document.createElement("tr");
+        const cells = [
+          row.improve_mode,
+          row.runs,
+          format6(row.avg_total_utility),
+          format6(row.best_total_utility),
+          format6(row.avg_gini_total_norm),
+          format6(row.min_gini_total_norm),
+          format6(row.avg_gini_base_norm),
+          format6(row.min_gini_base_norm)
+        ];
+        cells.forEach((value) => {
+          const td = document.createElement("td");
+          td.textContent = String(value);
+          tr.appendChild(td);
+        });
+        statsModeTableEl.appendChild(tr);
+      });
+    }
+
     async function loadHistory() {
       try {
         const response = await fetch("/api/history?limit=200");
@@ -922,6 +1184,55 @@
         setStatus("Run history has been reset.", "ok");
       } catch (err) {
         setStatus(err.message, "error");
+      }
+    }
+
+    async function runModeComparison() {
+      let payload;
+      try {
+        payload = payloadFromForm();
+        payload.batch_size = readInt("batch_size", 30);
+      } catch (err) {
+        setStatus(err.message, "error");
+        return;
+      }
+
+      runCompareBtn.disabled = true;
+      runBtn.disabled = true;
+      setStatsPanelVisible(true);
+      setStatus("Running mode comparison...", "");
+      resetStatsView("Running batch comparison. This can take a while.");
+
+      try {
+        const response = await fetch("/api/compare-modes", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        const data = await response.json();
+        if (!response.ok || !data.ok) {
+          throw new Error(data.error || ("HTTP " + response.status));
+        }
+        renderModeComparisonStats(data);
+        await loadHistory();
+        setStatus(
+          "Mode comparison finished: " +
+            data.config.batch_size +
+            " runs per mode, seeds " +
+            data.config.seed_start +
+            "-" +
+            data.config.seed_end +
+            ", workers " +
+            (data.config.effective_parallel_workers || data.config.parallel_workers || 1) +
+            ".",
+          "ok"
+        );
+      } catch (err) {
+        resetStatsView("Failed to run mode comparison.");
+        setStatus(err.message, "error");
+      } finally {
+        runCompareBtn.disabled = false;
+        runBtn.disabled = false;
       }
     }
 
@@ -982,9 +1293,11 @@
     document.getElementById("clear_results_btn").addEventListener("click", clearResults);
     document.getElementById("refresh_history_btn").addEventListener("click", resetHistory);
     document.getElementById("show_stats_btn").addEventListener("click", toggleStatsPanel);
+    document.getElementById("run_compare_btn").addEventListener("click", runModeComparison);
     document.querySelectorAll("input[name='improve_choice']").forEach((input) => {
       input.addEventListener("change", updateModePreview);
     });
+    document.getElementById("post_iters").addEventListener("input", updateModePreview);
 
     loadFiles();
     loadHistory();
