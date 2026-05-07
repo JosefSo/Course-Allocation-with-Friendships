@@ -1,0 +1,820 @@
+{
+  "schema": "openai.presentation.layout/v4",
+  "unit": "px",
+  "slide": {
+    "aid": "sl/0xtho2",
+    "id": "0xtho2",
+    "slide": 3,
+    "layoutId": "a9d6f888-2ede-4177-8d3b-21104dd91d99",
+    "layoutName": "Title Slide",
+    "layoutType": "title",
+    "masterLayoutId": "48346605-7561-466a-bbe8-d583f35814bb",
+    "masterLayoutName": "Master",
+    "frame": {
+      "left": 0,
+      "top": 0,
+      "width": 1280,
+      "height": 720
+    }
+  },
+  "theme": {
+    "colorSchemeName": "ChatGPT",
+    "colors": {
+      "accent1": "#156082",
+      "accent2": "#E97132",
+      "accent3": "#196B24",
+      "accent4": "#0F9ED5",
+      "accent5": "#A02B93",
+      "accent6": "#4EA72E",
+      "bg1": "#FFFFFF",
+      "bg2": "#000000",
+      "tx1": "#1F1F1F",
+      "tx2": "#FFFFFF",
+      "dk1": "#000000",
+      "lt1": "#FFFFFF",
+      "dk2": "#0E2841",
+      "lt2": "#E8E8E8",
+      "hlink": "#467886",
+      "folHlink": "#96607D"
+    },
+    "typefaces": [
+      "Aptos",
+      "Aptos Display"
+    ]
+  },
+  "inheritedLayers": [
+    {
+      "scope": "layout",
+      "id": "a9d6f888-2ede-4177-8d3b-21104dd91d99",
+      "name": "Title Slide",
+      "type": "title",
+      "parentLayoutId": "48346605-7561-466a-bbe8-d583f35814bb",
+      "elements": []
+    },
+    {
+      "scope": "master",
+      "id": "48346605-7561-466a-bbe8-d583f35814bb",
+      "name": "Master",
+      "type": "master",
+      "elements": []
+    }
+  ],
+  "elements": [
+    {
+      "order": 1,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/tsvu9kni",
+      "id": "1",
+      "bbox": [
+        0,
+        0,
+        1280,
+        720
+      ],
+      "geometry": "rect",
+      "fillColor": "#F7F3EA",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 2,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/m1cfa9w3",
+      "id": "2",
+      "bbox": [
+        58,
+        50,
+        6,
+        22
+      ],
+      "geometry": "rect",
+      "fillColor": "#0F766E",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 3,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/bm58z25k",
+      "id": "3",
+      "bbox": [
+        74,
+        49,
+        620,
+        24
+      ],
+      "geometry": "rect",
+      "text": "RESEARCH FRAMING",
+      "textPreview": "RESEARCH FRAMING",
+      "resolvedFontSize": 9.51,
+      "resolvedTextStyle": {
+        "fontSize": 9.51,
+        "typeface": "Aptos",
+        "bold": true,
+        "alignment": "left"
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "RESEARCH FRAMING"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "RESEARCH FRAMING",
+          "runs": [
+            {
+              "index": 1,
+              "text": "RESEARCH FRAMING",
+              "fontSize": 9.51,
+              "typeface": "Aptos",
+              "color": "#56616F",
+              "bold": true
+            }
+          ]
+        }
+      ],
+      "fillColor": "rgba(0, 0, 0, 0)",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 4,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/4vmtwra5",
+      "id": "4",
+      "bbox": [
+        58,
+        94,
+        930,
+        88
+      ],
+      "geometry": "rect",
+      "text": "The project extends course allocation with a social preference layer.",
+      "textPreview": "The project extends course allocation with a social preference layer.",
+      "resolvedFontSize": 35,
+      "resolvedTextStyle": {
+        "fontSize": 35,
+        "typeface": "Aptos Display",
+        "bold": true,
+        "alignment": "left"
+      },
+      "textLayout": {
+        "lineCount": 2,
+        "lines": [
+          {
+            "index": 1,
+            "text": "The project extends course allocation with a social"
+          },
+          {
+            "index": 2,
+            "text": "preference layer."
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "The project extends course allocation with a social preference layer.",
+          "runs": [
+            {
+              "index": 1,
+              "text": "The project extends course allocation with a social preference layer.",
+              "fontSize": 35,
+              "typeface": "Aptos Display",
+              "color": "#17212E",
+              "bold": true
+            }
+          ]
+        }
+      ],
+      "fillColor": "rgba(0, 0, 0, 0)",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 5,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/tgfmlkjm",
+      "id": "5",
+      "bbox": [
+        90,
+        232,
+        330,
+        178
+      ],
+      "geometry": "rect",
+      "fillColor": "#FFFCF4",
+      "lineColor": "#355070",
+      "lineWidth": 1
+    },
+    {
+      "order": 6,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/mp0bi9s3",
+      "id": "6",
+      "bbox": [
+        110,
+        250,
+        290,
+        20
+      ],
+      "geometry": "rect",
+      "text": "BASE PROBLEM",
+      "textPreview": "BASE PROBLEM",
+      "resolvedFontSize": 10,
+      "resolvedTextStyle": {
+        "fontSize": 10,
+        "typeface": "Aptos",
+        "bold": true,
+        "alignment": "left"
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "BASE PROBLEM"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "BASE PROBLEM",
+          "runs": [
+            {
+              "index": 1,
+              "text": "BASE PROBLEM",
+              "fontSize": 10,
+              "typeface": "Aptos",
+              "color": "#355070",
+              "bold": true
+            }
+          ]
+        }
+      ],
+      "fillColor": "rgba(0, 0, 0, 0)",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 7,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/bat47y1k",
+      "id": "7",
+      "bbox": [
+        110,
+        280,
+        290,
+        120
+      ],
+      "geometry": "rect",
+      "text": "Assign students to feasible bundles of course seats under capacity constraints.",
+      "textPreview": "Assign students to feasible bundles of course seats under capacity constraints.",
+      "resolvedFontSize": 17,
+      "resolvedTextStyle": {
+        "fontSize": 17,
+        "typeface": "Aptos Display",
+        "bold": true,
+        "alignment": "left"
+      },
+      "textLayout": {
+        "lineCount": 3,
+        "lines": [
+          {
+            "index": 1,
+            "text": "Assign students to feasible bundles"
+          },
+          {
+            "index": 2,
+            "text": "of course seats under capacity"
+          },
+          {
+            "index": 3,
+            "text": "constraints."
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "Assign students to feasible bundles of course seats under capacity constraints.",
+          "runs": [
+            {
+              "index": 1,
+              "text": "Assign students to feasible bundles of course seats under capacity constraints.",
+              "fontSize": 17,
+              "typeface": "Aptos Display",
+              "color": "#17212E",
+              "bold": true
+            }
+          ]
+        }
+      ],
+      "fillColor": "rgba(0, 0, 0, 0)",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 8,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/4nap4r65",
+      "id": "8",
+      "bbox": [
+        476,
+        232,
+        330,
+        178
+      ],
+      "geometry": "rect",
+      "fillColor": "#FFFCF4",
+      "lineColor": "#0F766E",
+      "lineWidth": 1
+    },
+    {
+      "order": 9,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/t83itgfm",
+      "id": "9",
+      "bbox": [
+        496,
+        250,
+        290,
+        20
+      ],
+      "geometry": "rect",
+      "text": "MY EXTENSION",
+      "textPreview": "MY EXTENSION",
+      "resolvedFontSize": 10,
+      "resolvedTextStyle": {
+        "fontSize": 10,
+        "typeface": "Aptos",
+        "bold": true,
+        "alignment": "left"
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "MY EXTENSION"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "MY EXTENSION",
+          "runs": [
+            {
+              "index": 1,
+              "text": "MY EXTENSION",
+              "fontSize": 10,
+              "typeface": "Aptos",
+              "color": "#0F766E",
+              "bold": true
+            }
+          ]
+        }
+      ],
+      "fillColor": "rgba(0, 0, 0, 0)",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 10,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/9gr2p8nq",
+      "id": "10",
+      "bbox": [
+        496,
+        280,
+        290,
+        120
+      ],
+      "geometry": "rect",
+      "text": "Add directed, course-specific friendship preferences as part of utility.",
+      "textPreview": "Add directed, course-specific friendship preferences as part of utility.",
+      "resolvedFontSize": 17,
+      "resolvedTextStyle": {
+        "fontSize": 17,
+        "typeface": "Aptos Display",
+        "bold": true,
+        "alignment": "left"
+      },
+      "textLayout": {
+        "lineCount": 3,
+        "lines": [
+          {
+            "index": 1,
+            "text": "Add directed, course-specific"
+          },
+          {
+            "index": 2,
+            "text": "friendship preferences as part of"
+          },
+          {
+            "index": 3,
+            "text": "utility."
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "Add directed, course-specific friendship preferences as part of utility.",
+          "runs": [
+            {
+              "index": 1,
+              "text": "Add directed, course-specific friendship preferences as part of utility.",
+              "fontSize": 17,
+              "typeface": "Aptos Display",
+              "color": "#17212E",
+              "bold": true
+            }
+          ]
+        }
+      ],
+      "fillColor": "rgba(0, 0, 0, 0)",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 11,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/gvy90je9",
+      "id": "11",
+      "bbox": [
+        862,
+        232,
+        330,
+        178
+      ],
+      "geometry": "rect",
+      "fillColor": "#FFFCF4",
+      "lineColor": "#B7791F",
+      "lineWidth": 1
+    },
+    {
+      "order": 12,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/ra5gbq1o",
+      "id": "12",
+      "bbox": [
+        882,
+        250,
+        290,
+        20
+      ],
+      "geometry": "rect",
+      "text": "CURRENT STAGE",
+      "textPreview": "CURRENT STAGE",
+      "resolvedFontSize": 10,
+      "resolvedTextStyle": {
+        "fontSize": 10,
+        "typeface": "Aptos",
+        "bold": true,
+        "alignment": "left"
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "CURRENT STAGE"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "CURRENT STAGE",
+          "runs": [
+            {
+              "index": 1,
+              "text": "CURRENT STAGE",
+              "fontSize": 10,
+              "typeface": "Aptos",
+              "color": "#B7791F",
+              "bold": true
+            }
+          ]
+        }
+      ],
+      "fillColor": "rgba(0, 0, 0, 0)",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 13,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/2p8nqxs7",
+      "id": "13",
+      "bbox": [
+        882,
+        280,
+        290,
+        120
+      ],
+      "geometry": "rect",
+      "text": "Build the model and prototype first; use experiments to understand behavior later.",
+      "textPreview": "Build the model and prototype first; use experiments to understand behavior later.",
+      "resolvedFontSize": 17,
+      "resolvedTextStyle": {
+        "fontSize": 17,
+        "typeface": "Aptos Display",
+        "bold": true,
+        "alignment": "left"
+      },
+      "textLayout": {
+        "lineCount": 3,
+        "lines": [
+          {
+            "index": 1,
+            "text": "Build the model and prototype first;"
+          },
+          {
+            "index": 2,
+            "text": "use experiments to understand"
+          },
+          {
+            "index": 3,
+            "text": "behavior later."
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "Build the model and prototype first; use experiments to understand behavior later.",
+          "runs": [
+            {
+              "index": 1,
+              "text": "Build the model and prototype first; use experiments to understand behavior later.",
+              "fontSize": 17,
+              "typeface": "Aptos Display",
+              "color": "#17212E",
+              "bold": true
+            }
+          ]
+        }
+      ],
+      "fillColor": "rgba(0, 0, 0, 0)",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 14,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/94fu18jq",
+      "id": "14",
+      "bbox": [
+        176,
+        506,
+        928,
+        60
+      ],
+      "geometry": "rect",
+      "fillColor": "#FFFCF4",
+      "lineColor": "#D7CDBE",
+      "lineWidth": 1
+    },
+    {
+      "order": 15,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/kjm1cfa9",
+      "id": "15",
+      "bbox": [
+        204,
+        524,
+        140,
+        18
+      ],
+      "geometry": "rect",
+      "text": "Research question",
+      "textPreview": "Research question",
+      "resolvedFontSize": 10,
+      "resolvedTextStyle": {
+        "fontSize": 10,
+        "typeface": "Aptos",
+        "bold": true,
+        "alignment": "left"
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "Research question"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "Research question",
+          "runs": [
+            {
+              "index": 1,
+              "text": "Research question",
+              "fontSize": 10,
+              "typeface": "Aptos",
+              "color": "#0F766E",
+              "bold": true
+            }
+          ]
+        }
+      ],
+      "fillColor": "rgba(0, 0, 0, 0)",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 16,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/r2p8nqxs",
+      "id": "16",
+      "bbox": [
+        362,
+        520,
+        682,
+        24
+      ],
+      "geometry": "rect",
+      "text": "Can friendship-aware utility be integrated into course allocation in a clear, reproducible way?",
+      "textPreview": "Can friendship-aware utility be integrated into course allocation in a clear, reproducible way?",
+      "resolvedFontSize": 15,
+      "resolvedTextStyle": {
+        "fontSize": 15,
+        "typeface": "Aptos Display",
+        "bold": true,
+        "alignment": "center"
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "Can friendship-aware utility be integrated into course allocation in a clear, reproducible way?"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "Can friendship-aware utility be integrated into course allocation in a clear, reproducible way?",
+          "runs": [
+            {
+              "index": 1,
+              "text": "Can friendship-aware utility be integrated into course allocation in a clear, reproducible way?",
+              "fontSize": 15,
+              "typeface": "Aptos Display",
+              "color": "#17212E",
+              "bold": true
+            }
+          ]
+        }
+      ],
+      "fillColor": "rgba(0, 0, 0, 0)",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 17,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/2hwfyxob",
+      "id": "17",
+      "bbox": [
+        58,
+        668,
+        1164,
+        1
+      ],
+      "geometry": "rect",
+      "fillColor": "#D7CDBE",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 18,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/9w3m94fu",
+      "id": "18",
+      "bbox": [
+        58,
+        682,
+        850,
+        18
+      ],
+      "geometry": "rect",
+      "text": "Source framing: course allocation as one-sided combinatorial assignment",
+      "textPreview": "Source framing: course allocation as one-sided combinatorial assignment",
+      "resolvedFontSize": 8.51,
+      "resolvedTextStyle": {
+        "fontSize": 8.51,
+        "typeface": "Aptos",
+        "alignment": "left"
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "Source framing: course allocation as one-sided combinatorial assignment"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "Source framing: course allocation as one-sided combinatorial assignment",
+          "runs": [
+            {
+              "index": 1,
+              "text": "Source framing: course allocation as one-sided combinatorial assignment",
+              "fontSize": 8.51,
+              "typeface": "Aptos",
+              "color": "#7A6E60"
+            }
+          ]
+        }
+      ],
+      "fillColor": "rgba(0, 0, 0, 0)",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 19,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/kb6xkf6d",
+      "id": "19",
+      "bbox": [
+        1160,
+        682,
+        62,
+        18
+      ],
+      "geometry": "rect",
+      "text": "3/8",
+      "textPreview": "3/8",
+      "resolvedFontSize": 9,
+      "resolvedTextStyle": {
+        "fontSize": 9,
+        "typeface": "Aptos",
+        "alignment": "right"
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "3/8"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "3/8",
+          "runs": [
+            {
+              "index": 1,
+              "text": "3/8",
+              "fontSize": 9,
+              "typeface": "Aptos",
+              "color": "#56616F"
+            }
+          ]
+        }
+      ],
+      "fillColor": "rgba(0, 0, 0, 0)",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    }
+  ],
+  "composeRuns": []
+}

@@ -1,0 +1,1145 @@
+{
+  "schema": "openai.presentation.layout/v4",
+  "unit": "px",
+  "slide": {
+    "aid": "sl/tfeczm",
+    "id": "tfeczm",
+    "slide": 1,
+    "layoutId": "a9d6f888-2ede-4177-8d3b-21104dd91d99",
+    "layoutName": "Title Slide",
+    "layoutType": "title",
+    "masterLayoutId": "48346605-7561-466a-bbe8-d583f35814bb",
+    "masterLayoutName": "Master",
+    "frame": {
+      "left": 0,
+      "top": 0,
+      "width": 1280,
+      "height": 720
+    }
+  },
+  "theme": {
+    "colorSchemeName": "ChatGPT",
+    "colors": {
+      "accent1": "#156082",
+      "accent2": "#E97132",
+      "accent3": "#196B24",
+      "accent4": "#0F9ED5",
+      "accent5": "#A02B93",
+      "accent6": "#4EA72E",
+      "bg1": "#FFFFFF",
+      "bg2": "#000000",
+      "tx1": "#1F1F1F",
+      "tx2": "#FFFFFF",
+      "dk1": "#000000",
+      "lt1": "#FFFFFF",
+      "dk2": "#0E2841",
+      "lt2": "#E8E8E8",
+      "hlink": "#467886",
+      "folHlink": "#96607D"
+    },
+    "typefaces": [
+      "Aptos",
+      "Aptos Display"
+    ]
+  },
+  "inheritedLayers": [
+    {
+      "scope": "layout",
+      "id": "a9d6f888-2ede-4177-8d3b-21104dd91d99",
+      "name": "Title Slide",
+      "type": "title",
+      "parentLayoutId": "48346605-7561-466a-bbe8-d583f35814bb",
+      "elements": []
+    },
+    {
+      "scope": "master",
+      "id": "48346605-7561-466a-bbe8-d583f35814bb",
+      "name": "Master",
+      "type": "master",
+      "elements": []
+    }
+  ],
+  "elements": [
+    {
+      "order": 1,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/7mp0bi9s",
+      "id": "1",
+      "bbox": [
+        0,
+        0,
+        1280,
+        720
+      ],
+      "geometry": "rect",
+      "fillColor": "#F7F3EA",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 2,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/w7mp0bi9",
+      "id": "2",
+      "bbox": [
+        58,
+        50,
+        6,
+        22
+      ],
+      "geometry": "rect",
+      "fillColor": "#0F766E",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 3,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/psfil0rq",
+      "id": "3",
+      "bbox": [
+        74,
+        49,
+        620,
+        24
+      ],
+      "geometry": "rect",
+      "text": "EARLY-STAGE RESEARCH",
+      "textPreview": "EARLY-STAGE RESEARCH",
+      "resolvedFontSize": 9.51,
+      "resolvedTextStyle": {
+        "fontSize": 9.51,
+        "typeface": "Aptos",
+        "bold": true,
+        "alignment": "left"
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "EARLY-STAGE RESEARCH"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "EARLY-STAGE RESEARCH",
+          "runs": [
+            {
+              "index": 1,
+              "text": "EARLY-STAGE RESEARCH",
+              "fontSize": 9.51,
+              "typeface": "Aptos",
+              "color": "#56616F",
+              "bold": true
+            }
+          ]
+        }
+      ],
+      "fillColor": "rgba(0, 0, 0, 0)",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 4,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/epkzupwb",
+      "id": "4",
+      "bbox": [
+        58,
+        118,
+        720,
+        118
+      ],
+      "geometry": "rect",
+      "text": "Course Allocation\nwith Friendships",
+      "textPreview": "Course Allocation | with Friendships",
+      "resolvedFontSize": 46,
+      "resolvedTextStyle": {
+        "fontSize": 46,
+        "typeface": "Aptos Display",
+        "bold": true,
+        "alignment": "left"
+      },
+      "textLayout": {
+        "lineCount": 2,
+        "lines": [
+          {
+            "index": 1,
+            "text": "Course Allocation"
+          },
+          {
+            "index": 2,
+            "text": "with Friendships"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "Course Allocation",
+          "runs": [
+            {
+              "index": 1,
+              "text": "Course Allocation",
+              "fontSize": 46,
+              "typeface": "Aptos Display",
+              "color": "#17212E",
+              "bold": true
+            }
+          ]
+        },
+        {
+          "index": 2,
+          "text": "with Friendships",
+          "runs": [
+            {
+              "index": 1,
+              "text": "with Friendships",
+              "fontSize": 46,
+              "typeface": "Aptos Display",
+              "color": "#17212E",
+              "bold": true
+            }
+          ]
+        }
+      ],
+      "fillColor": "rgba(0, 0, 0, 0)",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 5,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/7adsji5s",
+      "id": "5",
+      "bbox": [
+        62,
+        266,
+        680,
+        34
+      ],
+      "geometry": "rect",
+      "text": "A first framework for adding friendship relations to course allocation.",
+      "textPreview": "A first framework for adding friendship relations to course allocation.",
+      "resolvedFontSize": 21,
+      "resolvedTextStyle": {
+        "fontSize": 21,
+        "typeface": "Aptos Display",
+        "bold": true,
+        "alignment": "left"
+      },
+      "textLayout": {
+        "lineCount": 2,
+        "lines": [
+          {
+            "index": 1,
+            "text": "A first framework for adding friendship relations to course"
+          },
+          {
+            "index": 2,
+            "text": "allocation."
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "A first framework for adding friendship relations to course allocation.",
+          "runs": [
+            {
+              "index": 1,
+              "text": "A first framework for adding friendship relations to course allocation.",
+              "fontSize": 21,
+              "typeface": "Aptos Display",
+              "color": "#56616F",
+              "bold": true
+            }
+          ]
+        }
+      ],
+      "fillColor": "rgba(0, 0, 0, 0)",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 6,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/wval87ed",
+      "id": "6",
+      "bbox": [
+        64,
+        334,
+        640,
+        54
+      ],
+      "geometry": "rect",
+      "text": "This talk is about the research direction, the modeling idea, and the prototype built so far — not final empirical conclusions.",
+      "textPreview": "This talk is about the research direction, the modeling idea, and the prototype built so far — not final empirical conclusions.",
+      "resolvedFontSize": 16,
+      "resolvedTextStyle": {
+        "fontSize": 16,
+        "typeface": "Aptos",
+        "alignment": "left"
+      },
+      "textLayout": {
+        "lineCount": 2,
+        "lines": [
+          {
+            "index": 1,
+            "text": "This talk is about the research direction, the modeling idea, and the prototype built so far"
+          },
+          {
+            "index": 2,
+            "text": "— not final empirical conclusions."
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "This talk is about the research direction, the modeling idea, and the prototype built so far — not final empirical conclusions.",
+          "runs": [
+            {
+              "index": 1,
+              "text": "This talk is about the research direction, the modeling idea, and the prototype built so far — not final empirical conclusions.",
+              "fontSize": 16,
+              "typeface": "Aptos",
+              "color": "#56616F"
+            }
+          ]
+        }
+      ],
+      "fillColor": "rgba(0, 0, 0, 0)",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 7,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/pg3ex0nu",
+      "id": "7",
+      "bbox": [
+        814,
+        102,
+        328,
+        364
+      ],
+      "geometry": "rect",
+      "fillColor": "#17212E",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 8,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/eloj2t83",
+      "id": "8",
+      "bbox": [
+        846,
+        138,
+        150,
+        18
+      ],
+      "geometry": "rect",
+      "text": "Core question",
+      "textPreview": "Core question",
+      "resolvedFontSize": 11,
+      "resolvedTextStyle": {
+        "fontSize": 11,
+        "typeface": "Aptos",
+        "bold": true,
+        "alignment": "left"
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "Core question"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "Core question",
+          "runs": [
+            {
+              "index": 1,
+              "text": "Core question",
+              "fontSize": 11,
+              "typeface": "Aptos",
+              "color": "#C7D7EA",
+              "bold": true
+            }
+          ]
+        }
+      ],
+      "fillColor": "rgba(0, 0, 0, 0)",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 9,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/36hcrmhk",
+      "id": "9",
+      "bbox": [
+        846,
+        184,
+        232,
+        112
+      ],
+      "geometry": "rect",
+      "text": "How can friendship enter an allocation model?",
+      "textPreview": "How can friendship enter an allocation model?",
+      "resolvedFontSize": 29,
+      "resolvedTextStyle": {
+        "fontSize": 29,
+        "typeface": "Aptos Display",
+        "bold": true,
+        "alignment": "left"
+      },
+      "textLayout": {
+        "lineCount": 4,
+        "lines": [
+          {
+            "index": 1,
+            "text": "How can"
+          },
+          {
+            "index": 2,
+            "text": "friendship enter"
+          },
+          {
+            "index": 3,
+            "text": "an allocation"
+          },
+          {
+            "index": 4,
+            "text": "model?"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "How can friendship enter an allocation model?",
+          "runs": [
+            {
+              "index": 1,
+              "text": "How can friendship enter an allocation model?",
+              "fontSize": 29,
+              "typeface": "Aptos Display",
+              "color": "#FFFFFF",
+              "bold": true
+            }
+          ]
+        }
+      ],
+      "fillColor": "rgba(0, 0, 0, 0)",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 10,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/fil0rqd4",
+      "id": "10",
+      "bbox": [
+        846,
+        372,
+        232,
+        54
+      ],
+      "geometry": "rect",
+      "fillColor": "#223044",
+      "lineColor": "#41516A",
+      "lineWidth": 1
+    },
+    {
+      "order": 11,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/qxs72x4n",
+      "id": "11",
+      "bbox": [
+        864,
+        389,
+        196,
+        18
+      ],
+      "geometry": "rect",
+      "text": "concept -> formula -> prototype",
+      "textPreview": "concept -> formula -> prototype",
+      "resolvedFontSize": 12,
+      "resolvedTextStyle": {
+        "fontSize": 12,
+        "typeface": "Aptos",
+        "bold": true,
+        "alignment": "center"
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "concept -> formula -> prototype"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "concept -> formula -> prototype",
+          "runs": [
+            {
+              "index": 1,
+              "text": "concept -> formula -> prototype",
+              "fontSize": 12,
+              "typeface": "Aptos",
+              "color": "#F1D49D",
+              "bold": true
+            }
+          ]
+        }
+      ],
+      "fillColor": "rgba(0, 0, 0, 0)",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 12,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/xobm58z2",
+      "id": "12",
+      "bbox": [
+        88,
+        492,
+        3,
+        62
+      ],
+      "geometry": "rect",
+      "fillColor": "#0F766E",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 13,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/83itgfml",
+      "id": "13",
+      "bbox": [
+        104,
+        488,
+        150,
+        34
+      ],
+      "geometry": "rect",
+      "text": "1",
+      "textPreview": "1",
+      "resolvedFontSize": 27,
+      "resolvedTextStyle": {
+        "fontSize": 27,
+        "typeface": "Aptos Display",
+        "bold": true,
+        "alignment": "left"
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "1"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "1",
+          "runs": [
+            {
+              "index": 1,
+              "text": "1",
+              "fontSize": 27,
+              "typeface": "Aptos Display",
+              "color": "#17212E",
+              "bold": true
+            }
+          ]
+        }
+      ],
+      "fillColor": "rgba(0, 0, 0, 0)",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 14,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/fu18jqh0",
+      "id": "14",
+      "bbox": [
+        104,
+        526,
+        150,
+        16
+      ],
+      "geometry": "rect",
+      "text": "modeling idea",
+      "textPreview": "modeling idea",
+      "resolvedFontSize": 9.51,
+      "resolvedTextStyle": {
+        "fontSize": 9.51,
+        "typeface": "Aptos",
+        "bold": true,
+        "alignment": "left"
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "modeling idea"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "modeling idea",
+          "runs": [
+            {
+              "index": 1,
+              "text": "modeling idea",
+              "fontSize": 9.51,
+              "typeface": "Aptos",
+              "color": "#56616F",
+              "bold": true
+            }
+          ]
+        }
+      ],
+      "fillColor": "rgba(0, 0, 0, 0)",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 15,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/m94fu18j",
+      "id": "15",
+      "bbox": [
+        104,
+        544,
+        170,
+        20
+      ],
+      "geometry": "rect",
+      "text": "friendship as utility",
+      "textPreview": "friendship as utility",
+      "resolvedFontSize": 8.51,
+      "resolvedTextStyle": {
+        "fontSize": 8.51,
+        "typeface": "Aptos",
+        "alignment": "left"
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "friendship as utility"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "friendship as utility",
+          "runs": [
+            {
+              "index": 1,
+              "text": "friendship as utility",
+              "fontSize": 8.51,
+              "typeface": "Aptos",
+              "color": "#56616F"
+            }
+          ]
+        }
+      ],
+      "fillColor": "rgba(0, 0, 0, 0)",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 16,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/x0nuxc3y",
+      "id": "16",
+      "bbox": [
+        350,
+        492,
+        3,
+        62
+      ],
+      "geometry": "rect",
+      "fillColor": "#355070",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 17,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/4fu18jqh",
+      "id": "17",
+      "bbox": [
+        366,
+        488,
+        150,
+        34
+      ],
+      "geometry": "rect",
+      "text": "1",
+      "textPreview": "1",
+      "resolvedFontSize": 27,
+      "resolvedTextStyle": {
+        "fontSize": 27,
+        "typeface": "Aptos Display",
+        "bold": true,
+        "alignment": "left"
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "1"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "1",
+          "runs": [
+            {
+              "index": 1,
+              "text": "1",
+              "fontSize": 27,
+              "typeface": "Aptos Display",
+              "color": "#17212E",
+              "bold": true
+            }
+          ]
+        }
+      ],
+      "fillColor": "rgba(0, 0, 0, 0)",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 18,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/f6dcbulw",
+      "id": "18",
+      "bbox": [
+        366,
+        526,
+        150,
+        16
+      ],
+      "geometry": "rect",
+      "text": "prototype",
+      "textPreview": "prototype",
+      "resolvedFontSize": 9.51,
+      "resolvedTextStyle": {
+        "fontSize": 9.51,
+        "typeface": "Aptos",
+        "bold": true,
+        "alignment": "left"
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "prototype"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "prototype",
+          "runs": [
+            {
+              "index": 1,
+              "text": "prototype",
+              "fontSize": 9.51,
+              "typeface": "Aptos",
+              "color": "#56616F",
+              "bold": true
+            }
+          ]
+        }
+      ],
+      "fillColor": "rgba(0, 0, 0, 0)",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 19,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/mlkjm1cf",
+      "id": "19",
+      "bbox": [
+        366,
+        544,
+        170,
+        20
+      ],
+      "geometry": "rect",
+      "text": "CSV -> allocation -> metrics",
+      "textPreview": "CSV -> allocation -> metrics",
+      "resolvedFontSize": 8.51,
+      "resolvedTextStyle": {
+        "fontSize": 8.51,
+        "typeface": "Aptos",
+        "alignment": "left"
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "CSV -> allocation -> metrics"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "CSV -> allocation -> metrics",
+          "runs": [
+            {
+              "index": 1,
+              "text": "CSV -> allocation -> metrics",
+              "fontSize": 8.51,
+              "typeface": "Aptos",
+              "color": "#56616F"
+            }
+          ]
+        }
+      ],
+      "fillColor": "rgba(0, 0, 0, 0)",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 20,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/upwb2hwf",
+      "id": "20",
+      "bbox": [
+        612,
+        492,
+        3,
+        62
+      ],
+      "geometry": "rect",
+      "fillColor": "#B7791F",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 21,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/nap4r65w",
+      "id": "21",
+      "bbox": [
+        628,
+        488,
+        150,
+        34
+      ],
+      "geometry": "rect",
+      "text": "180",
+      "textPreview": "180",
+      "resolvedFontSize": 27,
+      "resolvedTextStyle": {
+        "fontSize": 27,
+        "typeface": "Aptos Display",
+        "bold": true,
+        "alignment": "left"
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "180"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "180",
+          "runs": [
+            {
+              "index": 1,
+              "text": "180",
+              "fontSize": 27,
+              "typeface": "Aptos Display",
+              "color": "#17212E",
+              "bold": true
+            }
+          ]
+        }
+      ],
+      "fillColor": "rgba(0, 0, 0, 0)",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 22,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/cvixczed",
+      "id": "22",
+      "bbox": [
+        628,
+        526,
+        150,
+        16
+      ],
+      "geometry": "rect",
+      "text": "test runs",
+      "textPreview": "test runs",
+      "resolvedFontSize": 9.51,
+      "resolvedTextStyle": {
+        "fontSize": 9.51,
+        "typeface": "Aptos",
+        "bold": true,
+        "alignment": "left"
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "test runs"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "test runs",
+          "runs": [
+            {
+              "index": 1,
+              "text": "test runs",
+              "fontSize": 9.51,
+              "typeface": "Aptos",
+              "color": "#56616F",
+              "bold": true
+            }
+          ]
+        }
+      ],
+      "fillColor": "rgba(0, 0, 0, 0)",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 23,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/5gbq1ory",
+      "id": "23",
+      "bbox": [
+        628,
+        544,
+        170,
+        20
+      ],
+      "geometry": "rect",
+      "text": "pipeline validation",
+      "textPreview": "pipeline validation",
+      "resolvedFontSize": 8.51,
+      "resolvedTextStyle": {
+        "fontSize": 8.51,
+        "typeface": "Aptos",
+        "alignment": "left"
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "pipeline validation"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "pipeline validation",
+          "runs": [
+            {
+              "index": 1,
+              "text": "pipeline validation",
+              "fontSize": 8.51,
+              "typeface": "Aptos",
+              "color": "#56616F"
+            }
+          ]
+        }
+      ],
+      "fillColor": "rgba(0, 0, 0, 0)",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 24,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/udg7adsj",
+      "id": "24",
+      "bbox": [
+        58,
+        668,
+        1164,
+        1
+      ],
+      "geometry": "rect",
+      "fillColor": "#D7CDBE",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 25,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/nyd0z610",
+      "id": "25",
+      "bbox": [
+        58,
+        682,
+        850,
+        18
+      ],
+      "geometry": "rect",
+      "text": "Positioning: early-stage research presentation",
+      "textPreview": "Positioning: early-stage research presentation",
+      "resolvedFontSize": 8.51,
+      "resolvedTextStyle": {
+        "fontSize": 8.51,
+        "typeface": "Aptos",
+        "alignment": "left"
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "Positioning: early-stage research presentation"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "Positioning: early-stage research presentation",
+          "runs": [
+            {
+              "index": 1,
+              "text": "Positioning: early-stage research presentation",
+              "fontSize": 8.51,
+              "typeface": "Aptos",
+              "color": "#7A6E60"
+            }
+          ]
+        }
+      ],
+      "fillColor": "rgba(0, 0, 0, 0)",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 26,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/cj6tovah",
+      "id": "26",
+      "bbox": [
+        1160,
+        682,
+        62,
+        18
+      ],
+      "geometry": "rect",
+      "text": "1/8",
+      "textPreview": "1/8",
+      "resolvedFontSize": 9,
+      "resolvedTextStyle": {
+        "fontSize": 9,
+        "typeface": "Aptos",
+        "alignment": "right"
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "1/8"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "1/8",
+          "runs": [
+            {
+              "index": 1,
+              "text": "1/8",
+              "fontSize": 9,
+              "typeface": "Aptos",
+              "color": "#56616F"
+            }
+          ]
+        }
+      ],
+      "fillColor": "rgba(0, 0, 0, 0)",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    }
+  ],
+  "composeRuns": []
+}

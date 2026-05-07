@@ -1,0 +1,28 @@
+Thesis:
+Adding directed friendship preferences changes course allocation from an independent preference assignment into a socially coupled combinatorial assignment problem; the main contribution is a deterministic HBS-style mechanism that makes this coupling explicit, measurable, and experimentally improvable after the draft.
+
+Audience:
+Professors and students in an academic seminar, familiar with algorithms, optimization, or operations research but not necessarily with this implementation.
+
+One-line arc:
+Define the classical allocation gap, introduce friendship-aware utility, show the mechanism and post-allocation search, then use experiments to explain the welfare-social-fairness trade-off.
+
+Slide list:
+01. Claim: Course allocation misses an important social externality when students are treated independently. Proof object: thesis cover with contribution rail. Source: abstract review + README.
+02. Claim: The project is a friendship-aware extension of a classical one-sided combinatorial assignment problem. Proof object: problem/gap/contribution triad. Source: abstract review.
+03. Claim: The model adds a directed course-specific friendship graph on top of individual rankings. Proof object: bipartite assignment plus social graph diagram. Source: README input tables.
+04. Claim: Utility is decomposed into individual course value and a reactive social term. Proof object: equations and component table. Source: README mathematical model.
+05. Claim: The reactive bonus avoids circular dependence by rewarding only friends who are already allocated. Proof object: sequential pick diagram. Source: README reactive bonus.
+06. Claim: The HBS-style snake draft remains deterministic while internalizing social utility at each pick. Proof object: draft-order and tie-break chain. Source: README pick rule.
+07. Claim: Post-allocation improvement turns the draft into an initial feasible point for local search. Proof object: three-stage workflow. Source: README post-draft improvement.
+08. Claim: The method space is a 3 x 2 design: move operator crossed with welfare objective. Proof object: method matrix. Source: README post-draft improvement.
+09. Claim: The experimental pipeline evaluates allocation quality, inequality, and social satisfaction, not just total utility. Proof object: pipeline + metric taxonomy. Source: README metrics and experiments.
+10. Claim: In the saved 200x8 sweep, hybrid-global captures most welfare gain within five post iterations. Proof object: mode comparison bars. Source: experiments.sqlite.
+11. Claim: The welfare gain is social: friendship overlap rises sharply under the global hybrid method. Proof object: before/after social metric chart. Source: experiments.sqlite.
+12. Claim: The improvement is not free; social welfare can trade against individual rank satisfaction and inequality. Proof object: trade-off dashboard. Source: experiments.sqlite.
+13. Claim: The implementation is built for reproducible mechanism experiments. Proof object: reproducibility/audit architecture. Source: README tests and outputs.
+14. Claim: The contribution is a testable bridge between mechanism design and social preference modeling. Proof object: contribution summary + next questions. Source: synthesized from local project sources.
+
+Omission notes:
+- Literature names are omitted because no bibliography or target conference style was provided.
+- Numeric results are described as saved/preliminary experiment evidence, not as final theorem-like claims.

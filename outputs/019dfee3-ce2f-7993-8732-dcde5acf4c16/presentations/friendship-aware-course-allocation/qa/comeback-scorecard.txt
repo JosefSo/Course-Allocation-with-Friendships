@@ -1,0 +1,27 @@
+Rendered QA scorecard
+
+Profile gate: pass
+- Technical diagrams preserve the actual model terms: directed friendship preferences, reactive bonus, lambda, feasibility, local moves, and objective scopes.
+- Charts use saved experiment values from results/experiments/experiments.sqlite.
+- No external brand assets or pseudo-logos are used.
+
+Rubric:
+- story: 5/5
+- specificity: 5/5
+- rhythm: 4/5
+- whitespace: 4/5
+- chart clarity: 4/5
+- typography: 4/5
+- restraint: 5/5
+- precision: 5/5
+- coherence: 5/5
+
+Total: 41/45
+
+Iterations performed:
+- Fixed slide 01 dark-panel text overlap.
+- Fixed slide 10 result-label overlap with the right proof box.
+
+Residual risks:
+- Literature slide is intentionally not included because no bibliography was supplied.
+- Numerical results are framed as saved computational evidence, not final paper claims.

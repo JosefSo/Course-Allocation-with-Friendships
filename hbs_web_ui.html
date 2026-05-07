@@ -219,6 +219,32 @@
       border-radius: 999px;
       display: inline-block;
     }
+    .worker-progress {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      padding: 8px;
+      display: none;
+      gap: 7px;
+    }
+    .worker-row {
+      display: grid;
+      grid-template-columns: 90px 1fr 90px;
+      gap: 8px;
+      align-items: center;
+      font-size: 12px;
+    }
+    .progress-track {
+      height: 9px;
+      border-radius: 999px;
+      background: #e8edf5;
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      width: 0%;
+      background: var(--accent);
+    }
   </style>
 </head>
 <body>
@@ -307,8 +333,11 @@
       <h3>Summary</h3>
       <pre id="summary_view">No run yet.</pre>
 
-      <h3>Allocation</h3>
-      <div style="overflow:auto;">
+      <div class="actions" style="align-items: center;">
+        <h3 style="margin: 0;">Allocation</h3>
+        <button type="button" class="secondary" id="toggle_allocation_btn">Hide Allocation</button>
+      </div>
+      <div id="allocation_wrap" style="overflow:auto;">
         <table id="allocation_table">
           <thead>
             <tr><th>StudentID</th><th>Courses</th></tr>
@@ -345,6 +374,7 @@
         <div id="stats_empty" class="inline-note">No statistics yet.</div>
 
         <div id="stats_overview" class="stats-grid"></div>
+        <div id="worker_progress" class="worker-progress"></div>
 
         <div class="chart-wrap">
           <div class="chart-title" id="utility_chart_title">Utility Trend</div>
@@ -385,6 +415,8 @@
   <script>
     const statusEl = document.getElementById("status");
     const runBtn = document.getElementById("run_btn");
+    const toggleAllocationBtn = document.getElementById("toggle_allocation_btn");
+    const allocationWrapEl = document.getElementById("allocation_wrap");
     const tableEl = document.getElementById("allocation_table").querySelector("tbody");
     const summaryEl = document.getElementById("summary_view");
     const picklogEl = document.getElementById("picklog_view");
@@ -403,7 +435,12 @@
     const fairnessChartNoteEl = document.getElementById("fairness_chart_note");
     const fairnessLegendEl = document.getElementById("fairness_legend");
     const statsModeTableEl = document.getElementById("stats_mode_table").querySelector("tbody");
+    const workerProgressEl = document.getElementById("worker_progress");
     let statsVisible = false;
+    let allocationVisible = true;
+    let progressPollTimer = null;
+    let statsMode = "history";
+    let currentModeComparisonStats = null;
 
     function setStatus(message, kind) {
       statusEl.textContent = message;
@@ -550,6 +587,12 @@
       });
     }
 
+    function setAllocationVisible(isVisible) {
+      allocationVisible = isVisible;
+      allocationWrapEl.style.display = isVisible ? "block" : "none";
+      toggleAllocationBtn.textContent = isVisible ? "Hide Allocation" : "Show Allocation";
+    }
+
     function makeDownloadButton(fileName, content) {
       const btn = document.createElement("button");
       btn.type = "button";
@@ -603,6 +646,8 @@
     }
 
     function resetStatsView(message) {
+      statsMode = "history";
+      currentModeComparisonStats = null;
       statsEmptyEl.textContent = message || "No statistics yet.";
       statsOverviewEl.innerHTML = "";
       utilityChartTitleEl.textContent = "Utility Trend";
@@ -612,6 +657,8 @@
       utilityChartEl.innerHTML = "";
       fairnessChartEl.innerHTML = "";
       fairnessLegendEl.innerHTML = "";
+      workerProgressEl.innerHTML = "";
+      workerProgressEl.style.display = "none";
       statsModeTableEl.innerHTML = "<tr><td colspan='8'>No statistics yet.</td></tr>";
     }
 
@@ -929,6 +976,8 @@
     }
 
     function renderStats(stats) {
+      statsMode = "history";
+      currentModeComparisonStats = null;
       const trend = Array.isArray(stats.trend) ? stats.trend : [];
       const byMode = Array.isArray(stats.by_mode) ? stats.by_mode : [];
       const overall = stats.overall || {};
@@ -940,6 +989,12 @@
 
       statsEmptyEl.textContent = "";
       statsOverviewEl.innerHTML = "";
+      workerProgressEl.innerHTML = "";
+      workerProgressEl.style.display = "none";
+      utilityChartTitleEl.textContent = "Utility Trend";
+      utilityChartNoteEl.textContent = "X-axis: run index, Y-axis: total_utility";
+      fairnessChartTitleEl.textContent = "Fairness Trend";
+      fairnessChartNoteEl.textContent = "X-axis: run index, Y-axis: gini values";
 
       const overviewItems = [
         { label: "Runs Total", value: String(overall.runs_total || 0) },
@@ -1031,6 +1086,8 @@
     }
 
     function renderModeComparisonStats(stats) {
+      statsMode = "comparison";
+      currentModeComparisonStats = JSON.parse(JSON.stringify(stats));
       const byMode = Array.isArray(stats.by_mode) ? stats.by_mode : [];
       const overall = stats.overall || {};
       const config = stats.config || {};
@@ -1046,9 +1103,13 @@
       utilityChartNoteEl.textContent = "X-axis: mode, Y-axis: average total_utility across the batch";
       fairnessChartTitleEl.textContent = "Fairness By Mode";
       fairnessChartNoteEl.textContent = "X-axis: mode, Y-axis: average gini across the batch";
+      const runCounts = byMode.map((row) => Number(row.runs || 0));
+      const minRuns = Math.min(...runCounts);
+      const maxRuns = Math.max(...runCounts);
+      const runsPerMode = minRuns === maxRuns ? String(minRuns) : `${minRuns} - ${maxRuns}`;
 
       const overviewItems = [
-        { label: "Batch Size", value: String(config.batch_size || 0) + " runs per mode" },
+        { label: "Runs Per Mode", value: runsPerMode },
         { label: "Seeds", value: `${config.seed_start} - ${config.seed_end}` },
         {
           label: "Workers",
@@ -1130,6 +1191,122 @@
       });
     }
 
+    function summarizeModeComparison(stats) {
+      const byMode = Array.isArray(stats.by_mode) ? stats.by_mode : [];
+      const bestAvgUtility = byMode.length > 0
+        ? byMode.reduce((best, row) => row.avg_total_utility > best.avg_total_utility ? row : best, byMode[0])
+        : null;
+      const bestAvgFairness = byMode.length > 0
+        ? byMode.reduce((best, row) => row.avg_gini_total_norm < best.avg_gini_total_norm ? row : best, byMode[0])
+        : null;
+      stats.overall = {
+        ...(stats.overall || {}),
+        mode_count: byMode.length,
+        runs_total: byMode.reduce((total, row) => total + Number(row.runs || 0), 0),
+        best_avg_utility_mode: bestAvgUtility,
+        best_avg_fairness_mode: bestAvgFairness
+      };
+      return stats;
+    }
+
+    function addSingleRunToModeComparison(runData) {
+      if (!currentModeComparisonStats || !Array.isArray(currentModeComparisonStats.by_mode)) {
+        return false;
+      }
+      const mode = runData && runData.config && runData.config.improve_mode;
+      const summary = runData && runData.summary;
+      const row = currentModeComparisonStats.by_mode.find((item) => item.improve_mode === mode);
+      if (!row || !summary) {
+        return false;
+      }
+
+      const oldRuns = Number(row.runs || 0);
+      const newRuns = oldRuns + 1;
+      const totalUtility = Number(summary.total_utility);
+      const gTotal = Number(summary.gini_total_norm);
+      const gBase = Number(summary.gini_base_norm);
+
+      row.runs = newRuns;
+      row.avg_total_utility = ((Number(row.avg_total_utility || 0) * oldRuns) + totalUtility) / newRuns;
+      row.best_total_utility = Math.max(Number(row.best_total_utility || totalUtility), totalUtility);
+      row.avg_gini_total_norm = ((Number(row.avg_gini_total_norm || 0) * oldRuns) + gTotal) / newRuns;
+      row.min_gini_total_norm = Math.min(Number(row.min_gini_total_norm || gTotal), gTotal);
+      row.avg_gini_base_norm = ((Number(row.avg_gini_base_norm || 0) * oldRuns) + gBase) / newRuns;
+      row.min_gini_base_norm = Math.min(Number(row.min_gini_base_norm || gBase), gBase);
+
+      renderModeComparisonStats(summarizeModeComparison(currentModeComparisonStats));
+      return true;
+    }
+
+    function renderWorkerProgress(progress) {
+      const workers = Array.isArray(progress.workers) ? progress.workers : [];
+      if (workers.length === 0) {
+        workerProgressEl.innerHTML = "";
+        workerProgressEl.style.display = "none";
+        return;
+      }
+      workerProgressEl.style.display = "grid";
+      workerProgressEl.innerHTML = "";
+
+      const header = document.createElement("div");
+      header.className = "chart-title";
+      header.textContent = "Worker Progress: " + progress.completed + " / " + progress.total;
+      workerProgressEl.appendChild(header);
+
+      workers.forEach((worker) => {
+        const total = Number(worker.total || 0);
+        const completed = Number(worker.completed || 0);
+        const pct = total > 0 ? Math.round((completed / total) * 100) : 100;
+        const row = document.createElement("div");
+        row.className = "worker-row";
+
+        const label = document.createElement("div");
+        label.textContent = "Worker " + worker.worker_id;
+
+        const track = document.createElement("div");
+        track.className = "progress-track";
+        const fill = document.createElement("div");
+        fill.className = "progress-fill";
+        fill.style.width = pct + "%";
+        track.appendChild(fill);
+
+        const value = document.createElement("div");
+        value.textContent = completed + " / " + total;
+
+        row.appendChild(label);
+        row.appendChild(track);
+        row.appendChild(value);
+        workerProgressEl.appendChild(row);
+      });
+    }
+
+    function stopProgressPolling() {
+      if (progressPollTimer !== null) {
+        clearInterval(progressPollTimer);
+        progressPollTimer = null;
+      }
+    }
+
+    function startProgressPolling(jobId) {
+      stopProgressPolling();
+      const poll = async () => {
+        try {
+          const response = await fetch("/api/compare-progress?job_id=" + encodeURIComponent(jobId));
+          const data = await response.json();
+          if (response.ok && data.ok) {
+            renderWorkerProgress(data);
+            if (data.status === "done" || data.status === "failed") {
+              stopProgressPolling();
+            }
+          }
+        } catch (err) {
+          // Progress polling is best-effort; the main request still reports final errors.
+        }
+      };
+      poll();
+      progressPollTimer = setInterval(poll, 700);
+    }
+
     async function loadHistory() {
       try {
         const response = await fetch("/api/history?limit=200");
@@ -1192,6 +1369,7 @@
       try {
         payload = payloadFromForm();
         payload.batch_size = readInt("batch_size", 30);
+        payload.progress_job_id = "compare_" + Date.now() + "_" + Math.random().toString(36).slice(2);
       } catch (err) {
         setStatus(err.message, "error");
         return;
@@ -1202,6 +1380,7 @@
       setStatsPanelVisible(true);
       setStatus("Running mode comparison...", "");
       resetStatsView("Running batch comparison. This can take a while.");
+      startProgressPolling(payload.progress_job_id);
 
       try {
         const response = await fetch("/api/compare-modes", {
@@ -1213,7 +1392,17 @@
         if (!response.ok || !data.ok) {
           throw new Error(data.error || ("HTTP " + response.status));
         }
+        stopProgressPolling();
         renderModeComparisonStats(data);
+        const progressResponse = await fetch(
+          "/api/compare-progress?job_id=" + encodeURIComponent(payload.progress_job_id)
+        );
+        if (progressResponse.ok) {
+          const progressData = await progressResponse.json();
+          if (progressData.ok) {
+            renderWorkerProgress(progressData);
+          }
+        }
         await loadHistory();
         setStatus(
           "Mode comparison finished: " +
@@ -1228,6 +1417,7 @@
           "ok"
         );
       } catch (err) {
+        stopProgressPolling();
         resetStatsView("Failed to run mode comparison.");
         setStatus(err.message, "error");
       } finally {
@@ -1270,7 +1460,11 @@
         renderDownloads(data.csv_outputs || {});
         await loadHistory();
         if (statsVisible) {
-          await loadStats();
+          if (statsMode === "comparison" && addSingleRunToModeComparison(data)) {
+            // Keep the current mode-comparison chart and fold this run into its mode.
+          } else {
+            await loadStats();
+          }
         }
         setStatus("Completed successfully.", "ok");
       } catch (err) {
@@ -1291,6 +1485,9 @@
     document.getElementById("run_btn").addEventListener("click", runAllocation);
     document.getElementById("refresh_files_btn").addEventListener("click", loadFiles);
     document.getElementById("clear_results_btn").addEventListener("click", clearResults);
+    document.getElementById("toggle_allocation_btn").addEventListener("click", () => {
+      setAllocationVisible(!allocationVisible);
+    });
     document.getElementById("refresh_history_btn").addEventListener("click", resetHistory);
     document.getElementById("show_stats_btn").addEventListener("click", toggleStatsPanel);
     document.getElementById("run_compare_btn").addEventListener("click", runModeComparison);

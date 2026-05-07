@@ -1,0 +1,14 @@
+{
+  "runsPerMode": 30,
+  "seeds": "20-49",
+  "workers": 6,
+  "totalRuns": 180,
+  "modes": [
+    {"mode": "swap-global", "avgU": 352.612299, "bestU": 354.755826, "avgGTotal": 0.070808, "minGTotal": 0.067269, "avgGBase": 0.047782, "minGBase": 0.042801},
+    {"mode": "swap-personal", "avgU": 340.181121, "bestU": 343.801659, "avgGTotal": 0.070852, "minGTotal": 0.067094, "avgGBase": 0.04068, "minGBase": 0.03725},
+    {"mode": "drop-add-global", "avgU": 346.16876, "bestU": 348.647529, "avgGTotal": 0.070193, "minGTotal": 0.063699, "avgGBase": 0.042996, "minGBase": 0.037615},
+    {"mode": "drop-add-personal", "avgU": 342.546983, "bestU": 344.415963, "avgGTotal": 0.070927, "minGTotal": 0.066144, "avgGBase": 0.046126, "minGBase": 0.042581},
+    {"mode": "hybrid-global", "avgU": 365.025017, "bestU": 366.177435, "avgGTotal": 0.072126, "minGTotal": 0.067076, "avgGBase": 0.072559, "minGBase": 0.066367},
+    {"mode": "hybrid-personal", "avgU": 337.391854, "bestU": 340.457359, "avgGTotal": 0.075803, "minGTotal": 0.069521, "avgGBase": 0.057403, "minGBase": 0.049554}
+  ]
+}

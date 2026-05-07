@@ -11,6 +11,7 @@ from HBS.hbs_web import (
     _build_run_history_stats,
     _list_run_history,
     _list_table_files,
+    _read_compare_progress,
     _reset_run_history,
     _run_mode_comparison_payload,
     _run_payload,
@@ -320,6 +321,7 @@ class TestWebApi(unittest.TestCase):
             "draft_rounds": 1,
             "post_iters": 0,
             "batch_size": 2,
+            "progress_job_id": "test_progress_job",
         }
 
         result = _run_mode_comparison_payload(payload)
@@ -355,6 +357,12 @@ class TestWebApi(unittest.TestCase):
                 "hybrid-personal",
             },
         )
+        progress = _read_compare_progress("test_progress_job")
+        self.assertTrue(progress["ok"])
+        self.assertEqual(progress["status"], "done")
+        self.assertEqual(progress["completed"], 12)
+        self.assertEqual(progress["total"], 12)
+        self.assertEqual(len(progress["workers"]), 6)
 
 
 if __name__ == "__main__":

@@ -1,0 +1,53 @@
+Slide size: 1280x720.
+
+Background system:
+- Warm academic paper background (#F7F3EA) for most slides.
+- Deep ink panels (#17212E) for emphasis and final synthesis.
+- Hairline rules instead of decorative card grids.
+
+Typography:
+- Claim titles: Aptos Display, large, sentence-case, academic conclusion.
+- Labels and body: Aptos, compact and readable.
+- Formula fragments: Aptos Mono only when useful.
+
+Palette:
+- Ink: #17212E.
+- Muted text: #56616F.
+- Paper: #F7F3EA.
+- Rule: #D7CDBE.
+- Teal accent: #0F766E.
+- Berry accent: #9F1239.
+- Gold accent: #B7791F.
+- Blue-gray accent: #355070.
+
+Chart grammar:
+- Direct labels and annotated deltas.
+- Bars and matrices preferred over thin line charts.
+- Values are drawn from local experiment sources and footnoted quietly.
+
+Diagram grammar:
+- Equal-role boxes share dimensions and typography.
+- Directional edges are used only when direction matters.
+- Reactive friendship logic is represented as sequence/order, not as a static undirected graph.
+
+Footer/page marker:
+- Bottom-left source note; bottom-right slide number.
+- Sources are local project files rather than external citations.
+
+Allowed layout families:
+- Cover with contribution rail.
+- Problem triad.
+- Technical system map.
+- Formula proof slide.
+- Sequential mechanism diagram.
+- Method matrix.
+- Experiment pipeline.
+- Bar-chart result slide.
+- Trade-off dashboard.
+- Synthesis / research agenda.
+
+Banned motifs:
+- Generic rounded SaaS cards.
+- Marketing hero layout.
+- Decorative logos or pseudo-institution marks.
+- Dense code screenshots.

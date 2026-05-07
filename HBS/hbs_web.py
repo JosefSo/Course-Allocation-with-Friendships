@@ -6,6 +6,7 @@ import logging
 import math
 import sqlite3
 import tempfile
+import threading
 from concurrent.futures import ProcessPoolExecutor
 from dataclasses import asdict
 from datetime import datetime, timezone
@@ -28,6 +29,8 @@ LOG = logging.getLogger(__name__)
 UI_PATH = Path(__file__).resolve().parents[1] / "hbs_web_ui.html"
 TABLES_DIR = Path(__file__).resolve().parents[1] / "tables"
 HISTORY_DB_PATH = Path(__file__).resolve().parents[1] / "results" / "hbs_social_web_history.sqlite3"
+_COMPARE_PROGRESS: dict[str, dict[str, Any]] = {}
+_COMPARE_PROGRESS_LOCK = threading.Lock()
 
 
 def _to_int(payload: dict[str, Any], key: str, default: int | None = None) -> int:
@@ -549,17 +552,122 @@ def _run_mode_comparison_task(task: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def _write_worker_progress(
+    progress_dir: Path,
+    *,
+    worker_id: int,
+    total: int,
+    completed: int,
+    status: str,
+) -> None:
+    payload = {
+        "worker_id": worker_id,
+        "total": total,
+        "completed": completed,
+        "status": status,
+    }
+    target = progress_dir / f"worker_{worker_id}.json"
+    tmp = progress_dir / f"worker_{worker_id}.json.tmp"
+    tmp.write_text(json.dumps(payload), encoding="utf-8")
+    tmp.replace(target)
+
+
+def _run_mode_comparison_chunk(chunk: dict[str, Any]) -> list[dict[str, Any]]:
+    worker_id = int(chunk["worker_id"])
+    tasks = list(chunk["tasks"])
+    progress_dir_raw = chunk.get("progress_dir")
+    progress_dir = Path(str(progress_dir_raw)) if progress_dir_raw is not None else None
+    total = len(tasks)
+    results: list[dict[str, Any]] = []
+    if progress_dir is not None:
+        _write_worker_progress(
+            progress_dir,
+            worker_id=worker_id,
+            total=total,
+            completed=0,
+            status=("done" if total == 0 else "running"),
+        )
+    for idx, task in enumerate(tasks, start=1):
+        results.append(_run_mode_comparison_task(task))
+        if progress_dir is not None:
+            _write_worker_progress(
+                progress_dir,
+                worker_id=worker_id,
+                total=total,
+                completed=idx,
+                status=("done" if idx == total else "running"),
+            )
+    return results
+
+
 def _run_mode_comparison_tasks(
-    tasks: list[dict[str, Any]],
+    chunks: list[dict[str, Any]],
     *,
     parallel_workers: int,
 ) -> tuple[list[dict[str, Any]], int, str | None]:
     try:
         with ProcessPoolExecutor(max_workers=parallel_workers) as executor:
-            return list(executor.map(_run_mode_comparison_task, tasks)), parallel_workers, None
+            results: list[dict[str, Any]] = []
+            for chunk_results in executor.map(_run_mode_comparison_chunk, chunks):
+                results.extend(chunk_results)
+            return results, parallel_workers, None
     except PermissionError as exc:
         LOG.debug("Parallel mode comparison blocked by the environment: %s", exc)
-        return [_run_mode_comparison_task(task) for task in tasks], 1, str(exc)
+        results = []
+        for chunk in chunks:
+            results.extend(_run_mode_comparison_chunk(chunk))
+        return results, 1, str(exc)
+
+
+def _normalize_progress_job_id(raw_job_id: Any) -> str:
+    job_id = str(raw_job_id or "").strip()
+    if job_id == "":
+        raise ValueError("progress_job_id is required")
+    allowed = set("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-")
+    if any(ch not in allowed for ch in job_id):
+        raise ValueError("progress_job_id may contain only letters, digits, _ and -")
+    return job_id[:80]
+
+
+def _read_compare_progress(job_id: str) -> dict[str, Any]:
+    with _COMPARE_PROGRESS_LOCK:
+        state = dict(_COMPARE_PROGRESS.get(job_id) or {})
+    if not state:
+        return {"ok": False, "error": "Progress job not found"}
+
+    workers = state.get("workers")
+    progress_dir_raw = state.get("progress_dir")
+    if workers is None and progress_dir_raw is not None:
+        progress_dir = Path(str(progress_dir_raw))
+        workers = []
+        for worker_id in range(1, int(state.get("worker_count", 0)) + 1):
+            path = progress_dir / f"worker_{worker_id}.json"
+            if path.exists():
+                try:
+                    workers.append(json.loads(path.read_text(encoding="utf-8")))
+                    continue
+                except json.JSONDecodeError:
+                    pass
+            workers.append(
+                {
+                    "worker_id": worker_id,
+                    "total": int(state.get("worker_totals", {}).get(worker_id, 0)),
+                    "completed": 0,
+                    "status": "queued",
+                }
+            )
+
+    workers = list(workers or [])
+    total = sum(int(worker.get("total", 0)) for worker in workers)
+    completed = sum(int(worker.get("completed", 0)) for worker in workers)
+    return {
+        "ok": True,
+        "job_id": job_id,
+        "status": state.get("status", "running"),
+        "workers": workers,
+        "total": total,
+        "completed": completed,
+    }
 
 
 def _run_payload(payload: dict[str, Any]) -> dict[str, Any]:
@@ -730,12 +838,20 @@ def _run_mode_comparison_payload(payload: dict[str, Any]) -> dict[str, Any]:
     table2_ref = _history_ref(payload, "table2_file") or "[inline-table2]"
     lambda_ref = _history_ref(payload, "lambda_file")
     resolved_draft_rounds = b if draft_rounds is None else draft_rounds
+    raw_progress_job_id = payload.get("progress_job_id")
+    progress_job_id = (
+        _normalize_progress_job_id(raw_progress_job_id)
+        if raw_progress_job_id is not None
+        else None
+    )
 
     with tempfile.TemporaryDirectory() as tmp:
         tmp_dir = Path(tmp)
         csv_a = tmp_dir / "table1.csv"
         csv_b = tmp_dir / "table2.csv"
         csv_lambda: Path | None = None
+        progress_dir = tmp_dir / "compare_progress"
+        progress_dir.mkdir()
         csv_a.write_text(table1_csv, encoding="utf-8")
         csv_b.write_text(table2_csv, encoding="utf-8")
 
@@ -767,9 +883,54 @@ def _run_mode_comparison_payload(payload: dict[str, Any]) -> dict[str, Any]:
                 )
 
         parallel_workers = 6
-        task_results, effective_parallel_workers, parallel_fallback_reason = (
-            _run_mode_comparison_tasks(tasks, parallel_workers=parallel_workers)
-        )
+        chunks: list[dict[str, Any]] = [
+            {
+                "worker_id": worker_id,
+                "progress_dir": str(progress_dir),
+                "tasks": [],
+            }
+            for worker_id in range(1, parallel_workers + 1)
+        ]
+        for idx, task in enumerate(tasks):
+            chunks[idx % parallel_workers]["tasks"].append(task)
+        worker_totals = {
+            int(chunk["worker_id"]): len(chunk["tasks"])
+            for chunk in chunks
+        }
+        if progress_job_id is not None:
+            with _COMPARE_PROGRESS_LOCK:
+                _COMPARE_PROGRESS[progress_job_id] = {
+                    "status": "running",
+                    "progress_dir": str(progress_dir),
+                    "worker_count": parallel_workers,
+                    "worker_totals": worker_totals,
+                }
+        try:
+            task_results, effective_parallel_workers, parallel_fallback_reason = (
+                _run_mode_comparison_tasks(chunks, parallel_workers=parallel_workers)
+            )
+        except Exception:
+            if progress_job_id is not None:
+                failed_workers = _read_compare_progress(progress_job_id).get("workers", [])
+                with _COMPARE_PROGRESS_LOCK:
+                    _COMPARE_PROGRESS[progress_job_id] = {
+                        "status": "failed",
+                        "workers": failed_workers,
+                        "worker_count": parallel_workers,
+                        "worker_totals": worker_totals,
+                    }
+            raise
+        if progress_job_id is not None:
+            final_workers = _read_compare_progress(progress_job_id).get("workers", [])
+            for worker in final_workers:
+                worker["status"] = "done"
+            with _COMPARE_PROGRESS_LOCK:
+                _COMPARE_PROGRESS[progress_job_id] = {
+                    "status": "done",
+                    "workers": final_workers,
+                    "worker_count": parallel_workers,
+                    "worker_totals": worker_totals,
+                }
 
         grouped_results: dict[str, list[dict[str, Any]]] = {
             mode: [] for mode in CANONICAL_IMPROVE_MODES
@@ -817,8 +978,8 @@ def _run_mode_comparison_payload(payload: dict[str, Any]) -> dict[str, Any]:
                     "move_type": move_type,
                     "objective_scope": objective_scope,
                     "runs": batch_size,
-                    "seed_start": seeds[0],
-                    "seed_end": seeds[-1],
+                    "seed_start": min(seeds),
+                    "seed_end": max(seeds),
                     "avg_total_utility": _mean(total_values),
                     "best_total_utility": max(total_values),
                     "std_total_utility": _stddev(total_values),
@@ -871,6 +1032,18 @@ class _HbsWebHandler(BaseHTTPRequestHandler):
             return
         if path == "/api/tables":
             self._send_json(HTTPStatus.OK, _list_table_files())
+            return
+        if path == "/api/compare-progress":
+            query = parse_qs(parsed.query)
+            job_id_raw = query.get("job_id", [""])[0]
+            try:
+                job_id = _normalize_progress_job_id(job_id_raw)
+                progress = _read_compare_progress(job_id)
+            except ValueError as exc:
+                self._send_json(HTTPStatus.BAD_REQUEST, {"ok": False, "error": str(exc)})
+                return
+            status = HTTPStatus.OK if progress.get("ok") else HTTPStatus.NOT_FOUND
+            self._send_json(status, progress)
             return
         if path == "/api/history":
             query = parse_qs(parsed.query)

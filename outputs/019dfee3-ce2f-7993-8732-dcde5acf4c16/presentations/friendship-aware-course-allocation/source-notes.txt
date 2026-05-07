@@ -1,0 +1,40 @@
+Sources used:
+
+1. README.md
+- Project title: HBS Social: Course Allocation with Friendships.
+- Model: deterministic snake-draft HBS-style course allocation with reactive social preferences.
+- Inputs: Table 1 individual course preferences, Table 2 directed friend preferences by course, Table 3 per-student LambdaFriend.
+- Utility: U(s,c) = (1 - lambda_s) Base(s,c) + lambda_s FriendBonusNorm(s,c).
+- Reactive friend bonus counts only friends already allocated to the candidate course.
+- Post-allocation stage includes swap, drop-add, and hybrid modes under global or personal objectives.
+- Metrics: total utility, normalized Gini, Jain, Theil, Atkinson, percentiles, friendship-overlap statistics, position statistics, fill rate.
+
+2. course_allocation_abstract_review.txt
+- Recommended research framing: course allocation is a one-sided combinatorial assignment problem with indivisible course seats, capacities, and no real monetary transfers.
+- Research gap: standard course allocation models usually treat student preferences as independent and ignore friendship relations.
+- Contribution language: friendship-aware extension with directed friendship-based social term and post-allocation local-search improvements.
+
+3. results/experiments/experiments.sqlite
+- Saved aggregate experiment evidence for scenario A_200x8.
+- Scenario: 200 students, 8 courses, capacity 80, b=3, draft_rounds=3, seeds 11-20.
+- Saved labels include legacy aliases:
+  adaptive-global = current hybrid-global.
+  adaptive-greedy = current hybrid-personal.
+  add-drop = current drop-add-global.
+  swap = current swap-global.
+- Baseline no-post mean total utility: 371.310.
+- Hybrid-global at post_iters=5: mean total utility 384.805, +3.63%.
+- Swap-global at post_iters=20: mean total utility 379.516, +2.21%.
+- Drop-add-global at post_iters=20: mean total utility 372.275, +0.26%.
+- Hybrid-personal at post_iters=20: mean total utility 369.862, -0.39%.
+- Friend overlap per student: 3.715 baseline -> 4.697 hybrid-global at post_iters=5, +26.44%.
+- Average assigned position: 2.186 baseline -> 2.434 hybrid-global at post_iters=5.
+- Share top-3 assigned courses: 0.872 baseline -> 0.796 hybrid-global at post_iters=5.
+- Gini total norm: 0.05238 baseline -> 0.05576 hybrid-global at post_iters=5.
+
+4. results/metrics_extended.csv, results/metrics_global.csv, results/metrics_greedy.csv
+- Single-run cross-checks confirm metric schema and the same welfare/friendship/rank trade-off pattern.
+
+Identity assets:
+- None used.
+- No pseudo-logo, mascot, or university mark is created.

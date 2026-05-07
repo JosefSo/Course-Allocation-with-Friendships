@@ -1,0 +1,1161 @@
+{
+  "schema": "openai.presentation.layout/v4",
+  "unit": "px",
+  "slide": {
+    "aid": "sl/etht5m",
+    "id": "etht5m",
+    "slide": 11,
+    "layoutId": "ed67588c-c8e1-4c9b-bba9-d2fe402538a3",
+    "layoutName": "Title Slide",
+    "layoutType": "title",
+    "masterLayoutId": "2927567c-333e-4ca4-b409-2f656a5b3787",
+    "masterLayoutName": "Master",
+    "frame": {
+      "left": 0,
+      "top": 0,
+      "width": 1280,
+      "height": 720
+    }
+  },
+  "theme": {
+    "colorSchemeName": "ChatGPT",
+    "colors": {
+      "accent1": "#156082",
+      "accent2": "#E97132",
+      "accent3": "#196B24",
+      "accent4": "#0F9ED5",
+      "accent5": "#A02B93",
+      "accent6": "#4EA72E",
+      "bg1": "#FFFFFF",
+      "bg2": "#000000",
+      "tx1": "#1F1F1F",
+      "tx2": "#FFFFFF",
+      "dk1": "#000000",
+      "lt1": "#FFFFFF",
+      "dk2": "#0E2841",
+      "lt2": "#E8E8E8",
+      "hlink": "#467886",
+      "folHlink": "#96607D"
+    },
+    "typefaces": [
+      "Aptos",
+      "Aptos Display"
+    ]
+  },
+  "inheritedLayers": [
+    {
+      "scope": "layout",
+      "id": "ed67588c-c8e1-4c9b-bba9-d2fe402538a3",
+      "name": "Title Slide",
+      "type": "title",
+      "parentLayoutId": "2927567c-333e-4ca4-b409-2f656a5b3787",
+      "elements": []
+    },
+    {
+      "scope": "master",
+      "id": "2927567c-333e-4ca4-b409-2f656a5b3787",
+      "name": "Master",
+      "type": "master",
+      "elements": []
+    }
+  ],
+  "elements": [
+    {
+      "order": 1,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/32lszqtc",
+      "id": "1",
+      "bbox": [
+        0,
+        0,
+        1280,
+        720
+      ],
+      "geometry": "rect",
+      "fillColor": "#F7F3EA",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 2,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/sneloj2t",
+      "id": "2",
+      "bbox": [
+        58,
+        49,
+        6,
+        22
+      ],
+      "geometry": "rect",
+      "fillColor": "#0F766E",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 3,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/l87ed8ba",
+      "id": "3",
+      "bbox": [
+        74,
+        48,
+        520,
+        24
+      ],
+      "geometry": "rect",
+      "text": "RESULT 2: SOCIAL SATISFACTION",
+      "textPreview": "RESULT 2: SOCIAL SATISFACTION",
+      "resolvedFontSize": 10,
+      "resolvedTextStyle": {
+        "fontSize": 10,
+        "typeface": "Aptos",
+        "bold": true,
+        "alignment": "left"
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "RESULT 2: SOCIAL SATISFACTION"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "RESULT 2: SOCIAL SATISFACTION",
+          "runs": [
+            {
+              "index": 1,
+              "text": "RESULT 2: SOCIAL SATISFACTION",
+              "fontSize": 10,
+              "typeface": "Aptos",
+              "color": "#56616F",
+              "bold": true
+            }
+          ]
+        }
+      ],
+      "fillColor": "rgba(0, 0, 0, 0)",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 4,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/at47y1kr",
+      "id": "4",
+      "bbox": [
+        58,
+        86,
+        950,
+        90
+      ],
+      "geometry": "rect",
+      "text": "The welfare gain is social: average friendship overlap rises by about one quarter.",
+      "textPreview": "The welfare gain is social: average friendship overlap rises by about one quarter.",
+      "resolvedFontSize": 33,
+      "resolvedTextStyle": {
+        "fontSize": 33,
+        "typeface": "Aptos Display",
+        "bold": true,
+        "alignment": "left"
+      },
+      "textLayout": {
+        "lineCount": 2,
+        "lines": [
+          {
+            "index": 1,
+            "text": "The welfare gain is social: average friendship overlap rises"
+          },
+          {
+            "index": 2,
+            "text": "by about one quarter."
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "The welfare gain is social: average friendship overlap rises by about one quarter.",
+          "runs": [
+            {
+              "index": 1,
+              "text": "The welfare gain is social: average friendship overlap rises by about one quarter.",
+              "fontSize": 33,
+              "typeface": "Aptos Display",
+              "color": "#17212E",
+              "bold": true
+            }
+          ]
+        }
+      ],
+      "fillColor": "rgba(0, 0, 0, 0)",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 5,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/3ex0nuxc",
+      "id": "5",
+      "bbox": [
+        92,
+        218,
+        520,
+        324
+      ],
+      "geometry": "rect",
+      "fillColor": "#FFFCF4",
+      "lineColor": "#D7CDBE",
+      "lineWidth": 1
+    },
+    {
+      "order": 6,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/szqtcj6t",
+      "id": "6",
+      "bbox": [
+        124,
+        242,
+        260,
+        22
+      ],
+      "geometry": "rect",
+      "text": "Avg. friend overlaps per student",
+      "textPreview": "Avg. friend overlaps per student",
+      "resolvedFontSize": 12,
+      "resolvedTextStyle": {
+        "fontSize": 12,
+        "typeface": "Aptos",
+        "bold": true,
+        "alignment": "left"
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "Avg. friend overlaps per student"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "Avg. friend overlaps per student",
+          "runs": [
+            {
+              "index": 1,
+              "text": "Avg. friend overlaps per student",
+              "fontSize": 12,
+              "typeface": "Aptos",
+              "color": "#56616F",
+              "bold": true
+            }
+          ]
+        }
+      ],
+      "fillColor": "rgba(0, 0, 0, 0)",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 7,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/lkjm1cfa",
+      "id": "7",
+      "bbox": [
+        196,
+        400.38,
+        95,
+        53.62
+      ],
+      "geometry": "rect",
+      "fillColor": "#355070",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 8,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/ex0nuxc3",
+      "id": "8",
+      "bbox": [
+        186,
+        376.38,
+        115,
+        20
+      ],
+      "geometry": "rect",
+      "text": "3.71",
+      "textPreview": "3.71",
+      "resolvedFontSize": 16,
+      "resolvedTextStyle": {
+        "fontSize": 16,
+        "typeface": "Aptos",
+        "bold": true,
+        "alignment": "center"
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "3.71"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "3.71",
+          "runs": [
+            {
+              "index": 1,
+              "text": "3.71",
+              "fontSize": 16,
+              "typeface": "Aptos",
+              "color": "#17212E",
+              "bold": true
+            }
+          ]
+        }
+      ],
+      "fillColor": "rgba(0, 0, 0, 0)",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 9,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/3itgfmlk",
+      "id": "9",
+      "bbox": [
+        178,
+        468,
+        131,
+        34
+      ],
+      "geometry": "rect",
+      "text": "no post",
+      "textPreview": "no post",
+      "resolvedFontSize": 11,
+      "resolvedTextStyle": {
+        "fontSize": 11,
+        "typeface": "Aptos",
+        "alignment": "center"
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "no post"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "no post",
+          "runs": [
+            {
+              "index": 1,
+              "text": "no post",
+              "fontSize": 11,
+              "typeface": "Aptos",
+              "color": "#56616F"
+            }
+          ]
+        }
+      ],
+      "fillColor": "rgba(0, 0, 0, 0)",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 10,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/bm58z25k",
+      "id": "10",
+      "bbox": [
+        377,
+        326.73,
+        95,
+        127.27
+      ],
+      "geometry": "rect",
+      "fillColor": "#0F766E",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 11,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/m1cfa9w3",
+      "id": "11",
+      "bbox": [
+        367,
+        302.73,
+        115,
+        20
+      ],
+      "geometry": "rect",
+      "text": "4.70",
+      "textPreview": "4.70",
+      "resolvedFontSize": 16,
+      "resolvedTextStyle": {
+        "fontSize": 16,
+        "typeface": "Aptos",
+        "bold": true,
+        "alignment": "center"
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "4.70"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "4.70",
+          "runs": [
+            {
+              "index": 1,
+              "text": "4.70",
+              "fontSize": 16,
+              "typeface": "Aptos",
+              "color": "#17212E",
+              "bold": true
+            }
+          ]
+        }
+      ],
+      "fillColor": "rgba(0, 0, 0, 0)",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 12,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/tsvu9kni",
+      "id": "12",
+      "bbox": [
+        359,
+        468,
+        131,
+        34
+      ],
+      "geometry": "rect",
+      "text": "hybrid-global\npost=5",
+      "textPreview": "hybrid-global | post=5",
+      "resolvedFontSize": 11,
+      "resolvedTextStyle": {
+        "fontSize": 11,
+        "typeface": "Aptos",
+        "alignment": "center"
+      },
+      "textLayout": {
+        "lineCount": 2,
+        "lines": [
+          {
+            "index": 1,
+            "text": "hybrid-global"
+          },
+          {
+            "index": 2,
+            "text": "post=5"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "hybrid-global",
+          "runs": [
+            {
+              "index": 1,
+              "text": "hybrid-global",
+              "fontSize": 11,
+              "typeface": "Aptos",
+              "color": "#56616F"
+            }
+          ]
+        },
+        {
+          "index": 2,
+          "text": "post=5",
+          "runs": [
+            {
+              "index": 1,
+              "text": "post=5",
+              "fontSize": 11,
+              "typeface": "Aptos",
+              "color": "#56616F"
+            }
+          ]
+        }
+      ],
+      "fillColor": "rgba(0, 0, 0, 0)",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 13,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/47y1kre1",
+      "id": "13",
+      "bbox": [
+        190,
+        454,
+        288,
+        1
+      ],
+      "geometry": "rect",
+      "fillColor": "#D7CDBE",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 14,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/bat47y1k",
+      "id": "14",
+      "bbox": [
+        404,
+        276,
+        126,
+        42
+      ],
+      "geometry": "rect",
+      "fillColor": "#17212E",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 15,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/mp0bi9s3",
+      "id": "15",
+      "bbox": [
+        418,
+        286,
+        98,
+        20
+      ],
+      "geometry": "rect",
+      "text": "+26.4%",
+      "textPreview": "+26.4%",
+      "resolvedFontSize": 18,
+      "resolvedTextStyle": {
+        "fontSize": 18,
+        "typeface": "Aptos Display",
+        "bold": true,
+        "alignment": "center"
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "+26.4%"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "+26.4%",
+          "runs": [
+            {
+              "index": 1,
+              "text": "+26.4%",
+              "fontSize": 18,
+              "typeface": "Aptos Display",
+              "color": "#F1D49D",
+              "bold": true
+            }
+          ]
+        }
+      ],
+      "fillColor": "rgba(0, 0, 0, 0)",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 16,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/tgfmlkjm",
+      "id": "16",
+      "bbox": [
+        700,
+        218,
+        406,
+        324
+      ],
+      "geometry": "rect",
+      "fillColor": "#FFFCF4",
+      "lineColor": "#D7CDBE",
+      "lineWidth": 1
+    },
+    {
+      "order": 17,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/4vmtwra5",
+      "id": "17",
+      "bbox": [
+        732,
+        244,
+        220,
+        20
+      ],
+      "geometry": "rect",
+      "text": "What the metric captures",
+      "textPreview": "What the metric captures",
+      "resolvedFontSize": 12,
+      "resolvedTextStyle": {
+        "fontSize": 12,
+        "typeface": "Aptos",
+        "bold": true,
+        "alignment": "left"
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "What the metric captures"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "What the metric captures",
+          "runs": [
+            {
+              "index": 1,
+              "text": "What the metric captures",
+              "fontSize": 12,
+              "typeface": "Aptos",
+              "color": "#0F766E",
+              "bold": true
+            }
+          ]
+        }
+      ],
+      "fillColor": "rgba(0, 0, 0, 0)",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 18,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/b2hwfyxo",
+      "id": "18",
+      "bbox": [
+        740,
+        292,
+        34,
+        34
+      ],
+      "geometry": "rect",
+      "fillColor": "#9F1239",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 19,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/mhk3q5o7",
+      "id": "19",
+      "bbox": [
+        740,
+        300,
+        34,
+        14
+      ],
+      "geometry": "rect",
+      "text": "1",
+      "textPreview": "1",
+      "resolvedFontSize": 11,
+      "resolvedTextStyle": {
+        "fontSize": 11,
+        "typeface": "Aptos",
+        "bold": true,
+        "alignment": "center"
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "1"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "1",
+          "runs": [
+            {
+              "index": 1,
+              "text": "1",
+              "fontSize": 11,
+              "typeface": "Aptos",
+              "color": "#FFFFFF",
+              "bold": true
+            }
+          ]
+        }
+      ],
+      "fillColor": "rgba(0, 0, 0, 0)",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 20,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/udg7adsj",
+      "id": "20",
+      "bbox": [
+        792,
+        290,
+        278,
+        42
+      ],
+      "geometry": "rect",
+      "text": "A directed relation A → B is counted only for the course context where A expressed it.",
+      "textPreview": "A directed relation A → B is counted only for the course context where A expressed it.",
+      "resolvedFontSize": 12,
+      "resolvedTextStyle": {
+        "fontSize": 12,
+        "typeface": "Aptos Display",
+        "bold": true,
+        "alignment": "left"
+      },
+      "textLayout": {
+        "lineCount": 2,
+        "lines": [
+          {
+            "index": 1,
+            "text": "A directed relation A → B is counted only for the"
+          },
+          {
+            "index": 2,
+            "text": "course context where A expressed it."
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "A directed relation A → B is counted only for the course context where A expressed it.",
+          "runs": [
+            {
+              "index": 1,
+              "text": "A directed relation A → B is counted only for the course context where A expressed it.",
+              "fontSize": 12,
+              "typeface": "Aptos Display",
+              "color": "#17212E",
+              "bold": true
+            }
+          ]
+        }
+      ],
+      "fillColor": "rgba(0, 0, 0, 0)",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 21,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/nyd0z610",
+      "id": "21",
+      "bbox": [
+        740,
+        368,
+        34,
+        34
+      ],
+      "geometry": "rect",
+      "fillColor": "#0F766E",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 22,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/cj6tovah",
+      "id": "22",
+      "bbox": [
+        740,
+        376,
+        34,
+        14
+      ],
+      "geometry": "rect",
+      "text": "2",
+      "textPreview": "2",
+      "resolvedFontSize": 11,
+      "resolvedTextStyle": {
+        "fontSize": 11,
+        "typeface": "Aptos",
+        "bold": true,
+        "alignment": "center"
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "2"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "2",
+          "runs": [
+            {
+              "index": 1,
+              "text": "2",
+              "fontSize": 11,
+              "typeface": "Aptos",
+              "color": "#FFFFFF",
+              "bold": true
+            }
+          ]
+        }
+      ],
+      "fillColor": "rgba(0, 0, 0, 0)",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 23,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/54zidony",
+      "id": "23",
+      "bbox": [
+        792,
+        366,
+        278,
+        42
+      ],
+      "geometry": "rect",
+      "text": "An overlap occurs when A receives course c and B also receives c.",
+      "textPreview": "An overlap occurs when A receives course c and B also receives c.",
+      "resolvedFontSize": 12,
+      "resolvedTextStyle": {
+        "fontSize": 12,
+        "typeface": "Aptos Display",
+        "bold": true,
+        "alignment": "left"
+      },
+      "textLayout": {
+        "lineCount": 2,
+        "lines": [
+          {
+            "index": 1,
+            "text": "An overlap occurs when A receives course c"
+          },
+          {
+            "index": 2,
+            "text": "and B also receives c."
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "An overlap occurs when A receives course c and B also receives c.",
+          "runs": [
+            {
+              "index": 1,
+              "text": "An overlap occurs when A receives course c and B also receives c.",
+              "fontSize": 12,
+              "typeface": "Aptos Display",
+              "color": "#17212E",
+              "bold": true
+            }
+          ]
+        }
+      ],
+      "fillColor": "rgba(0, 0, 0, 0)",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 24,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/upwb2hwf",
+      "id": "24",
+      "bbox": [
+        740,
+        444,
+        34,
+        34
+      ],
+      "geometry": "rect",
+      "fillColor": "#B7791F",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 25,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/nap4r65w",
+      "id": "25",
+      "bbox": [
+        740,
+        452,
+        34,
+        14
+      ],
+      "geometry": "rect",
+      "text": "3",
+      "textPreview": "3",
+      "resolvedFontSize": 11,
+      "resolvedTextStyle": {
+        "fontSize": 11,
+        "typeface": "Aptos",
+        "bold": true,
+        "alignment": "center"
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "3"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "3",
+          "runs": [
+            {
+              "index": 1,
+              "text": "3",
+              "fontSize": 11,
+              "typeface": "Aptos",
+              "color": "#FFFFFF",
+              "bold": true
+            }
+          ]
+        }
+      ],
+      "fillColor": "rgba(0, 0, 0, 0)",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 26,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/cvixczed",
+      "id": "26",
+      "bbox": [
+        792,
+        442,
+        278,
+        42
+      ],
+      "geometry": "rect",
+      "text": "The increase therefore reflects more socially aligned assignments, not just more filled seats.",
+      "textPreview": "The increase therefore reflects more socially aligned assignments, not just more filled seats.",
+      "resolvedFontSize": 12,
+      "resolvedTextStyle": {
+        "fontSize": 12,
+        "typeface": "Aptos Display",
+        "bold": true,
+        "alignment": "left"
+      },
+      "textLayout": {
+        "lineCount": 2,
+        "lines": [
+          {
+            "index": 1,
+            "text": "The increase therefore reflects more socially"
+          },
+          {
+            "index": 2,
+            "text": "aligned assignments, not just more filled seats."
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "The increase therefore reflects more socially aligned assignments, not just more filled seats.",
+          "runs": [
+            {
+              "index": 1,
+              "text": "The increase therefore reflects more socially aligned assignments, not just more filled seats.",
+              "fontSize": 12,
+              "typeface": "Aptos Display",
+              "color": "#17212E",
+              "bold": true
+            }
+          ]
+        }
+      ],
+      "fillColor": "rgba(0, 0, 0, 0)",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 27,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/5gbq1ory",
+      "id": "27",
+      "bbox": [
+        58,
+        668,
+        1164,
+        1
+      ],
+      "geometry": "rect",
+      "fillColor": "#D7CDBE",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 28,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/u18jqh0f",
+      "id": "28",
+      "bbox": [
+        58,
+        682,
+        900,
+        18
+      ],
+      "geometry": "rect",
+      "text": "Source: experiments.sqlite aggregate metrics, A_200x8",
+      "textPreview": "Source: experiments.sqlite aggregate metrics, A_200x8",
+      "resolvedFontSize": 8.51,
+      "resolvedTextStyle": {
+        "fontSize": 8.51,
+        "typeface": "Aptos",
+        "alignment": "left"
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "Source: experiments.sqlite aggregate metrics, A_200x8"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "Source: experiments.sqlite aggregate metrics, A_200x8",
+          "runs": [
+            {
+              "index": 1,
+              "text": "Source: experiments.sqlite aggregate metrics, A_200x8",
+              "fontSize": 8.51,
+              "typeface": "Aptos",
+              "color": "#7A6E60"
+            }
+          ]
+        }
+      ],
+      "fillColor": "rgba(0, 0, 0, 0)",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 29,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/jm1cfa9w",
+      "id": "29",
+      "bbox": [
+        1162,
+        682,
+        60,
+        18
+      ],
+      "geometry": "rect",
+      "text": "11/14",
+      "textPreview": "11/14",
+      "resolvedFontSize": 9,
+      "resolvedTextStyle": {
+        "fontSize": 9,
+        "typeface": "Aptos",
+        "alignment": "right"
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "11/14"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "11/14",
+          "runs": [
+            {
+              "index": 1,
+              "text": "11/14",
+              "fontSize": 9,
+              "typeface": "Aptos",
+              "color": "#56616F"
+            }
+          ]
+        }
+      ],
+      "fillColor": "rgba(0, 0, 0, 0)",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    }
+  ],
+  "composeRuns": []
+}

@@ -1,0 +1,8 @@
+Slide size: 1280x720.
+Tone: simple, academic, early-stage, English-only.
+Background: warm paper (#F7F3EA), deep ink emphasis panels.
+Typography: Aptos Display for claims, Aptos for labels and notes.
+Palette: ink, muted gray-blue, teal for model/progress, berry for open questions, gold for early-stage status.
+Chart grammar: minimal metrics cards, no over-interpretive result charts.
+Diagram grammar: simple input-to-model-to-output diagrams.
+Banned: strong empirical conclusions, trade-off framing, algorithmic detail, Gini formula, final-result language.

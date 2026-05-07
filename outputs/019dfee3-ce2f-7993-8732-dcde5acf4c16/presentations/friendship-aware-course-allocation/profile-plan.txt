@@ -1,0 +1,28 @@
+Task mode: create
+Primary deck-profile: engineering-platform
+Secondary gates: academic research narrative, appendix-heavy formulas kept readable
+
+Required proof objects:
+- Formal problem definition: students, courses, capacities, feasible bundles.
+- Workflow map: individual preferences + directed friendship graph -> utility -> snake draft -> post-allocation search -> metrics.
+- Formula slide: base utility, friendship bonus, lambda-weighted total utility.
+- Method matrix: swap / drop-add / hybrid crossed with global / personal objective.
+- Experiment evidence: saved A_200x8 sweep from results/experiments/experiments.sqlite.
+- Trade-off slide: welfare and friendship overlap improve, while average course rank and Gini can worsen.
+
+Source and asset requirements:
+- Local project README.md for formal model and implementation details.
+- course_allocation_abstract_review.txt for precise research positioning.
+- results/experiments/A_200x8_mode_post_agg_partial.csv and experiments.sqlite for aggregate numbers.
+- results/summary*.csv and results/metrics*.csv for single-run verification.
+- No logos or external identity assets required.
+
+Profile-specific QA gates:
+- Diagrams must preserve technical labels: directed friendship preference, reactive bonus, lambda, feasibility, objective scope.
+- Charts must use actual saved experiment values, not illustrative placeholders.
+- Claims must be academic conclusions, not topic labels.
+- Slide flow must support a 15-20 minute talk.
+
+Known missing inputs:
+- No final paper title, author affiliation, advisor names, or institution branding were provided.
+- No literature references were provided, so the deck describes the gap without naming specific papers.

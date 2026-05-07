@@ -1,0 +1,836 @@
+{
+  "schema": "openai.presentation.layout/v4",
+  "unit": "px",
+  "slide": {
+    "aid": "sl/6qhw4x",
+    "id": "6qhw4x",
+    "slide": 14,
+    "layoutId": "ed67588c-c8e1-4c9b-bba9-d2fe402538a3",
+    "layoutName": "Title Slide",
+    "layoutType": "title",
+    "masterLayoutId": "2927567c-333e-4ca4-b409-2f656a5b3787",
+    "masterLayoutName": "Master",
+    "frame": {
+      "left": 0,
+      "top": 0,
+      "width": 1280,
+      "height": 720
+    }
+  },
+  "theme": {
+    "colorSchemeName": "ChatGPT",
+    "colors": {
+      "accent1": "#156082",
+      "accent2": "#E97132",
+      "accent3": "#196B24",
+      "accent4": "#0F9ED5",
+      "accent5": "#A02B93",
+      "accent6": "#4EA72E",
+      "bg1": "#FFFFFF",
+      "bg2": "#000000",
+      "tx1": "#1F1F1F",
+      "tx2": "#FFFFFF",
+      "dk1": "#000000",
+      "lt1": "#FFFFFF",
+      "dk2": "#0E2841",
+      "lt2": "#E8E8E8",
+      "hlink": "#467886",
+      "folHlink": "#96607D"
+    },
+    "typefaces": [
+      "Aptos",
+      "Aptos Display"
+    ]
+  },
+  "inheritedLayers": [
+    {
+      "scope": "layout",
+      "id": "ed67588c-c8e1-4c9b-bba9-d2fe402538a3",
+      "name": "Title Slide",
+      "type": "title",
+      "parentLayoutId": "2927567c-333e-4ca4-b409-2f656a5b3787",
+      "elements": []
+    },
+    {
+      "scope": "master",
+      "id": "2927567c-333e-4ca4-b409-2f656a5b3787",
+      "name": "Master",
+      "type": "master",
+      "elements": []
+    }
+  ],
+  "elements": [
+    {
+      "order": 1,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/ih4byhgn",
+      "id": "1",
+      "bbox": [
+        0,
+        0,
+        1280,
+        720
+      ],
+      "geometry": "rect",
+      "fillColor": "#17212E",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 2,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/p8nqxs72",
+      "id": "2",
+      "bbox": [
+        58,
+        49,
+        6,
+        22
+      ],
+      "geometry": "rect",
+      "fillColor": "#F1D49D",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 3,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/0nuxc3yl",
+      "id": "3",
+      "bbox": [
+        74,
+        48,
+        520,
+        24
+      ],
+      "geometry": "rect",
+      "text": "CONTRIBUTION",
+      "textPreview": "CONTRIBUTION",
+      "resolvedFontSize": 10,
+      "resolvedTextStyle": {
+        "fontSize": 10,
+        "typeface": "Aptos",
+        "bold": true,
+        "alignment": "left"
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "CONTRIBUTION"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "CONTRIBUTION",
+          "runs": [
+            {
+              "index": 1,
+              "text": "CONTRIBUTION",
+              "fontSize": 10,
+              "typeface": "Aptos",
+              "color": "#D9E2EF",
+              "bold": true
+            }
+          ]
+        }
+      ],
+      "fillColor": "rgba(0, 0, 0, 0)",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 4,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/7ed8bat4",
+      "id": "4",
+      "bbox": [
+        58,
+        86,
+        1000,
+        110
+      ],
+      "geometry": "rect",
+      "text": "The contribution is a testable bridge between mechanism design and social preference modeling.",
+      "textPreview": "The contribution is a testable bridge between mechanism design and social preference modeling.",
+      "resolvedFontSize": 36,
+      "resolvedTextStyle": {
+        "fontSize": 36,
+        "typeface": "Aptos Display",
+        "bold": true,
+        "alignment": "left"
+      },
+      "textLayout": {
+        "lineCount": 2,
+        "lines": [
+          {
+            "index": 1,
+            "text": "The contribution is a testable bridge between mechanism"
+          },
+          {
+            "index": 2,
+            "text": "design and social preference modeling."
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "The contribution is a testable bridge between mechanism design and social preference modeling.",
+          "runs": [
+            {
+              "index": 1,
+              "text": "The contribution is a testable bridge between mechanism design and social preference modeling.",
+              "fontSize": 36,
+              "typeface": "Aptos Display",
+              "color": "#FFFFFF",
+              "bold": true
+            }
+          ]
+        }
+      ],
+      "fillColor": "rgba(0, 0, 0, 0)",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 5,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/itgfmlkj",
+      "id": "5",
+      "bbox": [
+        92,
+        260,
+        286,
+        176
+      ],
+      "geometry": "rect",
+      "fillColor": "#223044",
+      "lineColor": "#41516A",
+      "lineWidth": 1
+    },
+    {
+      "order": 6,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/pkzupwb2",
+      "id": "6",
+      "bbox": [
+        116,
+        284,
+        150,
+        28
+      ],
+      "geometry": "rect",
+      "text": "Model",
+      "textPreview": "Model",
+      "resolvedFontSize": 22,
+      "resolvedTextStyle": {
+        "fontSize": 22,
+        "typeface": "Aptos Display",
+        "bold": true,
+        "alignment": "left"
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "Model"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "Model",
+          "runs": [
+            {
+              "index": 1,
+              "text": "Model",
+              "fontSize": 22,
+              "typeface": "Aptos Display",
+              "color": "#BFE3DC",
+              "bold": true
+            }
+          ]
+        }
+      ],
+      "fillColor": "rgba(0, 0, 0, 0)",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 7,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/0z61032l",
+      "id": "7",
+      "bbox": [
+        116,
+        332,
+        226,
+        72
+      ],
+      "geometry": "rect",
+      "text": "Directed friendship preferences enter utility through a student-specific social weight λ_s.",
+      "textPreview": "Directed friendship preferences enter utility through a student-specific social weight λ_s.",
+      "resolvedFontSize": 14,
+      "resolvedTextStyle": {
+        "fontSize": 14,
+        "typeface": "Aptos Display",
+        "bold": true,
+        "alignment": "left"
+      },
+      "textLayout": {
+        "lineCount": 4,
+        "lines": [
+          {
+            "index": 1,
+            "text": "Directed friendship preferences"
+          },
+          {
+            "index": 2,
+            "text": "enter utility through a"
+          },
+          {
+            "index": 3,
+            "text": "student-specific social weight"
+          },
+          {
+            "index": 4,
+            "text": "λ_s."
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "Directed friendship preferences enter utility through a student-specific social weight λ_s.",
+          "runs": [
+            {
+              "index": 1,
+              "text": "Directed friendship preferences enter utility through a student-specific social weight λ_s.",
+              "fontSize": 14,
+              "typeface": "Aptos Display",
+              "color": "#FFFFFF",
+              "bold": true
+            }
+          ]
+        }
+      ],
+      "fillColor": "rgba(0, 0, 0, 0)",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 8,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/7qpg3ex0",
+      "id": "8",
+      "bbox": [
+        456,
+        260,
+        286,
+        176
+      ],
+      "geometry": "rect",
+      "fillColor": "#223044",
+      "lineColor": "#41516A",
+      "lineWidth": 1
+    },
+    {
+      "order": 9,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/i5sneloj",
+      "id": "9",
+      "bbox": [
+        480,
+        284,
+        150,
+        28
+      ],
+      "geometry": "rect",
+      "text": "Mechanism",
+      "textPreview": "Mechanism",
+      "resolvedFontSize": 22,
+      "resolvedTextStyle": {
+        "fontSize": 22,
+        "typeface": "Aptos Display",
+        "bold": true,
+        "alignment": "left"
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "Mechanism"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "Mechanism",
+          "runs": [
+            {
+              "index": 1,
+              "text": "Mechanism",
+              "fontSize": 22,
+              "typeface": "Aptos Display",
+              "color": "#F1D49D",
+              "bold": true
+            }
+          ]
+        }
+      ],
+      "fillColor": "rgba(0, 0, 0, 0)",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 10,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/0nuxc3yl",
+      "id": "10",
+      "bbox": [
+        480,
+        332,
+        226,
+        72
+      ],
+      "geometry": "rect",
+      "text": "A deterministic HBS-style snake draft remains feasible and reproducible while using reactive social utility.",
+      "textPreview": "A deterministic HBS-style snake draft remains feasible and reproducible while using reactive social utility.",
+      "resolvedFontSize": 14,
+      "resolvedTextStyle": {
+        "fontSize": 14,
+        "typeface": "Aptos Display",
+        "bold": true,
+        "alignment": "left"
+      },
+      "textLayout": {
+        "lineCount": 4,
+        "lines": [
+          {
+            "index": 1,
+            "text": "A deterministic HBS-style snake"
+          },
+          {
+            "index": 2,
+            "text": "draft remains feasible and"
+          },
+          {
+            "index": 3,
+            "text": "reproducible while using reactive"
+          },
+          {
+            "index": 4,
+            "text": "social utility."
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "A deterministic HBS-style snake draft remains feasible and reproducible while using reactive social utility.",
+          "runs": [
+            {
+              "index": 1,
+              "text": "A deterministic HBS-style snake draft remains feasible and reproducible while using reactive social utility.",
+              "fontSize": 14,
+              "typeface": "Aptos Display",
+              "color": "#FFFFFF",
+              "bold": true
+            }
+          ]
+        }
+      ],
+      "fillColor": "rgba(0, 0, 0, 0)",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 11,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/p8nqxs72",
+      "id": "11",
+      "bbox": [
+        820,
+        260,
+        286,
+        176
+      ],
+      "geometry": "rect",
+      "fillColor": "#223044",
+      "lineColor": "#41516A",
+      "lineWidth": 1
+    },
+    {
+      "order": 12,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/ih4byhgn",
+      "id": "12",
+      "bbox": [
+        844,
+        284,
+        150,
+        28
+      ],
+      "geometry": "rect",
+      "text": "Experiment",
+      "textPreview": "Experiment",
+      "resolvedFontSize": 22,
+      "resolvedTextStyle": {
+        "fontSize": 22,
+        "typeface": "Aptos Display",
+        "bold": true,
+        "alignment": "left"
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "Experiment"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "Experiment",
+          "runs": [
+            {
+              "index": 1,
+              "text": "Experiment",
+              "fontSize": 22,
+              "typeface": "Aptos Display",
+              "color": "#E9B8C6",
+              "bold": true
+            }
+          ]
+        }
+      ],
+      "fillColor": "rgba(0, 0, 0, 0)",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 13,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/72x4nap4",
+      "id": "13",
+      "bbox": [
+        844,
+        332,
+        226,
+        72
+      ],
+      "geometry": "rect",
+      "text": "Post-allocation local search reveals welfare, friendship-overlap, rank, and fairness trade-offs.",
+      "textPreview": "Post-allocation local search reveals welfare, friendship-overlap, rank, and fairness trade-offs.",
+      "resolvedFontSize": 14,
+      "resolvedTextStyle": {
+        "fontSize": 14,
+        "typeface": "Aptos Display",
+        "bold": true,
+        "alignment": "left"
+      },
+      "textLayout": {
+        "lineCount": 4,
+        "lines": [
+          {
+            "index": 1,
+            "text": "Post-allocation local search"
+          },
+          {
+            "index": 2,
+            "text": "reveals welfare,"
+          },
+          {
+            "index": 3,
+            "text": "friendship-overlap, rank, and"
+          },
+          {
+            "index": 4,
+            "text": "fairness trade-offs."
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "Post-allocation local search reveals welfare, friendship-overlap, rank, and fairness trade-offs.",
+          "runs": [
+            {
+              "index": 1,
+              "text": "Post-allocation local search reveals welfare, friendship-overlap, rank, and fairness trade-offs.",
+              "fontSize": 14,
+              "typeface": "Aptos Display",
+              "color": "#FFFFFF",
+              "bold": true
+            }
+          ]
+        }
+      ],
+      "fillColor": "rgba(0, 0, 0, 0)",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 14,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/0z61032l",
+      "id": "14",
+      "bbox": [
+        142,
+        520,
+        996,
+        1
+      ],
+      "geometry": "rect",
+      "fillColor": "#41516A",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 15,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/pkzupwb2",
+      "id": "15",
+      "bbox": [
+        160,
+        548,
+        210,
+        20
+      ],
+      "geometry": "rect",
+      "text": "Next research questions",
+      "textPreview": "Next research questions",
+      "resolvedFontSize": 12,
+      "resolvedTextStyle": {
+        "fontSize": 12,
+        "typeface": "Aptos",
+        "bold": true,
+        "alignment": "left"
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "Next research questions"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "Next research questions",
+          "runs": [
+            {
+              "index": 1,
+              "text": "Next research questions",
+              "fontSize": 12,
+              "typeface": "Aptos",
+              "color": "#F1D49D",
+              "bold": true
+            }
+          ]
+        }
+      ],
+      "fillColor": "rgba(0, 0, 0, 0)",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 16,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/itgfmlkj",
+      "id": "16",
+      "bbox": [
+        386,
+        546,
+        702,
+        24
+      ],
+      "geometry": "rect",
+      "text": "strategic friendship reports  ·  real enrollment data  ·  welfare/fairness frontier  ·  theoretical properties of reactive social mechanisms",
+      "textPreview": "strategic friendship reports  ·  real enrollment data  ·  welfare/fairness frontier  ·  theoretical properties of reactive social mechanisms",
+      "resolvedFontSize": 14,
+      "resolvedTextStyle": {
+        "fontSize": 14,
+        "typeface": "Aptos Display",
+        "bold": true,
+        "alignment": "left"
+      },
+      "textLayout": {
+        "lineCount": 2,
+        "lines": [
+          {
+            "index": 1,
+            "text": "strategic friendship reports  ·  real enrollment data  ·  welfare/fairness frontier  ·  theoretical properties of"
+          },
+          {
+            "index": 2,
+            "text": "reactive social mechanisms"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "strategic friendship reports  ·  real enrollment data  ·  welfare/fairness frontier  ·  theoretical properties of reactive social mechanisms",
+          "runs": [
+            {
+              "index": 1,
+              "text": "strategic friendship reports  ·  real enrollment data  ·  welfare/fairness frontier  ·  theoretical properties of reactive social mechanisms",
+              "fontSize": 14,
+              "typeface": "Aptos Display",
+              "color": "#D9E2EF",
+              "bold": true
+            }
+          ]
+        }
+      ],
+      "fillColor": "rgba(0, 0, 0, 0)",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 17,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/7ed8bat4",
+      "id": "17",
+      "bbox": [
+        58,
+        668,
+        1164,
+        1
+      ],
+      "geometry": "rect",
+      "fillColor": "#41516A",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 18,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/0bi9s36h",
+      "id": "18",
+      "bbox": [
+        58,
+        682,
+        900,
+        18
+      ],
+      "geometry": "rect",
+      "text": "Synthesis from local project sources",
+      "textPreview": "Synthesis from local project sources",
+      "resolvedFontSize": 8.51,
+      "resolvedTextStyle": {
+        "fontSize": 8.51,
+        "typeface": "Aptos",
+        "alignment": "left"
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "Synthesis from local project sources"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "Synthesis from local project sources",
+          "runs": [
+            {
+              "index": 1,
+              "text": "Synthesis from local project sources",
+              "fontSize": 8.51,
+              "typeface": "Aptos",
+              "color": "#9FB0C5"
+            }
+          ]
+        }
+      ],
+      "fillColor": "rgba(0, 0, 0, 0)",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 19,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/pwb2hwfy",
+      "id": "19",
+      "bbox": [
+        1162,
+        682,
+        60,
+        18
+      ],
+      "geometry": "rect",
+      "text": "14/14",
+      "textPreview": "14/14",
+      "resolvedFontSize": 9,
+      "resolvedTextStyle": {
+        "fontSize": 9,
+        "typeface": "Aptos",
+        "alignment": "right"
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "14/14"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "14/14",
+          "runs": [
+            {
+              "index": 1,
+              "text": "14/14",
+              "fontSize": 9,
+              "typeface": "Aptos",
+              "color": "#C7D7EA"
+            }
+          ]
+        }
+      ],
+      "fillColor": "rgba(0, 0, 0, 0)",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    }
+  ],
+  "composeRuns": []
+}

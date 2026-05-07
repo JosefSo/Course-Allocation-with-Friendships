@@ -1,0 +1,926 @@
+{
+  "schema": "openai.presentation.layout/v4",
+  "unit": "px",
+  "slide": {
+    "aid": "sl/pjhgp9",
+    "id": "pjhgp9",
+    "slide": 8,
+    "layoutId": "a9d6f888-2ede-4177-8d3b-21104dd91d99",
+    "layoutName": "Title Slide",
+    "layoutType": "title",
+    "masterLayoutId": "48346605-7561-466a-bbe8-d583f35814bb",
+    "masterLayoutName": "Master",
+    "frame": {
+      "left": 0,
+      "top": 0,
+      "width": 1280,
+      "height": 720
+    }
+  },
+  "theme": {
+    "colorSchemeName": "ChatGPT",
+    "colors": {
+      "accent1": "#156082",
+      "accent2": "#E97132",
+      "accent3": "#196B24",
+      "accent4": "#0F9ED5",
+      "accent5": "#A02B93",
+      "accent6": "#4EA72E",
+      "bg1": "#FFFFFF",
+      "bg2": "#000000",
+      "tx1": "#1F1F1F",
+      "tx2": "#FFFFFF",
+      "dk1": "#000000",
+      "lt1": "#FFFFFF",
+      "dk2": "#0E2841",
+      "lt2": "#E8E8E8",
+      "hlink": "#467886",
+      "folHlink": "#96607D"
+    },
+    "typefaces": [
+      "Aptos",
+      "Aptos Display"
+    ]
+  },
+  "inheritedLayers": [
+    {
+      "scope": "layout",
+      "id": "a9d6f888-2ede-4177-8d3b-21104dd91d99",
+      "name": "Title Slide",
+      "type": "title",
+      "parentLayoutId": "48346605-7561-466a-bbe8-d583f35814bb",
+      "elements": []
+    },
+    {
+      "scope": "master",
+      "id": "48346605-7561-466a-bbe8-d583f35814bb",
+      "name": "Master",
+      "type": "master",
+      "elements": []
+    }
+  ],
+  "elements": [
+    {
+      "order": 1,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/uxc3ylc7",
+      "id": "1",
+      "bbox": [
+        0,
+        0,
+        1280,
+        720
+      ],
+      "geometry": "rect",
+      "fillColor": "#17212E",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 2,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/1kre1w7m",
+      "id": "2",
+      "bbox": [
+        58,
+        50,
+        6,
+        22
+      ],
+      "geometry": "rect",
+      "fillColor": "#F1D49D",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 3,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/c3ylc7u5",
+      "id": "3",
+      "bbox": [
+        74,
+        49,
+        620,
+        24
+      ],
+      "geometry": "rect",
+      "text": "NEXT STEPS",
+      "textPreview": "NEXT STEPS",
+      "resolvedFontSize": 9.51,
+      "resolvedTextStyle": {
+        "fontSize": 9.51,
+        "typeface": "Aptos",
+        "bold": true,
+        "alignment": "left"
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "NEXT STEPS"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "NEXT STEPS",
+          "runs": [
+            {
+              "index": 1,
+              "text": "NEXT STEPS",
+              "fontSize": 9.51,
+              "typeface": "Aptos",
+              "color": "#C7D7EA",
+              "bold": true
+            }
+          ]
+        }
+      ],
+      "fillColor": "rgba(0, 0, 0, 0)",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 4,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/j6tovaho",
+      "id": "4",
+      "bbox": [
+        58,
+        94,
+        1040,
+        96
+      ],
+      "geometry": "rect",
+      "text": "The next stage is to refine the model and evaluate it carefully.",
+      "textPreview": "The next stage is to refine the model and evaluate it carefully.",
+      "resolvedFontSize": 38,
+      "resolvedTextStyle": {
+        "fontSize": 38,
+        "typeface": "Aptos Display",
+        "bold": true,
+        "alignment": "left"
+      },
+      "textLayout": {
+        "lineCount": 2,
+        "lines": [
+          {
+            "index": 1,
+            "text": "The next stage is to refine the model and evaluate it"
+          },
+          {
+            "index": 2,
+            "text": "carefully."
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "The next stage is to refine the model and evaluate it carefully.",
+          "runs": [
+            {
+              "index": 1,
+              "text": "The next stage is to refine the model and evaluate it carefully.",
+              "fontSize": 38,
+              "typeface": "Aptos Display",
+              "color": "#FFFFFF",
+              "bold": true
+            }
+          ]
+        }
+      ],
+      "fillColor": "rgba(0, 0, 0, 0)",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 5,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/ulwval87",
+      "id": "5",
+      "bbox": [
+        104,
+        268,
+        284,
+        176
+      ],
+      "geometry": "rect",
+      "fillColor": "#223044",
+      "lineColor": "#41516A",
+      "lineWidth": 1
+    },
+    {
+      "order": 6,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/1cfa9w3m",
+      "id": "6",
+      "bbox": [
+        128,
+        292,
+        38,
+        26
+      ],
+      "geometry": "rect",
+      "text": "1",
+      "textPreview": "1",
+      "resolvedFontSize": 22,
+      "resolvedTextStyle": {
+        "fontSize": 22,
+        "typeface": "Aptos Display",
+        "bold": true,
+        "alignment": "left"
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "1"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "1",
+          "runs": [
+            {
+              "index": 1,
+              "text": "1",
+              "fontSize": 22,
+              "typeface": "Aptos Display",
+              "color": "#BFE3DC",
+              "bold": true
+            }
+          ]
+        }
+      ],
+      "fillColor": "rgba(0, 0, 0, 0)",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 7,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/crmhk3q5",
+      "id": "7",
+      "bbox": [
+        176,
+        294,
+        166,
+        24
+      ],
+      "geometry": "rect",
+      "text": "Model refinement",
+      "textPreview": "Model refinement",
+      "resolvedFontSize": 19,
+      "resolvedTextStyle": {
+        "fontSize": 19,
+        "typeface": "Aptos Display",
+        "bold": true,
+        "alignment": "left"
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "Model refinement"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "Model refinement",
+          "runs": [
+            {
+              "index": 1,
+              "text": "Model refinement",
+              "fontSize": 19,
+              "typeface": "Aptos Display",
+              "color": "#BFE3DC",
+              "bold": true
+            }
+          ]
+        }
+      ],
+      "fillColor": "rgba(0, 0, 0, 0)",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 8,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/j2t83itg",
+      "id": "8",
+      "bbox": [
+        132,
+        346,
+        220,
+        62
+      ],
+      "geometry": "rect",
+      "text": "Decide how friendship strength, direction, and course context should be represented.",
+      "textPreview": "Decide how friendship strength, direction, and course context should be represented.",
+      "resolvedFontSize": 13.51,
+      "resolvedTextStyle": {
+        "fontSize": 13.51,
+        "typeface": "Aptos Display",
+        "bold": true,
+        "alignment": "left"
+      },
+      "textLayout": {
+        "lineCount": 3,
+        "lines": [
+          {
+            "index": 1,
+            "text": "Decide how friendship strength,"
+          },
+          {
+            "index": 2,
+            "text": "direction, and course context"
+          },
+          {
+            "index": 3,
+            "text": "should be represented."
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "Decide how friendship strength, direction, and course context should be represented.",
+          "runs": [
+            {
+              "index": 1,
+              "text": "Decide how friendship strength, direction, and course context should be represented.",
+              "fontSize": 13.51,
+              "typeface": "Aptos Display",
+              "color": "#FFFFFF",
+              "bold": true
+            }
+          ]
+        }
+      ],
+      "fillColor": "rgba(0, 0, 0, 0)",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 9,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/qh0fepkz",
+      "id": "9",
+      "bbox": [
+        456,
+        268,
+        284,
+        176
+      ],
+      "geometry": "rect",
+      "fillColor": "#223044",
+      "lineColor": "#41516A",
+      "lineWidth": 1
+    },
+    {
+      "order": 10,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/s36hcrmh",
+      "id": "10",
+      "bbox": [
+        480,
+        292,
+        38,
+        26
+      ],
+      "geometry": "rect",
+      "text": "2",
+      "textPreview": "2",
+      "resolvedFontSize": 22,
+      "resolvedTextStyle": {
+        "fontSize": 22,
+        "typeface": "Aptos Display",
+        "bold": true,
+        "alignment": "left"
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "2"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "2",
+          "runs": [
+            {
+              "index": 1,
+              "text": "2",
+              "fontSize": 22,
+              "typeface": "Aptos Display",
+              "color": "#F1D49D",
+              "bold": true
+            }
+          ]
+        }
+      ],
+      "fillColor": "rgba(0, 0, 0, 0)",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 11,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/hoza1gvy",
+      "id": "11",
+      "bbox": [
+        528,
+        294,
+        166,
+        24
+      ],
+      "geometry": "rect",
+      "text": "Better evaluation",
+      "textPreview": "Better evaluation",
+      "resolvedFontSize": 19,
+      "resolvedTextStyle": {
+        "fontSize": 19,
+        "typeface": "Aptos Display",
+        "bold": true,
+        "alignment": "left"
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "Better evaluation"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "Better evaluation",
+          "runs": [
+            {
+              "index": 1,
+              "text": "Better evaluation",
+              "fontSize": 19,
+              "typeface": "Aptos Display",
+              "color": "#F1D49D",
+              "bold": true
+            }
+          ]
+        }
+      ],
+      "fillColor": "rgba(0, 0, 0, 0)",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 12,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/a1gvy90j",
+      "id": "12",
+      "bbox": [
+        484,
+        346,
+        220,
+        62
+      ],
+      "geometry": "rect",
+      "text": "Compare utility, friendship overlap, and Gini index without overclaiming early results.",
+      "textPreview": "Compare utility, friendship overlap, and Gini index without overclaiming early results.",
+      "resolvedFontSize": 13.51,
+      "resolvedTextStyle": {
+        "fontSize": 13.51,
+        "typeface": "Aptos Display",
+        "bold": true,
+        "alignment": "left"
+      },
+      "textLayout": {
+        "lineCount": 3,
+        "lines": [
+          {
+            "index": 1,
+            "text": "Compare utility, friendship"
+          },
+          {
+            "index": 2,
+            "text": "overlap, and Gini index without"
+          },
+          {
+            "index": 3,
+            "text": "overclaiming early results."
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "Compare utility, friendship overlap, and Gini index without overclaiming early results.",
+          "runs": [
+            {
+              "index": 1,
+              "text": "Compare utility, friendship overlap, and Gini index without overclaiming early results.",
+              "fontSize": 13.51,
+              "typeface": "Aptos Display",
+              "color": "#FFFFFF",
+              "bold": true
+            }
+          ]
+        }
+      ],
+      "fillColor": "rgba(0, 0, 0, 0)",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 13,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/zidonyd0",
+      "id": "13",
+      "bbox": [
+        808,
+        268,
+        284,
+        176
+      ],
+      "geometry": "rect",
+      "fillColor": "#223044",
+      "lineColor": "#41516A",
+      "lineWidth": 1
+    },
+    {
+      "order": 14,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/svu9knih",
+      "id": "14",
+      "bbox": [
+        832,
+        292,
+        38,
+        26
+      ],
+      "geometry": "rect",
+      "text": "3",
+      "textPreview": "3",
+      "resolvedFontSize": 22,
+      "resolvedTextStyle": {
+        "fontSize": 22,
+        "typeface": "Aptos Display",
+        "bold": true,
+        "alignment": "left"
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "3"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "3",
+          "runs": [
+            {
+              "index": 1,
+              "text": "3",
+              "fontSize": 22,
+              "typeface": "Aptos Display",
+              "color": "#E9B8C6",
+              "bold": true
+            }
+          ]
+        }
+      ],
+      "fillColor": "rgba(0, 0, 0, 0)",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 15,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/hgn29gr2",
+      "id": "15",
+      "bbox": [
+        880,
+        294,
+        166,
+        24
+      ],
+      "geometry": "rect",
+      "text": "Research feedback",
+      "textPreview": "Research feedback",
+      "resolvedFontSize": 19,
+      "resolvedTextStyle": {
+        "fontSize": 19,
+        "typeface": "Aptos Display",
+        "bold": true,
+        "alignment": "left"
+      },
+      "textLayout": {
+        "lineCount": 2,
+        "lines": [
+          {
+            "index": 1,
+            "text": "Research"
+          },
+          {
+            "index": 2,
+            "text": "feedback"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "Research feedback",
+          "runs": [
+            {
+              "index": 1,
+              "text": "Research feedback",
+              "fontSize": 19,
+              "typeface": "Aptos Display",
+              "color": "#E9B8C6",
+              "bold": true
+            }
+          ]
+        }
+      ],
+      "fillColor": "rgba(0, 0, 0, 0)",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 16,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/ap4r65wj",
+      "id": "16",
+      "bbox": [
+        836,
+        346,
+        220,
+        62
+      ],
+      "geometry": "rect",
+      "text": "Use this stage to clarify assumptions, definitions, and the most interesting questions.",
+      "textPreview": "Use this stage to clarify assumptions, definitions, and the most interesting questions.",
+      "resolvedFontSize": 13.51,
+      "resolvedTextStyle": {
+        "fontSize": 13.51,
+        "typeface": "Aptos Display",
+        "bold": true,
+        "alignment": "left"
+      },
+      "textLayout": {
+        "lineCount": 3,
+        "lines": [
+          {
+            "index": 1,
+            "text": "Use this stage to clarify"
+          },
+          {
+            "index": 2,
+            "text": "assumptions, definitions, and the"
+          },
+          {
+            "index": 3,
+            "text": "most interesting questions."
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "Use this stage to clarify assumptions, definitions, and the most interesting questions.",
+          "runs": [
+            {
+              "index": 1,
+              "text": "Use this stage to clarify assumptions, definitions, and the most interesting questions.",
+              "fontSize": 13.51,
+              "typeface": "Aptos Display",
+              "color": "#FFFFFF",
+              "bold": true
+            }
+          ]
+        }
+      ],
+      "fillColor": "rgba(0, 0, 0, 0)",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 17,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/za1gvy90",
+      "id": "17",
+      "bbox": [
+        172,
+        534,
+        936,
+        54
+      ],
+      "geometry": "rect",
+      "fillColor": "#223044",
+      "lineColor": "#41516A",
+      "lineWidth": 1
+    },
+    {
+      "order": 18,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/sji5snel",
+      "id": "18",
+      "bbox": [
+        214,
+        550,
+        852,
+        18
+      ],
+      "geometry": "rect",
+      "text": "The goal for now is not to prove the final answer; it is to build a clean framework that can support serious analysis.",
+      "textPreview": "The goal for now is not to prove the final answer; it is to build a clean framework that can support serious analysis.",
+      "resolvedFontSize": 14,
+      "resolvedTextStyle": {
+        "fontSize": 14,
+        "typeface": "Aptos Display",
+        "bold": true,
+        "alignment": "center"
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "The goal for now is not to prove the final answer; it is to build a clean framework that can support serious analysis."
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "The goal for now is not to prove the final answer; it is to build a clean framework that can support serious analysis.",
+          "runs": [
+            {
+              "index": 1,
+              "text": "The goal for now is not to prove the final answer; it is to build a clean framework that can support serious analysis.",
+              "fontSize": 14,
+              "typeface": "Aptos Display",
+              "color": "#FFFFFF",
+              "bold": true
+            }
+          ]
+        }
+      ],
+      "fillColor": "rgba(0, 0, 0, 0)",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 19,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/h4byhgn2",
+      "id": "19",
+      "bbox": [
+        58,
+        668,
+        1164,
+        1
+      ],
+      "geometry": "rect",
+      "fillColor": "#41516A",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 20,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/psfil0rq",
+      "id": "20",
+      "bbox": [
+        58,
+        682,
+        850,
+        18
+      ],
+      "geometry": "rect",
+      "text": "Research-in-progress close",
+      "textPreview": "Research-in-progress close",
+      "resolvedFontSize": 8.51,
+      "resolvedTextStyle": {
+        "fontSize": 8.51,
+        "typeface": "Aptos",
+        "alignment": "left"
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "Research-in-progress close"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "Research-in-progress close",
+          "runs": [
+            {
+              "index": 1,
+              "text": "Research-in-progress close",
+              "fontSize": 8.51,
+              "typeface": "Aptos",
+              "color": "#9FB0C5"
+            }
+          ]
+        }
+      ],
+      "fillColor": "rgba(0, 0, 0, 0)",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 21,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/w7mp0bi9",
+      "id": "21",
+      "bbox": [
+        1160,
+        682,
+        62,
+        18
+      ],
+      "geometry": "rect",
+      "text": "8/8",
+      "textPreview": "8/8",
+      "resolvedFontSize": 9,
+      "resolvedTextStyle": {
+        "fontSize": 9,
+        "typeface": "Aptos",
+        "alignment": "right"
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "8/8"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "8/8",
+          "runs": [
+            {
+              "index": 1,
+              "text": "8/8",
+              "fontSize": 9,
+              "typeface": "Aptos",
+              "color": "#C7D7EA"
+            }
+          ]
+        }
+      ],
+      "fillColor": "rgba(0, 0, 0, 0)",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    }
+  ],
+  "composeRuns": []
+}

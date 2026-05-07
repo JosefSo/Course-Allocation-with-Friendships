@@ -1,0 +1,15 @@
+Nine-slide structure:
+01. Cover with thesis and result rail.
+02. Problem and contribution frame.
+03. Formal model with utility formula.
+04. Mechanism workflow.
+05. Experiment design and mode matrix.
+06. Average utility by mode.
+07. Fairness by mode.
+08. Trade-off table.
+09. Contribution and next research questions.
+
+Rhythm:
+- No more than two consecutive diagram slides.
+- Results appear by slide 6.
+- No appendix; formulas stay on the main model slide.

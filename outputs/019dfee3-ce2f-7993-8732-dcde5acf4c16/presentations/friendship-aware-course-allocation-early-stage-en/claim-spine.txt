@@ -1,0 +1,18 @@
+Thesis:
+This project is at an early stage and explores how friendship relations can be represented inside course allocation as a formal social preference term.
+
+Audience:
+Academic seminar with professors and students.
+
+One-line arc:
+Start with the intuition, show how friendships become mathematical inputs, describe the prototype, and end with what will be evaluated next.
+
+Slide list:
+01. This is early-stage research on adding friendship relations to course allocation.
+02. The motivation is simple: students may care about both courses and classmates.
+03. The research question is how to add social preferences without leaving the allocation framework.
+04. The core modeling step is translating "I want to be with this friend in this course" into a course-specific social value.
+05. The utility model combines course value and friendship value through a lambda weight.
+06. The prototype already connects inputs, allocation, logs, and metrics.
+07. Preliminary runs are used to test the pipeline, not to claim final results.
+08. Next steps are model refinement, better data, and careful evaluation.

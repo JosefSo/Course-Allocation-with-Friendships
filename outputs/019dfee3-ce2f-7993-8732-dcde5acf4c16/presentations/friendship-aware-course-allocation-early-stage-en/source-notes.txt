@@ -1,0 +1,21 @@
+Task mode: create
+Primary deck profile: engineering-platform
+
+User direction for this revision:
+- The talk should sound like early-stage research, not final results.
+- Do not present strong conclusions, trade-offs, or final empirical claims.
+- Keep the presentation simple and interesting to explain.
+- Focus on the concept, the mathematical translation of friendships into utility, prototype progress, and planned evaluation.
+- Mention Gini index only as a metric used for fairness/inequality inspection; do not explain how it is calculated.
+- Avoid algorithm-level details.
+
+Source story:
+- README.md provides the model inputs, utility formulation, deterministic prototype, metrics, and experiment tools.
+- course_allocation_abstract_review.txt provides the academic framing of course allocation.
+- User screenshots provide prototype progress evidence: 180 completed runs, 6 modes, seeds 20-49, average utility and Gini tracked.
+
+Deck stance:
+- English-only.
+- 8 slides.
+- Research-in-progress tone.
+- Results are framed as preliminary prototype checks, not findings.

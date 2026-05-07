@@ -1,0 +1,27 @@
+Rendered QA scorecard
+
+Profile gate: pass.
+- English-only slide text.
+- Deck is reduced to 8 slides.
+- Early-stage framing is explicit.
+- No final result claims, no utility-vs-fairness trade-off slide, and no algorithm details.
+- Gini index appears only as a fairness metric to be tracked.
+
+Rubric:
+- story: 5/5
+- specificity: 4/5
+- rhythm: 4/5
+- whitespace: 5/5
+- chart clarity: 4/5
+- typography: 4/5
+- restraint: 5/5
+- precision: 4/5
+- coherence: 5/5
+
+Total: 40/45
+
+Iteration performed:
+- Fixed slide 1 title/subtitle overlap after render inspection.
+
+Residual risk:
+- The deck intentionally avoids detailed empirical interpretation. This matches the requested early-stage framing.

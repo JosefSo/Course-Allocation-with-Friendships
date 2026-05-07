@@ -1,0 +1,19 @@
+Thesis:
+Friendship-aware course allocation extends classical course assignment by making directed social preferences part of the utility model and then evaluating how different post-allocation improvement methods affect utility and fairness.
+
+Audience:
+Academic seminar with professors and students.
+
+One-line arc:
+Define the gap, formalize the social utility, explain the mechanism, then show that hybrid-global maximizes average utility while drop-add-global is best on average total Gini.
+
+Slide list:
+01. The project adds friendship as a formal allocation variable.
+02. The research gap is independence: classical course allocation misses social externalities.
+03. The model combines rankings, directed friendship preferences, and lambda weights.
+04. The mechanism has two stages: reactive snake draft and post-allocation local search.
+05. The experiment compares six modes across 180 runs.
+06. Hybrid-global is the clear average-utility winner.
+07. Fairness tells a different story: drop-add-global has the lowest average total Gini.
+08. The main trade-off is utility versus fairness and base-preference inequality.
+09. The contribution is a reproducible framework for studying social preferences in course allocation.

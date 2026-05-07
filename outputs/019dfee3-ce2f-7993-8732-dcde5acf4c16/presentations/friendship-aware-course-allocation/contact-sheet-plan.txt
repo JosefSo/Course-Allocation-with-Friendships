@@ -1,0 +1,21 @@
+The deck uses 14 slides with at least eight macro-layout families:
+
+01. Cover with thesis and contribution rail.
+02. Three-column academic framing.
+03. Bipartite + directed social graph map.
+04. Formula board with decomposition table.
+05. Sequential pick diagram.
+06. Snake draft and tie-break cascade.
+07. Draft-to-local-search workflow.
+08. 3 x 2 method matrix.
+09. Experiment pipeline and metric taxonomy.
+10. Mode-comparison evidence bars.
+11. Social overlap before/after proof.
+12. Trade-off dashboard.
+13. Reproducibility architecture.
+14. Dark synthesis slide.
+
+Rhythm gates:
+- No three consecutive slides share the same macro layout.
+- Formula slides alternate with diagrams and charts.
+- Only repeated containment is semantically meaningful: matrix cells, pipeline stages, or metric rails.

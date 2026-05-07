@@ -1,0 +1,26 @@
+Task mode: create
+Primary deck profile: engineering-platform
+
+Source story:
+- README.md defines the model, mechanism, utility function, post-allocation improvement modes, and metrics.
+- course_allocation_abstract_review.txt provides the academic framing: course allocation as one-sided combinatorial assignment under capacity constraints.
+- User screenshots from 2026-05-06 provide the latest batch results used in the English short deck.
+
+Screenshot result extraction:
+- Runs per mode: 30.
+- Seeds: 20-49.
+- Workers: 6.
+- Total runs: 180.
+- Best average utility: hybrid-global = 365.025017.
+- Lowest average G_total: drop-add-global = 0.070193.
+
+Mode table:
+- swap-global: runs 30, Avg U 352.612299, Best U 354.755826, Avg G_total 0.070808, Min G_total 0.067269, Avg G_base 0.047782, Min G_base 0.042801.
+- swap-personal: runs 30, Avg U 340.181121, Best U 343.801659, Avg G_total 0.070852, Min G_total 0.067094, Avg G_base 0.040680, Min G_base 0.037250.
+- drop-add-global: runs 30, Avg U 346.168760, Best U 348.647529, Avg G_total 0.070193, Min G_total 0.063699, Avg G_base 0.042996, Min G_base 0.037615.
+- drop-add-personal: runs 30, Avg U 342.546983, Best U 344.415963, Avg G_total 0.070927, Min G_total 0.066144, Avg G_base 0.046126, Min G_base 0.042581.
+- hybrid-global: runs 30, Avg U 365.025017, Best U 366.177435, Avg G_total 0.072126, Min G_total 0.067076, Avg G_base 0.072559, Min G_base 0.066367.
+- hybrid-personal: runs 30, Avg U 337.391854, Best U 340.457359, Avg G_total 0.075803, Min G_total 0.069521, Avg G_base 0.057403, Min G_base 0.049554.
+
+Identity assets:
+- None used.

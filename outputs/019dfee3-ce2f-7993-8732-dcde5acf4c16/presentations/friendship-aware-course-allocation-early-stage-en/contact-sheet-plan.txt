@@ -1,0 +1,14 @@
+Eight-slide structure:
+01. Early-stage title and thesis.
+02. Motivation: individual + social course value.
+03. Research question and contribution-in-progress.
+04. Friendship-to-math translation.
+05. Utility formula.
+06. Prototype pipeline.
+07. Preliminary progress dashboard.
+08. Next steps and feedback sought.
+
+Rhythm:
+- Mostly diagrams and simple explanatory boards.
+- Only one formula slide.
+- One progress slide with metrics, framed as pipeline validation.

@@ -1,0 +1,26 @@
+Rendered QA scorecard
+
+Profile gate: pass.
+- All slide text is in English.
+- The deck is reduced from 14 slides to 9 slides.
+- Screenshot batch results are reflected in the main evidence slides.
+- Charts use editable primitives, not screenshot images.
+
+Rubric:
+- story: 5/5
+- specificity: 5/5
+- rhythm: 4/5
+- whitespace: 4/5
+- chart clarity: 4/5
+- typography: 4/5
+- restraint: 5/5
+- precision: 5/5
+- coherence: 5/5
+
+Total: 41/45
+
+Iteration performed:
+- Fixed slide 6 value-label overlap by narrowing the chart track and keeping labels outside the right callout.
+
+Residual risk:
+- Literature references are still not included because no bibliography was supplied.

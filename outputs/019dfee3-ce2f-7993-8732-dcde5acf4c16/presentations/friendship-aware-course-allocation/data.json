@@ -1,0 +1,32 @@
+{
+  "scenario": "A_200x8",
+  "description": "Saved experiment sweep: 200 students, 8 courses, cap_default=80, b=3, draft_rounds=3, seeds 11-20.",
+  "modeAliases": {
+    "adaptive-global": "hybrid-global",
+    "adaptive-greedy": "hybrid-personal",
+    "add-drop": "drop-add-global",
+    "swap": "swap-global"
+  },
+  "postIters": [0, 1, 5, 10, 20],
+  "totalUtility": {
+    "hybrid-global": [371.310059, 382.631291, 384.804574, 384.815154, 384.815154],
+    "hybrid-personal": [371.310059, 369.007255, 369.462452, 369.421339, 369.861994],
+    "drop-add-global": [371.310059, 372.164515, 372.129036, 372.295586, 372.274612],
+    "swap-global": [371.310059, 372.018039, 374.308638, 376.473502, 379.516450]
+  },
+  "friendOverlap": {
+    "baseline": 3.7145,
+    "hybridGlobalPost5": 4.6965,
+    "relativeGainPct": 26.44
+  },
+  "rankTradeoff": {
+    "avgPositionBaseline": 2.186,
+    "avgPositionHybridGlobalPost5": 2.434,
+    "shareTop3Baseline": 0.872,
+    "shareTop3HybridGlobalPost5": 0.796
+  },
+  "fairness": {
+    "giniBaseline": 0.05238,
+    "giniHybridGlobalPost5": 0.05576
+  }
+}

@@ -1,0 +1,8 @@
+Slide size: 1280x720.
+Tone: academic, concise, English-only.
+Background: warm paper (#F7F3EA) with deep ink (#17212E) emphasis.
+Typography: Aptos Display for claims, Aptos for labels/body.
+Palette: ink, muted blue-gray, teal for utility/social gain, berry for fairness tension, gold for selected highlights.
+Chart grammar: direct labels, no legends unless needed, all values from screenshot batch.
+Layouts: title rail, problem frame, formula/diagram, method pipeline, evidence bars, fairness matrix, conclusion.
+Banned motifs: marketing hero, decorative logos, repeated card grids without data purpose.

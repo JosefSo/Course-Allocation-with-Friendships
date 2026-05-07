@@ -1,0 +1,842 @@
+{
+  "schema": "openai.presentation.layout/v4",
+  "unit": "px",
+  "slide": {
+    "aid": "sl/x5en1j",
+    "id": "x5en1j",
+    "slide": 2,
+    "layoutId": "ed67588c-c8e1-4c9b-bba9-d2fe402538a3",
+    "layoutName": "Title Slide",
+    "layoutType": "title",
+    "masterLayoutId": "2927567c-333e-4ca4-b409-2f656a5b3787",
+    "masterLayoutName": "Master",
+    "frame": {
+      "left": 0,
+      "top": 0,
+      "width": 1280,
+      "height": 720
+    }
+  },
+  "theme": {
+    "colorSchemeName": "ChatGPT",
+    "colors": {
+      "accent1": "#156082",
+      "accent2": "#E97132",
+      "accent3": "#196B24",
+      "accent4": "#0F9ED5",
+      "accent5": "#A02B93",
+      "accent6": "#4EA72E",
+      "bg1": "#FFFFFF",
+      "bg2": "#000000",
+      "tx1": "#1F1F1F",
+      "tx2": "#FFFFFF",
+      "dk1": "#000000",
+      "lt1": "#FFFFFF",
+      "dk2": "#0E2841",
+      "lt2": "#E8E8E8",
+      "hlink": "#467886",
+      "folHlink": "#96607D"
+    },
+    "typefaces": [
+      "Aptos",
+      "Aptos Display"
+    ]
+  },
+  "inheritedLayers": [
+    {
+      "scope": "layout",
+      "id": "ed67588c-c8e1-4c9b-bba9-d2fe402538a3",
+      "name": "Title Slide",
+      "type": "title",
+      "parentLayoutId": "2927567c-333e-4ca4-b409-2f656a5b3787",
+      "elements": []
+    },
+    {
+      "scope": "master",
+      "id": "2927567c-333e-4ca4-b409-2f656a5b3787",
+      "name": "Master",
+      "type": "master",
+      "elements": []
+    }
+  ],
+  "elements": [
+    {
+      "order": 1,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/ji5snelo",
+      "id": "1",
+      "bbox": [
+        0,
+        0,
+        1280,
+        720
+      ],
+      "geometry": "rect",
+      "fillColor": "#F7F3EA",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 2,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/c3ylc7u5",
+      "id": "2",
+      "bbox": [
+        58,
+        49,
+        6,
+        22
+      ],
+      "geometry": "rect",
+      "fillColor": "#0F766E",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 3,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/1kre1w7m",
+      "id": "3",
+      "bbox": [
+        74,
+        48,
+        520,
+        24
+      ],
+      "geometry": "rect",
+      "text": "RESEARCH GAP",
+      "textPreview": "RESEARCH GAP",
+      "resolvedFontSize": 10,
+      "resolvedTextStyle": {
+        "fontSize": 10,
+        "typeface": "Aptos",
+        "bold": true,
+        "alignment": "left"
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "RESEARCH GAP"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "RESEARCH GAP",
+          "runs": [
+            {
+              "index": 1,
+              "text": "RESEARCH GAP",
+              "fontSize": 10,
+              "typeface": "Aptos",
+              "color": "#56616F",
+              "bold": true
+            }
+          ]
+        }
+      ],
+      "fillColor": "rgba(0, 0, 0, 0)",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 4,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/ulwval87",
+      "id": "4",
+      "bbox": [
+        58,
+        86,
+        900,
+        94
+      ],
+      "geometry": "rect",
+      "text": "Классическая постановка теряет социальную внешность выбора.",
+      "textPreview": "Классическая постановка теряет социальную внешность выбора.",
+      "resolvedFontSize": 36,
+      "resolvedTextStyle": {
+        "fontSize": 36,
+        "typeface": "Aptos Display",
+        "bold": true,
+        "alignment": "left"
+      },
+      "textLayout": {
+        "lineCount": 2,
+        "lines": [
+          {
+            "index": 1,
+            "text": "Классическая постановка теряет социальную"
+          },
+          {
+            "index": 2,
+            "text": "внешность выбора."
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "Классическая постановка теряет социальную внешность выбора.",
+          "runs": [
+            {
+              "index": 1,
+              "text": "Классическая постановка теряет социальную внешность выбора.",
+              "fontSize": 36,
+              "typeface": "Aptos Display",
+              "color": "#17212E",
+              "bold": true
+            }
+          ]
+        }
+      ],
+      "fillColor": "rgba(0, 0, 0, 0)",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 5,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/j6tovaho",
+      "id": "5",
+      "bbox": [
+        62,
+        174,
+        900,
+        48
+      ],
+      "geometry": "rect",
+      "text": "Стандартный course allocation рассматривает студентов как независимых агентов. Но в реальном выборе курсов полезность часто зависит от того, с кем студент окажется в аудитории.",
+      "textPreview": "Стандартный course allocation рассматривает студентов как независимых агентов. Но в реальном выборе курсов полезность часто зависит от то...",
+      "resolvedFontSize": 15,
+      "resolvedTextStyle": {
+        "fontSize": 15,
+        "typeface": "Aptos",
+        "alignment": "left"
+      },
+      "textLayout": {
+        "lineCount": 2,
+        "lines": [
+          {
+            "index": 1,
+            "text": "Стандартный course allocation рассматривает студентов как независимых агентов. Но в реальном выборе курсов полезность"
+          },
+          {
+            "index": 2,
+            "text": "часто зависит от того, с кем студент окажется в аудитории."
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "Стандартный course allocation рассматривает студентов как независимых агентов. Но в реальном выборе курсов полезность часто зависит от того, с кем студент окажется в аудитории.",
+          "runs": [
+            {
+              "index": 1,
+              "text": "Стандартный course allocation рассматривает студентов как независимых агентов. Но в реальном выборе курсов полезность часто зависит от того, с кем студент окажется в аудитории.",
+              "fontSize": 15,
+              "typeface": "Aptos",
+              "color": "#56616F"
+            }
+          ]
+        }
+      ],
+      "fillColor": "rgba(0, 0, 0, 0)",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 6,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/crmhk3q5",
+      "id": "6",
+      "bbox": [
+        72,
+        274,
+        330,
+        196
+      ],
+      "geometry": "rect",
+      "fillColor": "rgba(0, 0, 0, 0)",
+      "lineColor": "#D7CDBE",
+      "lineWidth": 1
+    },
+    {
+      "order": 7,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/1cfa9w3m",
+      "id": "7",
+      "bbox": [
+        90,
+        290,
+        294,
+        20
+      ],
+      "geometry": "rect",
+      "text": "CLASSICAL BASELINE",
+      "textPreview": "CLASSICAL BASELINE",
+      "resolvedFontSize": 10,
+      "resolvedTextStyle": {
+        "fontSize": 10,
+        "typeface": "Aptos",
+        "bold": true,
+        "alignment": "left"
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "CLASSICAL BASELINE"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "CLASSICAL BASELINE",
+          "runs": [
+            {
+              "index": 1,
+              "text": "CLASSICAL BASELINE",
+              "fontSize": 10,
+              "typeface": "Aptos",
+              "color": "#355070",
+              "bold": true
+            }
+          ]
+        }
+      ],
+      "fillColor": "rgba(0, 0, 0, 0)",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 8,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/qh0fepkz",
+      "id": "8",
+      "bbox": [
+        90,
+        316,
+        294,
+        142
+      ],
+      "geometry": "rect",
+      "text": "One-sided combinatorial assignment: students receive feasible bundles of indivisible course seats under capacity constraints.",
+      "textPreview": "One-sided combinatorial assignment: students receive feasible bundles of indivisible course seats under capacity constraints.",
+      "resolvedFontSize": 18,
+      "resolvedTextStyle": {
+        "fontSize": 18,
+        "typeface": "Aptos Display",
+        "bold": true,
+        "alignment": "left"
+      },
+      "textLayout": {
+        "lineCount": 5,
+        "lines": [
+          {
+            "index": 1,
+            "text": "One-sided combinatorial"
+          },
+          {
+            "index": 2,
+            "text": "assignment: students receive"
+          },
+          {
+            "index": 3,
+            "text": "feasible bundles of indivisible"
+          },
+          {
+            "index": 4,
+            "text": "course seats under capacity"
+          },
+          {
+            "index": 5,
+            "text": "constraints."
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "One-sided combinatorial assignment: students receive feasible bundles of indivisible course seats under capacity constraints.",
+          "runs": [
+            {
+              "index": 1,
+              "text": "One-sided combinatorial assignment: students receive feasible bundles of indivisible course seats under capacity constraints.",
+              "fontSize": 18,
+              "typeface": "Aptos Display",
+              "color": "#17212E",
+              "bold": true
+            }
+          ]
+        }
+      ],
+      "fillColor": "rgba(0, 0, 0, 0)",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 9,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/j2t83itg",
+      "id": "9",
+      "bbox": [
+        474,
+        274,
+        330,
+        196
+      ],
+      "geometry": "rect",
+      "fillColor": "rgba(0, 0, 0, 0)",
+      "lineColor": "#D7CDBE",
+      "lineWidth": 1
+    },
+    {
+      "order": 10,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/byhgn29g",
+      "id": "10",
+      "bbox": [
+        492,
+        290,
+        294,
+        20
+      ],
+      "geometry": "rect",
+      "text": "MISSING VARIABLE",
+      "textPreview": "MISSING VARIABLE",
+      "resolvedFontSize": 10,
+      "resolvedTextStyle": {
+        "fontSize": 10,
+        "typeface": "Aptos",
+        "bold": true,
+        "alignment": "left"
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "MISSING VARIABLE"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "MISSING VARIABLE",
+          "runs": [
+            {
+              "index": 1,
+              "text": "MISSING VARIABLE",
+              "fontSize": 10,
+              "typeface": "Aptos",
+              "color": "#9F1239",
+              "bold": true
+            }
+          ]
+        }
+      ],
+      "fillColor": "rgba(0, 0, 0, 0)",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 11,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/idonyd0z",
+      "id": "11",
+      "bbox": [
+        492,
+        316,
+        294,
+        142
+      ],
+      "geometry": "rect",
+      "text": "Preferences are usually individual: the model observes how much a student wants a course, not whether friends also make that course valuable.",
+      "textPreview": "Preferences are usually individual: the model observes how much a student wants a course, not whether friends also make that course valua...",
+      "resolvedFontSize": 18,
+      "resolvedTextStyle": {
+        "fontSize": 18,
+        "typeface": "Aptos Display",
+        "bold": true,
+        "alignment": "left"
+      },
+      "textLayout": {
+        "lineCount": 5,
+        "lines": [
+          {
+            "index": 1,
+            "text": "Preferences are usually individual:"
+          },
+          {
+            "index": 2,
+            "text": "the model observes how much a"
+          },
+          {
+            "index": 3,
+            "text": "student wants a course, not"
+          },
+          {
+            "index": 4,
+            "text": "whether friends also make that"
+          },
+          {
+            "index": 5,
+            "text": "course valuable."
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "Preferences are usually individual: the model observes how much a student wants a course, not whether friends also make that course valuable.",
+          "runs": [
+            {
+              "index": 1,
+              "text": "Preferences are usually individual: the model observes how much a student wants a course, not whether friends also make that course valuable.",
+              "fontSize": 18,
+              "typeface": "Aptos Display",
+              "color": "#17212E",
+              "bold": true
+            }
+          ]
+        }
+      ],
+      "fillColor": "rgba(0, 0, 0, 0)",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 12,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/t47y1kre",
+      "id": "12",
+      "bbox": [
+        876,
+        274,
+        330,
+        196
+      ],
+      "geometry": "rect",
+      "fillColor": "rgba(0, 0, 0, 0)",
+      "lineColor": "#D7CDBE",
+      "lineWidth": 1
+    },
+    {
+      "order": 13,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/0je9cvix",
+      "id": "13",
+      "bbox": [
+        894,
+        290,
+        294,
+        20
+      ],
+      "geometry": "rect",
+      "text": "PROJECT EXTENSION",
+      "textPreview": "PROJECT EXTENSION",
+      "resolvedFontSize": 10,
+      "resolvedTextStyle": {
+        "fontSize": 10,
+        "typeface": "Aptos",
+        "bold": true,
+        "alignment": "left"
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "PROJECT EXTENSION"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "PROJECT EXTENSION",
+          "runs": [
+            {
+              "index": 1,
+              "text": "PROJECT EXTENSION",
+              "fontSize": 10,
+              "typeface": "Aptos",
+              "color": "#0F766E",
+              "bold": true
+            }
+          ]
+        }
+      ],
+      "fillColor": "rgba(0, 0, 0, 0)",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 14,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/b6xkf6dc",
+      "id": "14",
+      "bbox": [
+        894,
+        316,
+        294,
+        142
+      ],
+      "geometry": "rect",
+      "text": "A directed friendship term enters the utility model and is evaluated together with welfare, inequality, and social-overlap metrics.",
+      "textPreview": "A directed friendship term enters the utility model and is evaluated together with welfare, inequality, and social-overlap metrics.",
+      "resolvedFontSize": 18,
+      "resolvedTextStyle": {
+        "fontSize": 18,
+        "typeface": "Aptos Display",
+        "bold": true,
+        "alignment": "left"
+      },
+      "textLayout": {
+        "lineCount": 4,
+        "lines": [
+          {
+            "index": 1,
+            "text": "A directed friendship term enters"
+          },
+          {
+            "index": 2,
+            "text": "the utility model and is evaluated"
+          },
+          {
+            "index": 3,
+            "text": "together with welfare, inequality,"
+          },
+          {
+            "index": 4,
+            "text": "and social-overlap metrics."
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "A directed friendship term enters the utility model and is evaluated together with welfare, inequality, and social-overlap metrics.",
+          "runs": [
+            {
+              "index": 1,
+              "text": "A directed friendship term enters the utility model and is evaluated together with welfare, inequality, and social-overlap metrics.",
+              "fontSize": 18,
+              "typeface": "Aptos Display",
+              "color": "#17212E",
+              "bold": true
+            }
+          ]
+        }
+      ],
+      "fillColor": "rgba(0, 0, 0, 0)",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 15,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/il0rqd4v",
+      "id": "15",
+      "bbox": [
+        92,
+        535,
+        1096,
+        46
+      ],
+      "geometry": "rect",
+      "fillColor": "#17212E",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 16,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/tcj6tova",
+      "id": "16",
+      "bbox": [
+        122,
+        548,
+        1038,
+        22
+      ],
+      "geometry": "rect",
+      "text": "Main conceptual move: friendship is not a side note after allocation; it becomes part of the mechanism's utility calculation.",
+      "textPreview": "Main conceptual move: friendship is not a side note after allocation; it becomes part of the mechanism's utility calculation.",
+      "resolvedFontSize": 15,
+      "resolvedTextStyle": {
+        "fontSize": 15,
+        "typeface": "Aptos Display",
+        "bold": true,
+        "alignment": "center"
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "Main conceptual move: friendship is not a side note after allocation; it becomes part of the mechanism's utility calculation."
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "Main conceptual move: friendship is not a side note after allocation; it becomes part of the mechanism's utility calculation.",
+          "runs": [
+            {
+              "index": 1,
+              "text": "Main conceptual move: friendship is not a side note after allocation; it becomes part of the mechanism's utility calculation.",
+              "fontSize": 15,
+              "typeface": "Aptos Display",
+              "color": "#FFFFFF",
+              "bold": true
+            }
+          ]
+        }
+      ],
+      "fillColor": "rgba(0, 0, 0, 0)",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 17,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/0rqd4vmt",
+      "id": "17",
+      "bbox": [
+        58,
+        668,
+        1164,
+        1
+      ],
+      "geometry": "rect",
+      "fillColor": "#D7CDBE",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 18,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/bi9s36hc",
+      "id": "18",
+      "bbox": [
+        58,
+        682,
+        900,
+        18
+      ],
+      "geometry": "rect",
+      "text": "Source: course_allocation_abstract_review.txt",
+      "textPreview": "Source: course_allocation_abstract_review.txt",
+      "resolvedFontSize": 8.51,
+      "resolvedTextStyle": {
+        "fontSize": 8.51,
+        "typeface": "Aptos",
+        "alignment": "left"
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "Source: course_allocation_abstract_review.txt"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "Source: course_allocation_abstract_review.txt",
+          "runs": [
+            {
+              "index": 1,
+              "text": "Source: course_allocation_abstract_review.txt",
+              "fontSize": 8.51,
+              "typeface": "Aptos",
+              "color": "#7A6E60"
+            }
+          ]
+        }
+      ],
+      "fillColor": "rgba(0, 0, 0, 0)",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 19,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/ixczed8v",
+      "id": "19",
+      "bbox": [
+        1162,
+        682,
+        60,
+        18
+      ],
+      "geometry": "rect",
+      "text": "2/14",
+      "textPreview": "2/14",
+      "resolvedFontSize": 9,
+      "resolvedTextStyle": {
+        "fontSize": 9,
+        "typeface": "Aptos",
+        "alignment": "right"
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "2/14"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "2/14",
+          "runs": [
+            {
+              "index": 1,
+              "text": "2/14",
+              "fontSize": 9,
+              "typeface": "Aptos",
+              "color": "#56616F"
+            }
+          ]
+        }
+      ],
+      "fillColor": "rgba(0, 0, 0, 0)",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    }
+  ],
+  "composeRuns": []
+}
