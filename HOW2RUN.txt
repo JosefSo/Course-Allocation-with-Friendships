@@ -20,7 +20,7 @@ python hbs_social.py --csv-a tables/table1_individual.csv --csv-b tables/table2_
 python hbs_social.py --csv-a tables/table1_individual.csv --csv-b tables/table2_pair.csv --csv-lambda tables/table3_lambda.csv --cap-default 80 --b 3 --seed 11
 
 С post-phase:
-python hbs_social.py --csv-a tables/table1_individual.csv --csv-b tables/table2_pair.csv --csv-lambda tables/table3_lambda.csv --cap-default 80 --b 3 --draft-rounds 3 --post-iters 10 --move-type hybrid --objective-scope global --seed 11 --progress
+python hbs_social.py --csv-a tables/table1_individual.csv --csv-b tabl vn. es/table2_pair.csv --csv-lambda tables/table3_lambda.csv --cap-default 80 --b 3 --draft-rounds 3 --post-iters 10 --move-type hybrid --objective-scope global --seed 11 --progress
 
 Что появляется после запуска:
 allocation.csv
