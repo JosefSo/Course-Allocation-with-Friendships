@@ -94,6 +94,17 @@
       font-size: 12px;
       word-break: break-word;
     }
+    .checkbox-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 38px;
+      font-weight: 600;
+    }
+    .checkbox-row input {
+      width: 16px;
+      height: 16px;
+    }
     .matrix-block {
       grid-column: 1 / -1;
       display: grid;
@@ -306,6 +317,67 @@
     </section>
 
     <section class="card">
+      <h2>Generate Tables</h2>
+      <div class="grid params">
+        <label>students
+          <input id="gen_students" type="number" value="10" min="1">
+        </label>
+        <label>courses
+          <input id="gen_courses" type="number" value="5" min="1">
+        </label>
+        <label>seed
+          <input id="gen_seed" type="number" value="30" placeholder="random">
+        </label>
+        <label>score_min
+          <input id="gen_score_min" type="number" value="1">
+        </label>
+        <label>score_max
+          <input id="gen_score_max" type="number" value="5">
+        </label>
+        <label>swap_prob
+          <input id="gen_swap_prob" type="number" value="0" min="0" max="1" step="0.01">
+        </label>
+        <label>friend_top_k
+          <input id="gen_friend_top_k" type="number" value="3" min="1">
+        </label>
+        <label>friend_score_min
+          <input id="gen_friend_score_min" type="number" placeholder="score_min">
+        </label>
+        <label>friend_score_max
+          <input id="gen_friend_score_max" type="number" placeholder="score_max">
+        </label>
+        <label>friend_score_mode
+          <select id="gen_friend_score_mode">
+            <option value="score_first">score_first</option>
+            <option value="position_first">position_first</option>
+          </select>
+        </label>
+        <label>friend_swap_prob
+          <input id="gen_friend_swap_prob" type="number" value="0" min="0" max="1" step="0.01">
+        </label>
+        <label>lambda_default
+          <input id="gen_lambda_default" type="number" value="0.3" min="0" max="1" step="0.01">
+        </label>
+        <label class="checkbox-row">
+          <input id="gen_table1" type="checkbox" checked>
+          <span>Table 1</span>
+        </label>
+        <label class="checkbox-row">
+          <input id="gen_table2" type="checkbox" checked>
+          <span>Table 2</span>
+        </label>
+        <label class="checkbox-row">
+          <input id="gen_lambda" type="checkbox" checked>
+          <span>Lambda</span>
+        </label>
+      </div>
+      <div class="actions">
+        <button type="button" id="generate_tables_btn">Generate Selected Tables</button>
+      </div>
+      <div class="inline-note" id="generate_tables_note">Files are saved into the local tables folder and appear below immediately.</div>
+    </section>
+
+    <section class="card">
       <h2>Input Tables</h2>
       <div class="grid files" style="margin-top: 10px;">
         <label>Table 1 file (required)
@@ -424,6 +496,8 @@
     const historyEl = document.getElementById("history_table").querySelector("tbody");
     const showStatsBtn = document.getElementById("show_stats_btn");
     const runCompareBtn = document.getElementById("run_compare_btn");
+    const generateTablesBtn = document.getElementById("generate_tables_btn");
+    const generateTablesNoteEl = document.getElementById("generate_tables_note");
     const statsPanelEl = document.getElementById("stats_panel");
     const statsEmptyEl = document.getElementById("stats_empty");
     const statsOverviewEl = document.getElementById("stats_overview");
@@ -453,6 +527,26 @@
       const value = Number.parseInt(raw, 10);
       if (Number.isNaN(value)) {
         throw new Error(id + " must be an integer");
+      }
+      return value;
+    }
+
+    function readOptionalInt(id) {
+      const raw = document.getElementById(id).value.trim();
+      if (!raw) return null;
+      const value = Number.parseInt(raw, 10);
+      if (Number.isNaN(value)) {
+        throw new Error(id + " must be an integer");
+      }
+      return value;
+    }
+
+    function readFloat(id, fallback) {
+      const raw = document.getElementById(id).value.trim();
+      if (!raw) return fallback;
+      const value = Number.parseFloat(raw);
+      if (Number.isNaN(value)) {
+        throw new Error(id + " must be a number");
       }
       return value;
     }
@@ -489,7 +583,7 @@
       }
     }
 
-    async function loadFiles() {
+    async function loadFiles(preferredFiles) {
       setStatus("Loading file list...", "");
       try {
         const response = await fetch("/api/tables");
@@ -501,6 +595,18 @@
         fillSelect("table1_file", data.table1 || [], true);
         fillSelect("table2_file", data.table2 || [], true);
         fillSelect("lambda_file", data.lambda || [], false);
+
+        if (preferredFiles) {
+          if (preferredFiles.table1) {
+            document.getElementById("table1_file").value = preferredFiles.table1;
+          }
+          if (preferredFiles.table2) {
+            document.getElementById("table2_file").value = preferredFiles.table2;
+          }
+          if (preferredFiles.lambda) {
+            document.getElementById("lambda_file").value = preferredFiles.lambda;
+          }
+        }
 
         setStatus("File list updated.", "ok");
       } catch (err) {
@@ -539,6 +645,62 @@
         objective_scope: selectedMode.dataset.objectiveScope,
         improve_mode: selectedMode.value
       };
+    }
+
+    function generateTablesPayloadFromForm() {
+      const generateTable1 = document.getElementById("gen_table1").checked;
+      const generateTable2 = document.getElementById("gen_table2").checked;
+      const generateLambda = document.getElementById("gen_lambda").checked;
+      if (!generateTable1 && !generateTable2 && !generateLambda) {
+        throw new Error("Select at least one generated table.");
+      }
+      return {
+        students: readInt("gen_students", 10),
+        courses: readInt("gen_courses", 5),
+        seed: readOptionalInt("gen_seed"),
+        score_min: readInt("gen_score_min", 1),
+        score_max: readInt("gen_score_max", 5),
+        swap_prob: readFloat("gen_swap_prob", 0),
+        friend_top_k: readInt("gen_friend_top_k", 3),
+        friend_score_min: readOptionalInt("gen_friend_score_min"),
+        friend_score_max: readOptionalInt("gen_friend_score_max"),
+        friend_score_mode: document.getElementById("gen_friend_score_mode").value,
+        friend_swap_prob: readFloat("gen_friend_swap_prob", 0),
+        lambda_default: readFloat("gen_lambda_default", 0.3),
+        generate_table1: generateTable1,
+        generate_table2: generateTable2,
+        generate_lambda: generateLambda
+      };
+    }
+
+    async function generateTables() {
+      generateTablesBtn.disabled = true;
+      setStatus("Generating tables...", "");
+      generateTablesNoteEl.textContent = "Generating selected CSV files...";
+      try {
+        const payload = generateTablesPayloadFromForm();
+        const response = await fetch("/api/generate-tables", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        const data = await response.json();
+        if (!response.ok || !data.ok) {
+          throw new Error(data.error || ("HTTP " + response.status));
+        }
+        const created = data.created || {};
+        await loadFiles(created);
+        const names = Object.values(created);
+        generateTablesNoteEl.textContent = names.length
+          ? "Generated: " + names.join(", ")
+          : "No files generated.";
+        setStatus("Tables generated and selected.", "ok");
+      } catch (err) {
+        generateTablesNoteEl.textContent = err.message;
+        setStatus(err.message, "error");
+      } finally {
+        generateTablesBtn.disabled = false;
+      }
     }
 
     function updateModePreview() {
@@ -1483,6 +1645,7 @@
     }
 
     document.getElementById("run_btn").addEventListener("click", runAllocation);
+    document.getElementById("generate_tables_btn").addEventListener("click", generateTables);
     document.getElementById("refresh_files_btn").addEventListener("click", loadFiles);
     document.getElementById("clear_results_btn").addEventListener("click", clearResults);
     document.getElementById("toggle_allocation_btn").addEventListener("click", () => {

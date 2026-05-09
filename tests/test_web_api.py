@@ -9,6 +9,7 @@ sys.path.append(str(ROOT))
 import HBS.hbs_web as hbs_web
 from HBS.hbs_web import (
     _build_run_history_stats,
+    _generate_tables_payload,
     _list_run_history,
     _list_table_files,
     _read_compare_progress,
@@ -133,6 +134,33 @@ class TestWebApi(unittest.TestCase):
         self.assertIn("table1_demo.csv", listing["table1"])
         self.assertIn("table2_demo.csv", listing["table2"])
         self.assertIn("table3_lambda_demo.csv", listing["lambda"])
+
+    def test_generate_tables_payload_writes_selected_files(self) -> None:
+        with TemporaryDirectory() as tmp:
+            tables_dir = Path(tmp)
+            old_tables_dir = hbs_web.TABLES_DIR
+            try:
+                hbs_web.TABLES_DIR = tables_dir
+                result = _generate_tables_payload(
+                    {
+                        "students": 4,
+                        "courses": 3,
+                        "seed": 30,
+                        "generate_table1": True,
+                        "generate_table2": True,
+                        "generate_lambda": False,
+                    }
+                )
+            finally:
+                hbs_web.TABLES_DIR = old_tables_dir
+
+            self.assertTrue(result["ok"])
+            self.assertEqual(result["created"]["table1"], "table1_4×3.csv")
+            self.assertEqual(result["created"]["table2"], "table2_4×3.csv")
+            self.assertNotIn("lambda", result["created"])
+            self.assertTrue((tables_dir / "table1_4×3.csv").exists())
+            self.assertTrue((tables_dir / "table2_4×3.csv").exists())
+            self.assertFalse((tables_dir / "table3_4×3.csv").exists())
 
     def test_run_history_contains_latest_run(self) -> None:
         payload = {

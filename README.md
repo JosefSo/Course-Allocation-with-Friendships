@@ -98,7 +98,7 @@ A deterministic snake-draft course allocation engine with **reactive social pref
 **1. Generate sample data:**
 
 ```bash
-python generate/generate_tables.py --students 200 --courses 8 --seed 11
+python3 generate/generate_tables.py --students 10 --courses 5 --seed 30
 ```
 
 **2. Run the allocator:**

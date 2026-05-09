@@ -4,6 +4,7 @@ import argparse
 import json
 import logging
 import math
+import random
 import sqlite3
 import tempfile
 import threading
@@ -16,6 +17,18 @@ from pathlib import Path
 from typing import Any
 from urllib.parse import parse_qs, urlparse
 
+from generate.generate_tables import (
+    _default_table_paths,
+    _ensure_parent_dirs,
+    _validate_table_1,
+    _validate_table_2,
+    _write_csv_table_1,
+    _write_csv_table_2,
+    _write_csv_table_3,
+    generate_table_1,
+    generate_table_2,
+    generate_table_3,
+)
 from .hbs_api import CANONICAL_IMPROVE_MODES, normalize_improvement_config, run_hbs_social
 from .hbs_domain import PickLogRow, PostAllocLogRow
 from .hbs_io import (
@@ -67,6 +80,31 @@ def _optional_str(payload: dict[str, Any], key: str) -> str | None:
     if text == "":
         return None
     return text
+
+
+def _to_float(payload: dict[str, Any], key: str, default: float | None = None) -> float:
+    raw = payload.get(key, default)
+    if raw is None:
+        raise ValueError(f"{key} is required")
+    try:
+        return float(raw)
+    except (TypeError, ValueError) as exc:
+        raise ValueError(f"{key} must be a number") from exc
+
+
+def _to_bool(payload: dict[str, Any], key: str, default: bool = False) -> bool:
+    raw = payload.get(key, default)
+    if isinstance(raw, bool):
+        return raw
+    if isinstance(raw, str):
+        lowered = raw.strip().lower()
+        if lowered in {"1", "true", "yes", "on"}:
+            return True
+        if lowered in {"0", "false", "no", "off", ""}:
+            return False
+    if isinstance(raw, int):
+        return bool(raw)
+    raise ValueError(f"{key} must be a boolean")
 
 
 def _to_csv_text(payload: dict[str, Any], key: str, required: bool) -> str | None:
@@ -157,6 +195,131 @@ def _list_table_files() -> dict[str, Any]:
         "table1": table1_files,
         "table2": table2_files,
         "lambda": lambda_files,
+    }
+
+
+def _table_path_in_tables_dir(default_path: Path) -> Path:
+    return TABLES_DIR / default_path.name
+
+
+def _generate_tables_payload(payload: dict[str, Any]) -> dict[str, Any]:
+    if not isinstance(payload, dict):
+        raise ValueError("JSON payload must be an object")
+
+    n_students = _to_int(payload, "students")
+    n_courses = _to_int(payload, "courses")
+    if n_students <= 0:
+        raise ValueError("students must be > 0")
+    if n_courses <= 0:
+        raise ValueError("courses must be > 0")
+
+    generate_table1 = _to_bool(payload, "generate_table1", True)
+    generate_table2 = _to_bool(payload, "generate_table2", True)
+    generate_lambda = _to_bool(payload, "generate_lambda", True)
+    if not (generate_table1 or generate_table2 or generate_lambda):
+        raise ValueError("Select at least one table to generate")
+
+    seed = payload.get("seed")
+    if seed is not None and str(seed).strip() != "":
+        seed = _to_int(payload, "seed")
+    else:
+        seed = None
+    score_min = _to_int(payload, "score_min", default=1)
+    score_max = _to_int(payload, "score_max", default=5)
+    if score_min >= score_max:
+        raise ValueError("score_min must be less than score_max")
+    swap_prob = _to_float(payload, "swap_prob", default=0.0)
+    if not (0.0 <= swap_prob <= 1.0):
+        raise ValueError("swap_prob must be in range 0..1")
+
+    friend_top_k = _to_int(payload, "friend_top_k", default=3)
+    if friend_top_k <= 0:
+        raise ValueError("friend_top_k must be > 0")
+    friend_score_min = payload.get("friend_score_min")
+    friend_score_min = (
+        score_min
+        if friend_score_min is None or str(friend_score_min).strip() == ""
+        else _to_int(payload, "friend_score_min")
+    )
+    friend_score_max = payload.get("friend_score_max")
+    friend_score_max = (
+        score_max
+        if friend_score_max is None or str(friend_score_max).strip() == ""
+        else _to_int(payload, "friend_score_max")
+    )
+    if friend_score_min >= friend_score_max:
+        raise ValueError("friend_score_min must be less than friend_score_max")
+    friend_score_mode = str(payload.get("friend_score_mode", "score_first")).strip()
+    if friend_score_mode not in {"score_first", "position_first"}:
+        raise ValueError("friend_score_mode must be score_first or position_first")
+    friend_swap_prob = _to_float(payload, "friend_swap_prob", default=0.0)
+    if not (0.0 <= friend_swap_prob <= 1.0):
+        raise ValueError("friend_swap_prob must be in range 0..1")
+
+    lambda_default = _to_float(payload, "lambda_default", default=0.3)
+    if not (0.0 <= lambda_default <= 1.0):
+        raise ValueError("lambda_default must be in range 0..1")
+
+    student_ids = [f"S{i}" for i in range(1, n_students + 1)]
+    course_ids = [f"C{i}" for i in range(1, n_courses + 1)]
+    rng = random.Random(seed)
+    default_out1, default_out2, default_out3 = _default_table_paths(n_students, n_courses)
+    out1 = _table_path_in_tables_dir(default_out1)
+    out2 = _table_path_in_tables_dir(default_out2)
+    out3 = _table_path_in_tables_dir(default_out3)
+    created: dict[str, str] = {}
+
+    if generate_table1:
+        table1 = generate_table_1(
+            student_ids,
+            course_ids,
+            rng,
+            score_min=score_min,
+            score_max=score_max,
+            swap_prob=swap_prob,
+        )
+        _validate_table_1(
+            table1,
+            n_courses=len(course_ids),
+            score_min=score_min,
+            score_max=score_max,
+        )
+        _ensure_parent_dirs(out1)
+        _write_csv_table_1(out1, table1)
+        created["table1"] = out1.name
+
+    if generate_table2:
+        table2 = generate_table_2(
+            student_ids,
+            course_ids,
+            rng,
+            top_k=friend_top_k,
+            score_min=friend_score_min,
+            score_max=friend_score_max,
+            score_mode=friend_score_mode,
+            swap_prob=friend_swap_prob,
+        )
+        _validate_table_2(
+            table2,
+            top_k=friend_top_k,
+            score_min=friend_score_min,
+            score_max=friend_score_max,
+        )
+        _ensure_parent_dirs(out2)
+        _write_csv_table_2(out2, table2)
+        created["table2"] = out2.name
+
+    if generate_lambda:
+        table3 = generate_table_3(student_ids, lambda_default=lambda_default)
+        _ensure_parent_dirs(out3)
+        _write_csv_table_3(out3, table3)
+        created["lambda"] = out3.name
+
+    return {
+        "ok": True,
+        "tables_dir": str(TABLES_DIR),
+        "created": created,
+        "files": _list_table_files(),
     }
 
 
@@ -1108,7 +1271,7 @@ class _HbsWebHandler(BaseHTTPRequestHandler):
                 )
             return
 
-        if path not in {"/api/run", "/api/compare-modes"}:
+        if path not in {"/api/run", "/api/compare-modes", "/api/generate-tables"}:
             self._send_json(
                 HTTPStatus.NOT_FOUND,
                 {"ok": False, "error": f"Unknown route: {path}"},
@@ -1153,6 +1316,8 @@ class _HbsWebHandler(BaseHTTPRequestHandler):
         try:
             if path == "/api/compare-modes":
                 response = _run_mode_comparison_payload(payload)
+            elif path == "/api/generate-tables":
+                response = _generate_tables_payload(payload)
             else:
                 response = _run_payload(payload)
         except ValueError as exc:

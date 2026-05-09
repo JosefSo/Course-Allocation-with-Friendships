@@ -365,13 +365,13 @@ def _parse_args() -> argparse.Namespace:
     p.add_argument(
         "--out1",
         type=Path,
-        default=Path("tables/table1_individual.csv"),
+        default=None,
         help="Путь для CSV Таблицы 1",
     )
     p.add_argument(
         "--out2",
         type=Path,
-        default=Path("tables/table2_pair.csv"),
+        default=None,
         help="Путь для CSV Таблицы 2",
     )
     p.add_argument(
@@ -383,10 +383,24 @@ def _parse_args() -> argparse.Namespace:
     p.add_argument(
         "--out3",
         type=Path,
-        default=Path("tables/table3_lambda.csv"),
+        default=None,
         help="Путь для CSV Таблицы 3 (lambda)",
     )
     return p.parse_args()
+
+
+def _default_table_paths(n_students: int, n_courses: int) -> tuple[Path, Path, Path]:
+    suffix = f"{n_students}×{n_courses}"
+    return (
+        Path(f"tables/table1_{suffix}.csv"),
+        Path(f"tables/table2_{suffix}.csv"),
+        Path(f"tables/table3_{suffix}.csv"),
+    )
+
+
+def _ensure_parent_dirs(*paths: Path) -> None:
+    for path in paths:
+        path.parent.mkdir(parents=True, exist_ok=True)
 
 
 def main() -> int:
@@ -394,6 +408,10 @@ def main() -> int:
 
     n_students = args.students if args.students is not None else _prompt_positive_int("Количество студентов (N): ")
     n_courses = args.courses if args.courses is not None else _prompt_positive_int("Количество курсов (K): ")
+    default_out1, default_out2, default_out3 = _default_table_paths(n_students, n_courses)
+    out1 = args.out1 if args.out1 is not None else default_out1
+    out2 = args.out2 if args.out2 is not None else default_out2
+    out3 = args.out3 if args.out3 is not None else default_out3
 
     if args.score_min >= args.score_max:
         raise SystemExit("--score-min должен быть меньше --score-max")
@@ -451,13 +469,14 @@ def main() -> int:
         score_max=friend_score_max,
     )
 
-    _write_csv_table_1(args.out1, table1)
-    _write_csv_table_2(args.out2, table2)
-    _write_csv_table_3(args.out3, table3)
+    _ensure_parent_dirs(out1, out2, out3)
+    _write_csv_table_1(out1, table1)
+    _write_csv_table_2(out2, table2)
+    _write_csv_table_3(out3, table3)
 
-    print(f"Готово: {args.out1} ({len(table1)} строк)")
-    print(f"Готово: {args.out2} ({len(table2)} строк)")
-    print(f"Готово: {args.out3} ({len(table3)} строк)")
+    print(f"Готово: {out1} ({len(table1)} строк)")
+    print(f"Готово: {out2} ({len(table2)} строк)")
+    print(f"Готово: {out3} ({len(table3)} строк)")
     return 0
 
 
