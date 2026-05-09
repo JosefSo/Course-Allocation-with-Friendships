@@ -356,7 +356,7 @@
           <input id="gen_friend_swap_prob" type="number" value="0" min="0" max="1" step="0.01">
         </label>
         <label>lambda_default
-          <input id="gen_lambda_default" type="number" value="0.3" min="0" max="1" step="0.01">
+          <input id="gen_lambda_default" type="number" min="0" max="1" step="0.01" placeholder="blank = random">
         </label>
         <label class="checkbox-row">
           <input id="gen_table1" type="checkbox" checked>
@@ -374,7 +374,7 @@
       <div class="actions">
         <button type="button" id="generate_tables_btn">Generate Selected Tables</button>
       </div>
-      <div class="inline-note" id="generate_tables_note">Files are saved into the local tables folder and appear below immediately.</div>
+      <div class="inline-note" id="generate_tables_note">Files are saved into the local tables folder and appear below immediately. Blank `lambda_default` means random lambda per student.</div>
     </section>
 
     <section class="card">
@@ -451,6 +451,7 @@
         <div class="chart-wrap">
           <div class="chart-title" id="utility_chart_title">Utility Trend</div>
           <div id="utility_chart" class="chart-area"></div>
+          <div id="utility_legend" class="chart-legend"></div>
           <div class="inline-note" id="utility_chart_note">X-axis: run index, Y-axis: total_utility</div>
         </div>
 
@@ -461,6 +462,20 @@
           <div class="inline-note" id="fairness_chart_note">X-axis: run index, Y-axis: gini values</div>
         </div>
 
+        <div class="chart-wrap">
+          <div class="chart-title" id="social_chart_title">Social Component Trend</div>
+          <div id="social_chart" class="chart-area"></div>
+          <div id="social_legend" class="chart-legend"></div>
+          <div class="inline-note" id="social_chart_note">X-axis: run index, Y-axis: normalized friend utility and overlap rates</div>
+        </div>
+
+        <div class="chart-wrap">
+          <div class="chart-title" id="quality_chart_title">Preference Quality Trend</div>
+          <div id="quality_chart" class="chart-area"></div>
+          <div id="quality_legend" class="chart-legend"></div>
+          <div class="inline-note" id="quality_chart_note">X-axis: run index, Y-axis: rank/top-k quality values</div>
+        </div>
+
         <div style="overflow:auto;">
           <table id="stats_mode_table">
             <thead>
@@ -468,15 +483,22 @@
                 <th>Mode</th>
                 <th>Runs</th>
                 <th>Avg U</th>
-                <th>Best U</th>
-                <th>Avg G_total</th>
-                <th>Min G_total</th>
-                <th>Avg G_base</th>
-                <th>Min G_base</th>
+                <th>Avg U_norm</th>
+                <th>Avg base</th>
+                <th>Avg friend_norm</th>
+                <th>Overlap/student</th>
+                <th>Students overlap</th>
+                <th>G_total</th>
+                <th>G_base</th>
+                <th>G_friend</th>
+                <th>G_friend_opp</th>
+                <th>Avg pos</th>
+                <th>Top1</th>
+                <th>Top3</th>
               </tr>
             </thead>
             <tbody>
-              <tr><td colspan="8">No statistics yet.</td></tr>
+              <tr><td colspan="15">No statistics yet.</td></tr>
             </tbody>
           </table>
         </div>
@@ -504,10 +526,19 @@
     const utilityChartEl = document.getElementById("utility_chart");
     const utilityChartTitleEl = document.getElementById("utility_chart_title");
     const utilityChartNoteEl = document.getElementById("utility_chart_note");
+    const utilityLegendEl = document.getElementById("utility_legend");
     const fairnessChartEl = document.getElementById("fairness_chart");
     const fairnessChartTitleEl = document.getElementById("fairness_chart_title");
     const fairnessChartNoteEl = document.getElementById("fairness_chart_note");
     const fairnessLegendEl = document.getElementById("fairness_legend");
+    const socialChartEl = document.getElementById("social_chart");
+    const socialChartTitleEl = document.getElementById("social_chart_title");
+    const socialChartNoteEl = document.getElementById("social_chart_note");
+    const socialLegendEl = document.getElementById("social_legend");
+    const qualityChartEl = document.getElementById("quality_chart");
+    const qualityChartTitleEl = document.getElementById("quality_chart_title");
+    const qualityChartNoteEl = document.getElementById("quality_chart_note");
+    const qualityLegendEl = document.getElementById("quality_legend");
     const statsModeTableEl = document.getElementById("stats_mode_table").querySelector("tbody");
     const workerProgressEl = document.getElementById("worker_progress");
     let statsVisible = false;
@@ -544,6 +575,16 @@
     function readFloat(id, fallback) {
       const raw = document.getElementById(id).value.trim();
       if (!raw) return fallback;
+      const value = Number.parseFloat(raw);
+      if (Number.isNaN(value)) {
+        throw new Error(id + " must be a number");
+      }
+      return value;
+    }
+
+    function readOptionalFloat(id) {
+      const raw = document.getElementById(id).value.trim();
+      if (!raw) return null;
       const value = Number.parseFloat(raw);
       if (Number.isNaN(value)) {
         throw new Error(id + " must be a number");
@@ -666,7 +707,7 @@
         friend_score_max: readOptionalInt("gen_friend_score_max"),
         friend_score_mode: document.getElementById("gen_friend_score_mode").value,
         friend_swap_prob: readFloat("gen_friend_swap_prob", 0),
-        lambda_default: readFloat("gen_lambda_default", 0.3),
+        lambda_default: readOptionalFloat("gen_lambda_default"),
         generate_table1: generateTable1,
         generate_table2: generateTable2,
         generate_lambda: generateLambda
@@ -691,9 +732,19 @@
         const created = data.created || {};
         await loadFiles(created);
         const names = Object.values(created);
-        generateTablesNoteEl.textContent = names.length
-          ? "Generated: " + names.join(", ")
-          : "No files generated.";
+        const lambdaInfo = data.lambda_info;
+        let note = names.length ? "Generated: " + names.join(", ") : "No files generated.";
+        if (lambdaInfo && lambdaInfo.summary) {
+          const summary = lambdaInfo.summary;
+          if (lambdaInfo.mode === "random") {
+            note += " | Lambda: random per student";
+          } else {
+            note += " | Lambda default: " + Number(lambdaInfo.requested_default).toFixed(3);
+          }
+          note += " | values: " + (summary.sample_values || []).join(", ");
+          note += " | range: " + Number(summary.min).toFixed(3) + " .. " + Number(summary.max).toFixed(3);
+        }
+        generateTablesNoteEl.textContent = note;
         setStatus("Tables generated and selected.", "ok");
       } catch (err) {
         generateTablesNoteEl.textContent = err.message;
@@ -807,6 +858,35 @@
       return num.toFixed(6);
     }
 
+    function format3(value) {
+      const num = Number(value);
+      if (Number.isNaN(num)) return "";
+      return num.toFixed(3);
+    }
+
+    function renderLegend(container, items) {
+      container.innerHTML = "";
+      items.forEach((item) => {
+        const span = document.createElement("span");
+        span.className = "legend-item";
+        const dot = document.createElement("span");
+        dot.className = "legend-dot";
+        dot.style.background = item.color;
+        const label = document.createElement("span");
+        label.textContent = item.label;
+        span.appendChild(dot);
+        span.appendChild(label);
+        container.appendChild(span);
+      });
+    }
+
+    function metricValue(row, key, fallbackKey) {
+      const primary = Number(row && row[key]);
+      if (Number.isFinite(primary)) return primary;
+      const fallback = Number(row && row[fallbackKey]);
+      return Number.isFinite(fallback) ? fallback : NaN;
+    }
+
     function resetStatsView(message) {
       statsMode = "history";
       currentModeComparisonStats = null;
@@ -816,12 +896,21 @@
       utilityChartNoteEl.textContent = "X-axis: run index, Y-axis: total_utility";
       fairnessChartTitleEl.textContent = "Fairness Trend";
       fairnessChartNoteEl.textContent = "X-axis: run index, Y-axis: gini values";
+      socialChartTitleEl.textContent = "Social Component Trend";
+      socialChartNoteEl.textContent = "X-axis: run index, Y-axis: normalized friend utility and overlap rates";
+      qualityChartTitleEl.textContent = "Preference Quality Trend";
+      qualityChartNoteEl.textContent = "X-axis: run index, Y-axis: rank/top-k quality values";
       utilityChartEl.innerHTML = "";
+      utilityLegendEl.innerHTML = "";
       fairnessChartEl.innerHTML = "";
       fairnessLegendEl.innerHTML = "";
+      socialChartEl.innerHTML = "";
+      socialLegendEl.innerHTML = "";
+      qualityChartEl.innerHTML = "";
+      qualityLegendEl.innerHTML = "";
       workerProgressEl.innerHTML = "";
       workerProgressEl.style.display = "none";
-      statsModeTableEl.innerHTML = "<tr><td colspan='8'>No statistics yet.</td></tr>";
+      statsModeTableEl.innerHTML = "<tr><td colspan='15'>No statistics yet.</td></tr>";
     }
 
     function setStatsPanelVisible(isVisible) {
@@ -945,7 +1034,11 @@
 
       lineDefs.forEach((line) => {
         const coords = points
-          .map((p) => `${xScale(p.run_index)},${yScale(Number(p[line.key]))}`)
+          .map((p) => {
+            const value = Number(p[line.key]);
+            return Number.isFinite(value) ? `${xScale(p.run_index)},${yScale(value)}` : "";
+          })
+          .filter((coord) => coord !== "")
           .join(" ");
         if (coords.length > 0) {
           const polyline = document.createElementNS(ns, "polyline");
@@ -957,15 +1050,19 @@
         }
 
         points.forEach((p) => {
+          const value = Number(p[line.key]);
+          if (!Number.isFinite(value)) {
+            return;
+          }
           const cx = xScale(p.run_index);
-          const cy = yScale(Number(p[line.key]));
+          const cy = yScale(value);
           const dot = document.createElementNS(ns, "circle");
           dot.setAttribute("cx", String(cx));
           dot.setAttribute("cy", String(cy));
           dot.setAttribute("r", "3.4");
           dot.setAttribute("fill", line.color);
           const title = document.createElementNS(ns, "title");
-          title.textContent = `#${p.run_index} | ${p.improve_mode} | ${line.label}=${Number(p[line.key]).toFixed(6)}`;
+          title.textContent = `#${p.run_index} | ${p.improve_mode} | ${line.label}=${value.toFixed(6)}`;
           dot.appendChild(title);
           svg.appendChild(dot);
         });
@@ -1100,7 +1197,11 @@
 
       lineDefs.forEach((line) => {
         const coords = rows
-          .map((row, idx) => `${xScale(idx)},${yScale(Number(row[line.key]))}`)
+          .map((row, idx) => {
+            const value = Number(row[line.key]);
+            return Number.isFinite(value) ? `${xScale(idx)},${yScale(value)}` : "";
+          })
+          .filter((coord) => coord !== "")
           .join(" ");
         if (coords.length > 0) {
           const polyline = document.createElementNS(ns, "polyline");
@@ -1113,6 +1214,9 @@
 
         rows.forEach((row, idx) => {
           const value = Number(row[line.key]);
+          if (!Number.isFinite(value)) {
+            return;
+          }
           const dot = document.createElementNS(ns, "circle");
           dot.setAttribute("cx", String(xScale(idx)));
           dot.setAttribute("cy", String(yScale(value)));
@@ -1153,30 +1257,48 @@
       statsOverviewEl.innerHTML = "";
       workerProgressEl.innerHTML = "";
       workerProgressEl.style.display = "none";
-      utilityChartTitleEl.textContent = "Utility Trend";
-      utilityChartNoteEl.textContent = "X-axis: run index, Y-axis: total_utility";
-      fairnessChartTitleEl.textContent = "Fairness Trend";
-      fairnessChartNoteEl.textContent = "X-axis: run index, Y-axis: gini values";
+      utilityChartTitleEl.textContent = "Normalized Welfare and Components";
+      utilityChartNoteEl.textContent = "X-axis: run index, Y-axis: normalized total, assigned base, assigned friend_norm";
+      fairnessChartTitleEl.textContent = "Fairness Decomposition";
+      fairnessChartNoteEl.textContent = "X-axis: run index, Y-axis: Gini over total/base/social/opportunity-adjusted social utility";
+      socialChartTitleEl.textContent = "Social Component Trend";
+      socialChartNoteEl.textContent = "X-axis: run index, Y-axis: social utility and friend overlap diagnostics";
+      qualityChartTitleEl.textContent = "Preference Quality Trend";
+      qualityChartNoteEl.textContent = "X-axis: run index, Y-axis: lower avg_position is better; higher top shares are better";
+
+      const latest = trend[trend.length - 1] || {};
 
       const overviewItems = [
         { label: "Runs Total", value: String(overall.runs_total || 0) },
         {
-          label: "Best Utility",
+          label: "Best Raw Utility",
           value: overall.best_utility
             ? `#${overall.best_utility.run_index} (${overall.best_utility.improve_mode}) = ${format6(overall.best_utility.value)}`
             : "-"
         },
         {
-          label: "Best Fairness G_total",
-          value: overall.best_fairness_g_total
-            ? `#${overall.best_fairness_g_total.run_index} (${overall.best_fairness_g_total.improve_mode}) = ${format6(overall.best_fairness_g_total.value)}`
-            : "-"
+          label: "Latest U_norm",
+          value: format6(latest.total_utility_norm)
         },
         {
-          label: "Best Fairness G_base",
-          value: overall.best_fairness_g_base
-            ? `#${overall.best_fairness_g_base.run_index} (${overall.best_fairness_g_base.improve_mode}) = ${format6(overall.best_fairness_g_base.value)}`
-            : "-"
+          label: "Latest Base vs Friend",
+          value: `${format6(latest.mean_base_assigned)} / ${format6(latest.mean_friend_norm_assigned)}`
+        },
+        {
+          label: "Latest Friend/Base Ratio",
+          value: format6(latest.friend_norm_base_ratio_mean)
+        },
+        {
+          label: "Latest Overlap Rate",
+          value: `${format6(latest.avg_friend_overlaps_per_student)} per student, ${format6(latest.share_students_with_any_friend_overlap)} students`
+        },
+        {
+          label: "Latest Gini Split",
+          value: `T ${format6(latest.gini_total_norm)} | B ${format6(latest.gini_base_norm)} | F ${format6(latest.gini_friend_norm)}`
+        },
+        {
+          label: "Latest Course Quality",
+          value: `pos ${format6(latest.avg_position)} | top1 ${format6(latest.share_top1)} | top3 ${format6(latest.share_top3)}`
         }
       ];
       overviewItems.forEach((item) => {
@@ -1193,35 +1315,54 @@
         statsOverviewEl.appendChild(card);
       });
 
+      const utilityLines = [
+        { key: "total_utility_norm", label: "U_norm", color: "#1f6feb" },
+        { key: "mean_base_assigned", label: "Mean base", color: "#2da44e" },
+        { key: "mean_friend_norm_assigned", label: "Mean friend_norm", color: "#bf8700" }
+      ];
       renderLineChartSvg(
         utilityChartEl,
         trend,
-        [{ key: "total_utility", label: "U", color: "#1f6feb" }],
-        { yLabel: "total_utility" }
+        utilityLines,
+        { yLabel: "normalized utility" }
       );
+      renderLegend(utilityLegendEl, utilityLines);
+      renderLegend(fairnessLegendEl, [
+        { label: "G_total_norm", color: "#d73a49" },
+        { label: "G_base_norm", color: "#2da44e" },
+        { label: "G_friend_norm", color: "#8250df" },
+        { label: "G_friend_opportunity", color: "#bf8700" }
+      ]);
       renderLineChartSvg(
         fairnessChartEl,
         trend,
         [
-          { key: "gini_total_norm", label: "G_total", color: "#d73a49" },
-          { key: "gini_base_norm", label: "G_base", color: "#2da44e" }
+          { key: "gini_total_norm", label: "G_total_norm", color: "#d73a49" },
+          { key: "gini_base_norm", label: "G_base_norm", color: "#2da44e" },
+          { key: "gini_friend_norm", label: "G_friend_norm", color: "#8250df" },
+          { key: "gini_friend_opportunity_norm", label: "G_friend_opportunity", color: "#bf8700" }
         ],
         { yLabel: "gini" }
       );
+      const socialLines = [
+        { key: "mean_friend_norm_assigned", label: "Mean friend_norm", color: "#bf8700" },
+        { key: "friend_norm_base_ratio_mean", label: "Friend/Base ratio", color: "#8250df" },
+        { key: "avg_friend_overlaps_per_student", label: "Overlaps/student", color: "#0969da" },
+        { key: "share_students_with_any_friend_overlap", label: "Students with overlap", color: "#1a7f37" }
+      ];
+      renderLineChartSvg(socialChartEl, trend, socialLines, { yLabel: "social diagnostics" });
+      renderLegend(socialLegendEl, socialLines);
 
-      fairnessLegendEl.innerHTML = "";
-      [
-        { label: "G_total", color: "#d73a49" },
-        { label: "G_base", color: "#2da44e" }
-      ].forEach((item) => {
-        const span = document.createElement("span");
-        span.className = "legend-item";
-        span.innerHTML = `<span class="legend-dot" style="background:${item.color}"></span>${item.label}`;
-        fairnessLegendEl.appendChild(span);
-      });
+      const qualityLines = [
+        { key: "avg_position", label: "Avg position", color: "#d1242f" },
+        { key: "share_top1", label: "Top1 share", color: "#1f6feb" },
+        { key: "share_top3", label: "Top3 share", color: "#2da44e" }
+      ];
+      renderLineChartSvg(qualityChartEl, trend, qualityLines, { yLabel: "preference quality" });
+      renderLegend(qualityLegendEl, qualityLines);
 
       if (byMode.length === 0) {
-        statsModeTableEl.innerHTML = "<tr><td colspan='8'>No statistics yet.</td></tr>";
+        statsModeTableEl.innerHTML = "<tr><td colspan='15'>No statistics yet.</td></tr>";
         return;
       }
 
@@ -1232,11 +1373,18 @@
           row.improve_mode,
           row.runs,
           format6(row.avg_total_utility),
-          format6(row.best_total_utility),
+          format6(row.avg_total_utility_norm),
+          format6(row.avg_mean_base_assigned),
+          format6(row.avg_mean_friend_norm_assigned),
+          format6(row.avg_avg_friend_overlaps_per_student),
+          format6(row.avg_share_students_with_any_friend_overlap),
           format6(row.avg_gini_total_norm),
-          format6(row.min_gini_total_norm),
           format6(row.avg_gini_base_norm),
-          format6(row.min_gini_base_norm)
+          format6(row.avg_gini_friend_norm),
+          format6(row.avg_gini_friend_opportunity_norm),
+          format6(row.avg_avg_position),
+          format6(row.avg_share_top1),
+          format6(row.avg_share_top3)
         ];
         cells.forEach((value) => {
           const td = document.createElement("td");
@@ -1261,10 +1409,14 @@
 
       statsEmptyEl.textContent = "";
       statsOverviewEl.innerHTML = "";
-      utilityChartTitleEl.textContent = "Avg Utility By Mode";
-      utilityChartNoteEl.textContent = "X-axis: mode, Y-axis: average total_utility across the batch";
-      fairnessChartTitleEl.textContent = "Fairness By Mode";
-      fairnessChartNoteEl.textContent = "X-axis: mode, Y-axis: average gini across the batch";
+      utilityChartTitleEl.textContent = "Average Normalized Welfare and Components By Mode";
+      utilityChartNoteEl.textContent = "X-axis: mode, Y-axis: average normalized total, base, and friend_norm";
+      fairnessChartTitleEl.textContent = "Average Fairness Decomposition By Mode";
+      fairnessChartNoteEl.textContent = "X-axis: mode, Y-axis: average Gini";
+      socialChartTitleEl.textContent = "Average Social Component By Mode";
+      socialChartNoteEl.textContent = "X-axis: mode, Y-axis: average social utility and overlap diagnostics";
+      qualityChartTitleEl.textContent = "Average Preference Quality By Mode";
+      qualityChartNoteEl.textContent = "X-axis: mode, Y-axis: average rank/top-k quality values";
       const runCounts = byMode.map((row) => Number(row.runs || 0));
       const minRuns = Math.min(...runCounts);
       const maxRuns = Math.max(...runCounts);
@@ -1278,15 +1430,27 @@
           value: String(config.effective_parallel_workers || config.parallel_workers || 1)
         },
         {
-          label: "Best Avg Utility",
+          label: "Best Avg Raw Utility",
           value: overall.best_avg_utility_mode
             ? `${overall.best_avg_utility_mode.improve_mode} = ${format6(overall.best_avg_utility_mode.avg_total_utility)}`
             : "-"
         },
         {
-          label: "Lowest Avg G_total (Best)",
+          label: "Lowest Avg G_total",
           value: overall.best_avg_fairness_mode
             ? `${overall.best_avg_fairness_mode.improve_mode} = ${format6(overall.best_avg_fairness_mode.avg_gini_total_norm)}`
+            : "-"
+        },
+        {
+          label: "Best Avg Friend Norm",
+          value: overall.best_avg_friend_mode
+            ? `${overall.best_avg_friend_mode.improve_mode} = ${format6(overall.best_avg_friend_mode.avg_mean_friend_norm_assigned)}`
+            : "-"
+        },
+        {
+          label: "Lowest Avg Opportunity Gini",
+          value: overall.best_avg_social_opportunity_fairness_mode
+            ? `${overall.best_avg_social_opportunity_fairness_mode.improve_mode} = ${format6(overall.best_avg_social_opportunity_fairness_mode.avg_gini_friend_opportunity_norm)}`
             : "-"
         }
       ];
@@ -1304,32 +1468,43 @@
         statsOverviewEl.appendChild(card);
       });
 
-      renderModePointChartSvg(
-        utilityChartEl,
-        byMode,
-        [{ key: "avg_total_utility", label: "Avg U", color: "#1f6feb" }],
-        { yLabel: "avg_total_utility" }
-      );
+      const utilityLines = [
+        { key: "avg_total_utility_norm", label: "Avg U_norm", color: "#1f6feb" },
+        { key: "avg_mean_base_assigned", label: "Avg base", color: "#2da44e" },
+        { key: "avg_mean_friend_norm_assigned", label: "Avg friend_norm", color: "#bf8700" }
+      ];
+      renderModePointChartSvg(utilityChartEl, byMode, utilityLines, { yLabel: "avg normalized utility" });
+      renderLegend(utilityLegendEl, utilityLines);
+      const fairnessLines = [
+        { key: "avg_gini_total_norm", label: "Avg G_total", color: "#d73a49" },
+        { key: "avg_gini_base_norm", label: "Avg G_base", color: "#2da44e" },
+        { key: "avg_gini_friend_norm", label: "Avg G_friend", color: "#8250df" },
+        { key: "avg_gini_friend_opportunity_norm", label: "Avg G_friend_opp", color: "#bf8700" }
+      ];
       renderModePointChartSvg(
         fairnessChartEl,
         byMode,
-        [
-          { key: "avg_gini_total_norm", label: "Avg G_total", color: "#d73a49" },
-          { key: "avg_gini_base_norm", label: "Avg G_base", color: "#2da44e" }
-        ],
+        fairnessLines,
         { yLabel: "avg_gini" }
       );
+      renderLegend(fairnessLegendEl, fairnessLines);
 
-      fairnessLegendEl.innerHTML = "";
-      [
-        { label: "Avg G_total", color: "#d73a49" },
-        { label: "Avg G_base", color: "#2da44e" }
-      ].forEach((item) => {
-        const span = document.createElement("span");
-        span.className = "legend-item";
-        span.innerHTML = `<span class="legend-dot" style="background:${item.color}"></span>${item.label}`;
-        fairnessLegendEl.appendChild(span);
-      });
+      const socialLines = [
+        { key: "avg_mean_friend_norm_assigned", label: "Avg friend_norm", color: "#bf8700" },
+        { key: "avg_friend_norm_base_ratio_mean", label: "Avg friend/base ratio", color: "#8250df" },
+        { key: "avg_avg_friend_overlaps_per_student", label: "Avg overlaps/student", color: "#0969da" },
+        { key: "avg_share_students_with_any_friend_overlap", label: "Avg students overlap", color: "#1a7f37" }
+      ];
+      renderModePointChartSvg(socialChartEl, byMode, socialLines, { yLabel: "avg social diagnostics" });
+      renderLegend(socialLegendEl, socialLines);
+
+      const qualityLines = [
+        { key: "avg_avg_position", label: "Avg position", color: "#d1242f" },
+        { key: "avg_share_top1", label: "Avg top1", color: "#1f6feb" },
+        { key: "avg_share_top3", label: "Avg top3", color: "#2da44e" }
+      ];
+      renderModePointChartSvg(qualityChartEl, byMode, qualityLines, { yLabel: "avg preference quality" });
+      renderLegend(qualityLegendEl, qualityLines);
 
       statsModeTableEl.innerHTML = "";
       byMode.forEach((row) => {
@@ -1338,11 +1513,18 @@
           row.improve_mode,
           row.runs,
           format6(row.avg_total_utility),
-          format6(row.best_total_utility),
+          format6(row.avg_total_utility_norm),
+          format6(row.avg_mean_base_assigned),
+          format6(row.avg_mean_friend_norm_assigned),
+          format6(row.avg_avg_friend_overlaps_per_student),
+          format6(row.avg_share_students_with_any_friend_overlap),
           format6(row.avg_gini_total_norm),
-          format6(row.min_gini_total_norm),
           format6(row.avg_gini_base_norm),
-          format6(row.min_gini_base_norm)
+          format6(row.avg_gini_friend_norm),
+          format6(row.avg_gini_friend_opportunity_norm),
+          format6(row.avg_avg_position),
+          format6(row.avg_share_top1),
+          format6(row.avg_share_top3)
         ];
         cells.forEach((value) => {
           const td = document.createElement("td");
@@ -1361,12 +1543,20 @@
       const bestAvgFairness = byMode.length > 0
         ? byMode.reduce((best, row) => row.avg_gini_total_norm < best.avg_gini_total_norm ? row : best, byMode[0])
         : null;
+      const bestAvgFriend = byMode.length > 0
+        ? byMode.reduce((best, row) => metricValue(row, "avg_mean_friend_norm_assigned") > metricValue(best, "avg_mean_friend_norm_assigned") ? row : best, byMode[0])
+        : null;
+      const bestAvgSocialOpportunityFairness = byMode.length > 0
+        ? byMode.reduce((best, row) => metricValue(row, "avg_gini_friend_opportunity_norm") < metricValue(best, "avg_gini_friend_opportunity_norm") ? row : best, byMode[0])
+        : null;
       stats.overall = {
         ...(stats.overall || {}),
         mode_count: byMode.length,
         runs_total: byMode.reduce((total, row) => total + Number(row.runs || 0), 0),
         best_avg_utility_mode: bestAvgUtility,
-        best_avg_fairness_mode: bestAvgFairness
+        best_avg_fairness_mode: bestAvgFairness,
+        best_avg_friend_mode: bestAvgFriend,
+        best_avg_social_opportunity_fairness_mode: bestAvgSocialOpportunityFairness
       };
       return stats;
     }
@@ -1387,6 +1577,20 @@
       const totalUtility = Number(summary.total_utility);
       const gTotal = Number(summary.gini_total_norm);
       const gBase = Number(summary.gini_base_norm);
+      const metrics = (runData.metrics_extended && runData.metrics_extended.values) || {};
+      const extraKeys = [
+        "total_utility_norm",
+        "mean_base_assigned",
+        "mean_friend_norm_assigned",
+        "friend_norm_base_ratio_mean",
+        "avg_friend_overlaps_per_student",
+        "share_students_with_any_friend_overlap",
+        "gini_friend_norm",
+        "gini_friend_opportunity_norm",
+        "avg_position",
+        "share_top1",
+        "share_top3"
+      ];
 
       row.runs = newRuns;
       row.avg_total_utility = ((Number(row.avg_total_utility || 0) * oldRuns) + totalUtility) / newRuns;
@@ -1395,6 +1599,29 @@
       row.min_gini_total_norm = Math.min(Number(row.min_gini_total_norm || gTotal), gTotal);
       row.avg_gini_base_norm = ((Number(row.avg_gini_base_norm || 0) * oldRuns) + gBase) / newRuns;
       row.min_gini_base_norm = Math.min(Number(row.min_gini_base_norm || gBase), gBase);
+      extraKeys.forEach((key) => {
+        const value = Number(metrics[key]);
+        if (!Number.isFinite(value)) {
+          return;
+        }
+        const avgKey = "avg_" + key;
+        row[avgKey] = ((Number(row[avgKey] || 0) * oldRuns) + value) / newRuns;
+        if (key.startsWith("gini_") || key === "avg_position") {
+          const minKey = "min_" + key;
+          row[minKey] = Math.min(Number(row[minKey] || value), value);
+        }
+        if (
+          key === "total_utility_norm" ||
+          key === "mean_friend_norm_assigned" ||
+          key === "avg_friend_overlaps_per_student" ||
+          key === "share_students_with_any_friend_overlap" ||
+          key === "share_top1" ||
+          key === "share_top3"
+        ) {
+          const bestKey = "best_" + key;
+          row[bestKey] = Math.max(Number(row[bestKey] || value), value);
+        }
+      });
 
       renderModeComparisonStats(summarizeModeComparison(currentModeComparisonStats));
       return true;

@@ -148,7 +148,8 @@ class TestWebApi(unittest.TestCase):
                         "seed": 30,
                         "generate_table1": True,
                         "generate_table2": True,
-                        "generate_lambda": False,
+                        "generate_lambda": True,
+                        "lambda_default": 0.4,
                     }
                 )
             finally:
@@ -157,10 +158,39 @@ class TestWebApi(unittest.TestCase):
             self.assertTrue(result["ok"])
             self.assertEqual(result["created"]["table1"], "table1_4×3.csv")
             self.assertEqual(result["created"]["table2"], "table2_4×3.csv")
-            self.assertNotIn("lambda", result["created"])
+            self.assertEqual(result["created"]["lambda"], "table3_4×3_lambda-0.4.csv")
+            self.assertEqual(result["lambda_info"]["mode"], "constant")
+            self.assertEqual(result["lambda_info"]["summary"]["unique_count"], 1)
             self.assertTrue((tables_dir / "table1_4×3.csv").exists())
             self.assertTrue((tables_dir / "table2_4×3.csv").exists())
-            self.assertFalse((tables_dir / "table3_4×3.csv").exists())
+            self.assertTrue((tables_dir / "table3_4×3_lambda-0.4.csv").exists())
+
+    def test_generate_tables_payload_random_lambda_when_blank(self) -> None:
+        with TemporaryDirectory() as tmp:
+            tables_dir = Path(tmp)
+            old_tables_dir = hbs_web.TABLES_DIR
+            try:
+                hbs_web.TABLES_DIR = tables_dir
+                result = _generate_tables_payload(
+                    {
+                        "students": 5,
+                        "courses": 2,
+                        "seed": 9,
+                        "generate_table1": False,
+                        "generate_table2": False,
+                        "generate_lambda": True,
+                        "lambda_default": "",
+                    }
+                )
+            finally:
+                hbs_web.TABLES_DIR = old_tables_dir
+
+            self.assertTrue(result["ok"])
+            self.assertEqual(result["created"]["lambda"], "table3_5×2_lambda-random.csv")
+            self.assertEqual(result["lambda_info"]["mode"], "random")
+            self.assertIsNone(result["lambda_info"]["requested_default"])
+            self.assertGreaterEqual(result["lambda_info"]["summary"]["unique_count"], 1)
+            self.assertTrue((tables_dir / "table3_5×2_lambda-random.csv").exists())
 
     def test_run_history_contains_latest_run(self) -> None:
         payload = {

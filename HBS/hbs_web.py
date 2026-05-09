@@ -45,6 +45,47 @@ HISTORY_DB_PATH = Path(__file__).resolve().parents[1] / "results" / "hbs_social_
 _COMPARE_PROGRESS: dict[str, dict[str, Any]] = {}
 _COMPARE_PROGRESS_LOCK = threading.Lock()
 
+HISTORY_METRIC_KEYS = (
+    "total_utility",
+    "total_utility_norm",
+    "total_base_utility",
+    "total_friend_utility_norm",
+    "total_friend_utility_raw",
+    "mean_base_assigned",
+    "mean_friend_norm_assigned",
+    "friend_norm_base_ratio_mean",
+    "avg_friend_overlaps_per_student",
+    "share_students_with_any_friend_overlap",
+    "gini_total_raw",
+    "gini_total_norm",
+    "gini_base_raw",
+    "gini_base_norm",
+    "gini_friend_norm",
+    "gini_friend_opportunity_norm",
+    "avg_position",
+    "share_top1",
+    "share_top3",
+)
+
+HISTORY_MIN_METRIC_KEYS = (
+    "gini_total_norm",
+    "gini_base_norm",
+    "gini_friend_norm",
+    "gini_friend_opportunity_norm",
+    "avg_position",
+)
+
+HISTORY_MAX_METRIC_KEYS = (
+    "total_utility",
+    "total_utility_norm",
+    "total_base_utility",
+    "total_friend_utility_norm",
+    "avg_friend_overlaps_per_student",
+    "share_students_with_any_friend_overlap",
+    "share_top1",
+    "share_top3",
+)
+
 
 def _to_int(payload: dict[str, Any], key: str, default: int | None = None) -> int:
     raw = payload.get(key, default)
@@ -202,6 +243,19 @@ def _table_path_in_tables_dir(default_path: Path) -> Path:
     return TABLES_DIR / default_path.name
 
 
+def _summarize_lambda_rows(rows: list[Any]) -> dict[str, Any]:
+    values = [float(row.lambda_friend) for row in rows]
+    unique_values = sorted({round(value, 3) for value in values})
+    sample = [f"{value:.3f}" for value in unique_values[:10]]
+    return {
+        "count": len(values),
+        "min": min(values) if values else None,
+        "max": max(values) if values else None,
+        "unique_count": len(unique_values),
+        "sample_values": sample,
+    }
+
+
 def _generate_tables_payload(payload: dict[str, Any]) -> dict[str, Any]:
     if not isinstance(payload, dict):
         raise ValueError("JSON payload must be an object")
@@ -256,18 +310,27 @@ def _generate_tables_payload(payload: dict[str, Any]) -> dict[str, Any]:
     if not (0.0 <= friend_swap_prob <= 1.0):
         raise ValueError("friend_swap_prob must be in range 0..1")
 
-    lambda_default = _to_float(payload, "lambda_default", default=0.3)
-    if not (0.0 <= lambda_default <= 1.0):
-        raise ValueError("lambda_default must be in range 0..1")
+    lambda_default_raw = payload.get("lambda_default")
+    if lambda_default_raw is None or str(lambda_default_raw).strip() == "":
+        lambda_default = None
+    else:
+        lambda_default = _to_float(payload, "lambda_default")
+        if not (0.0 <= lambda_default <= 1.0):
+            raise ValueError("lambda_default must be in range 0..1")
 
     student_ids = [f"S{i}" for i in range(1, n_students + 1)]
     course_ids = [f"C{i}" for i in range(1, n_courses + 1)]
     rng = random.Random(seed)
-    default_out1, default_out2, default_out3 = _default_table_paths(n_students, n_courses)
+    default_out1, default_out2, default_out3 = _default_table_paths(
+        n_students,
+        n_courses,
+        lambda_default=lambda_default,
+    )
     out1 = _table_path_in_tables_dir(default_out1)
     out2 = _table_path_in_tables_dir(default_out2)
     out3 = _table_path_in_tables_dir(default_out3)
     created: dict[str, str] = {}
+    lambda_info: dict[str, Any] | None = None
 
     if generate_table1:
         table1 = generate_table_1(
@@ -310,15 +373,26 @@ def _generate_tables_payload(payload: dict[str, Any]) -> dict[str, Any]:
         created["table2"] = out2.name
 
     if generate_lambda:
-        table3 = generate_table_3(student_ids, lambda_default=lambda_default)
+        table3 = generate_table_3(
+            student_ids,
+            lambda_default=lambda_default,
+            rng=rng,
+        )
         _ensure_parent_dirs(out3)
         _write_csv_table_3(out3, table3)
         created["lambda"] = out3.name
+        lambda_info = {
+            "mode": ("random" if lambda_default is None else "constant"),
+            "requested_default": lambda_default,
+            "file": out3.name,
+            "summary": _summarize_lambda_rows(table3),
+        }
 
     return {
         "ok": True,
         "tables_dir": str(TABLES_DIR),
         "created": created,
+        "lambda_info": lambda_info,
         "files": _list_table_files(),
     }
 
@@ -349,7 +423,8 @@ def _init_history_db(db_path: Path | None = None) -> None:
                 improve_mode TEXT NOT NULL,
                 total_utility REAL NOT NULL,
                 gini_total_norm REAL NOT NULL,
-                gini_base_norm REAL NOT NULL
+                gini_base_norm REAL NOT NULL,
+                metrics_extended_json TEXT
             )
             """
         )
@@ -361,6 +436,8 @@ def _init_history_db(db_path: Path | None = None) -> None:
             conn.execute("ALTER TABLE run_history ADD COLUMN move_type TEXT")
         if "objective_scope" not in columns:
             conn.execute("ALTER TABLE run_history ADD COLUMN objective_scope TEXT")
+        if "metrics_extended_json" not in columns:
+            conn.execute("ALTER TABLE run_history ADD COLUMN metrics_extended_json TEXT")
         rows_to_backfill = conn.execute(
             """
             SELECT id, improve_mode
@@ -414,6 +491,7 @@ def _append_run_history(
     total_utility: float,
     gini_total_norm: float,
     gini_base_norm: float,
+    metrics_extended: dict[str, float] | None = None,
     db_path: Path | None = None,
 ) -> int:
     db_path = _resolve_history_db_path(db_path)
@@ -425,8 +503,8 @@ def _append_run_history(
             INSERT INTO run_history (
                 created_at, table1_ref, table2_ref, lambda_ref, cap_default, b, seed,
                 draft_rounds, post_iters, move_type, objective_scope, improve_mode,
-                total_utility, gini_total_norm, gini_base_norm
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                total_utility, gini_total_norm, gini_base_norm, metrics_extended_json
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 created_at,
@@ -444,6 +522,7 @@ def _append_run_history(
                 total_utility,
                 gini_total_norm,
                 gini_base_norm,
+                json.dumps(metrics_extended or {}, ensure_ascii=True, sort_keys=True),
             ),
         )
         conn.commit()
@@ -464,7 +543,7 @@ def _list_run_history(limit: int = 200, db_path: Path | None = None) -> dict[str
                 id, created_at, table1_ref, table2_ref, lambda_ref,
                 cap_default, b, seed, draft_rounds, post_iters, move_type, objective_scope,
                 improve_mode,
-                total_utility, gini_total_norm, gini_base_norm
+                total_utility, gini_total_norm, gini_base_norm, metrics_extended_json
             FROM run_history
             ORDER BY id DESC
             LIMIT ?
@@ -482,6 +561,7 @@ def _list_run_history(limit: int = 200, db_path: Path | None = None) -> dict[str
             f"metrics: U={row['total_utility']:.6f}, "
             f"G_total={row['gini_total_norm']:.6f}, G_base={row['gini_base_norm']:.6f}"
         )
+        metrics = _history_metrics_from_row(row)
         items.append(
             {
                 "id": row["id"],
@@ -500,6 +580,7 @@ def _list_run_history(limit: int = 200, db_path: Path | None = None) -> dict[str
                 "total_utility": row["total_utility"],
                 "gini_total_norm": row["gini_total_norm"],
                 "gini_base_norm": row["gini_base_norm"],
+                "metrics_extended": metrics,
                 "summary_line": summary_line,
             }
         )
@@ -522,10 +603,16 @@ def _build_run_history_stats(limit: int = 200, db_path: Path | None = None) -> d
             """
             SELECT
                 id, move_type, objective_scope, improve_mode,
-                total_utility, gini_total_norm, gini_base_norm
-            FROM run_history
+                total_utility, gini_total_norm, gini_base_norm, metrics_extended_json
+            FROM (
+                SELECT
+                    id, move_type, objective_scope, improve_mode,
+                    total_utility, gini_total_norm, gini_base_norm, metrics_extended_json
+                FROM run_history
+                ORDER BY id DESC
+                LIMIT ?
+            )
             ORDER BY id ASC
-            LIMIT ?
             """,
             (safe_limit,),
         ).fetchall()
@@ -547,6 +634,7 @@ def _build_run_history_stats(limit: int = 200, db_path: Path | None = None) -> d
         total_utility = float(row["total_utility"])
         gini_total_norm = float(row["gini_total_norm"])
         gini_base_norm = float(row["gini_base_norm"])
+        metrics = _history_metrics_from_row(row)
 
         trend_point = {
             "run_index": idx,
@@ -554,10 +642,10 @@ def _build_run_history_stats(limit: int = 200, db_path: Path | None = None) -> d
             "move_type": move_type,
             "objective_scope": objective_scope,
             "improve_mode": mode,
-            "total_utility": total_utility,
-            "gini_total_norm": gini_total_norm,
-            "gini_base_norm": gini_base_norm,
         }
+        for key in HISTORY_METRIC_KEYS:
+            if key in metrics:
+                trend_point[key] = metrics[key]
         trend.append(trend_point)
 
         if mode not in mode_acc:
@@ -566,21 +654,34 @@ def _build_run_history_stats(limit: int = 200, db_path: Path | None = None) -> d
                 "move_type": move_type,
                 "objective_scope": objective_scope,
                 "runs": 0,
-                "sum_total_utility": 0.0,
-                "best_total_utility": total_utility,
-                "sum_gini_total_norm": 0.0,
-                "min_gini_total_norm": gini_total_norm,
-                "sum_gini_base_norm": 0.0,
-                "min_gini_base_norm": gini_base_norm,
             }
+            for key in HISTORY_METRIC_KEYS:
+                mode_acc[mode][f"sum_{key}"] = 0.0
+                mode_acc[mode][f"count_{key}"] = 0
+            for key in HISTORY_MAX_METRIC_KEYS:
+                mode_acc[mode][f"best_{key}"] = None
+            for key in HISTORY_MIN_METRIC_KEYS:
+                mode_acc[mode][f"min_{key}"] = None
         bucket = mode_acc[mode]
         bucket["runs"] += 1
-        bucket["sum_total_utility"] += total_utility
-        bucket["best_total_utility"] = max(bucket["best_total_utility"], total_utility)
-        bucket["sum_gini_total_norm"] += gini_total_norm
-        bucket["min_gini_total_norm"] = min(bucket["min_gini_total_norm"], gini_total_norm)
-        bucket["sum_gini_base_norm"] += gini_base_norm
-        bucket["min_gini_base_norm"] = min(bucket["min_gini_base_norm"], gini_base_norm)
+        for key in HISTORY_METRIC_KEYS:
+            value = metrics.get(key)
+            if value is None or not math.isfinite(value):
+                continue
+            bucket[f"sum_{key}"] += value
+            bucket[f"count_{key}"] += 1
+        for key in HISTORY_MAX_METRIC_KEYS:
+            value = metrics.get(key)
+            if value is None or not math.isfinite(value):
+                continue
+            current = bucket[f"best_{key}"]
+            bucket[f"best_{key}"] = value if current is None else max(float(current), value)
+        for key in HISTORY_MIN_METRIC_KEYS:
+            value = metrics.get(key)
+            if value is None or not math.isfinite(value):
+                continue
+            current = bucket[f"min_{key}"]
+            bucket[f"min_{key}"] = value if current is None else min(float(current), value)
 
         utility_candidate = {
             "run_index": idx,
@@ -631,14 +732,18 @@ def _build_run_history_stats(limit: int = 200, db_path: Path | None = None) -> d
                 "move_type": str(bucket["move_type"]),
                 "objective_scope": str(bucket["objective_scope"]),
                 "runs": runs,
-                "avg_total_utility": (bucket["sum_total_utility"] / runs if runs > 0 else 0.0),
-                "best_total_utility": float(bucket["best_total_utility"]),
-                "avg_gini_total_norm": (bucket["sum_gini_total_norm"] / runs if runs > 0 else 0.0),
-                "min_gini_total_norm": float(bucket["min_gini_total_norm"]),
-                "avg_gini_base_norm": (bucket["sum_gini_base_norm"] / runs if runs > 0 else 0.0),
-                "min_gini_base_norm": float(bucket["min_gini_base_norm"]),
             }
         )
+        out = by_mode[-1]
+        for key in HISTORY_METRIC_KEYS:
+            count = int(bucket.get(f"count_{key}", 0))
+            out[f"avg_{key}"] = (
+                float(bucket[f"sum_{key}"]) / count if count > 0 else None
+            )
+        for key in HISTORY_MAX_METRIC_KEYS:
+            out[f"best_{key}"] = bucket.get(f"best_{key}")
+        for key in HISTORY_MIN_METRIC_KEYS:
+            out[f"min_{key}"] = bucket.get(f"min_{key}")
 
     return {
         "ok": True,
@@ -691,6 +796,28 @@ def _stddev(values: list[float]) -> float:
     return math.sqrt(sum((value - mean) ** 2 for value in values) / len(values))
 
 
+def _history_metrics_from_row(row: sqlite3.Row) -> dict[str, float]:
+    metrics: dict[str, float] = {}
+    raw_metrics = row["metrics_extended_json"] if "metrics_extended_json" in row.keys() else None
+    if raw_metrics:
+        try:
+            loaded = json.loads(str(raw_metrics))
+        except json.JSONDecodeError:
+            loaded = {}
+        if isinstance(loaded, dict):
+            for key, value in loaded.items():
+                try:
+                    metrics[str(key)] = float(value)
+                except (TypeError, ValueError):
+                    continue
+
+    # Backward-compatible fallbacks for history rows saved before extended metrics existed.
+    metrics.setdefault("total_utility", float(row["total_utility"]))
+    metrics.setdefault("gini_total_norm", float(row["gini_total_norm"]))
+    metrics.setdefault("gini_base_norm", float(row["gini_base_norm"]))
+    return metrics
+
+
 def _run_mode_comparison_task(task: dict[str, Any]) -> dict[str, Any]:
     result = run_hbs_social(
         Path(str(task["csv_a"])),
@@ -712,6 +839,7 @@ def _run_mode_comparison_task(task: dict[str, Any]) -> dict[str, Any]:
         "total_utility": float(result.summary.total_utility),
         "gini_total_norm": float(result.summary.gini_total_norm),
         "gini_base_norm": float(result.summary.gini_base_norm),
+        "metrics_extended": result.metrics_extended.values,
     }
 
 
@@ -935,6 +1063,7 @@ def _run_payload(payload: dict[str, Any]) -> dict[str, Any]:
             total_utility=result.summary.total_utility,
             gini_total_norm=result.summary.gini_total_norm,
             gini_base_norm=result.summary.gini_base_norm,
+            metrics_extended=result.metrics_extended.values,
         )
 
         return {
@@ -1118,6 +1247,7 @@ def _run_mode_comparison_payload(payload: dict[str, Any]) -> dict[str, Any]:
                     total_utility=float(row["total_utility"]),
                     gini_total_norm=float(row["gini_total_norm"]),
                     gini_base_norm=float(row["gini_base_norm"]),
+                    metrics_extended=dict(row.get("metrics_extended") or {}),
                 )
             )
 
@@ -1128,35 +1258,65 @@ def _run_mode_comparison_payload(payload: dict[str, Any]) -> dict[str, Any]:
             total_values: list[float] = []
             g_total_values: list[float] = []
             g_base_values: list[float] = []
+            metric_values: dict[str, list[float]] = {key: [] for key in HISTORY_METRIC_KEYS}
             seeds: list[int] = []
             for row in rows:
                 seeds.append(int(row["seed"]))
                 total_values.append(float(row["total_utility"]))
                 g_total_values.append(float(row["gini_total_norm"]))
                 g_base_values.append(float(row["gini_base_norm"]))
+                metrics = dict(row.get("metrics_extended") or {})
+                metrics.setdefault("total_utility", float(row["total_utility"]))
+                metrics.setdefault("gini_total_norm", float(row["gini_total_norm"]))
+                metrics.setdefault("gini_base_norm", float(row["gini_base_norm"]))
+                for key in HISTORY_METRIC_KEYS:
+                    try:
+                        value = float(metrics[key])
+                    except (KeyError, TypeError, ValueError):
+                        continue
+                    if math.isfinite(value):
+                        metric_values[key].append(value)
 
-            by_mode.append(
-                {
-                    "improve_mode": mode,
-                    "move_type": move_type,
-                    "objective_scope": objective_scope,
-                    "runs": batch_size,
-                    "seed_start": min(seeds),
-                    "seed_end": max(seeds),
-                    "avg_total_utility": _mean(total_values),
-                    "best_total_utility": max(total_values),
-                    "std_total_utility": _stddev(total_values),
-                    "avg_gini_total_norm": _mean(g_total_values),
-                    "min_gini_total_norm": min(g_total_values),
-                    "std_gini_total_norm": _stddev(g_total_values),
-                    "avg_gini_base_norm": _mean(g_base_values),
-                    "min_gini_base_norm": min(g_base_values),
-                    "std_gini_base_norm": _stddev(g_base_values),
-                }
-            )
+            out_row: dict[str, Any] = {
+                "improve_mode": mode,
+                "move_type": move_type,
+                "objective_scope": objective_scope,
+                "runs": batch_size,
+                "seed_start": min(seeds),
+                "seed_end": max(seeds),
+            }
+            for key, values in metric_values.items():
+                out_row[f"avg_{key}"] = _mean(values)
+                out_row[f"std_{key}"] = _stddev(values)
+                if key in HISTORY_MAX_METRIC_KEYS:
+                    out_row[f"best_{key}"] = max(values) if values else 0.0
+                if key in HISTORY_MIN_METRIC_KEYS:
+                    out_row[f"min_{key}"] = min(values) if values else 0.0
+
+            # Preserve legacy response keys used by older UI/tests.
+            out_row.setdefault("avg_total_utility", _mean(total_values))
+            out_row.setdefault("best_total_utility", max(total_values))
+            out_row.setdefault("std_total_utility", _stddev(total_values))
+            out_row.setdefault("avg_gini_total_norm", _mean(g_total_values))
+            out_row.setdefault("min_gini_total_norm", min(g_total_values))
+            out_row.setdefault("std_gini_total_norm", _stddev(g_total_values))
+            out_row.setdefault("avg_gini_base_norm", _mean(g_base_values))
+            out_row.setdefault("min_gini_base_norm", min(g_base_values))
+            out_row.setdefault("std_gini_base_norm", _stddev(g_base_values))
+            by_mode.append(out_row)
 
     best_utility = max(by_mode, key=lambda row: row["avg_total_utility"]) if by_mode else None
     best_fairness = min(by_mode, key=lambda row: row["avg_gini_total_norm"]) if by_mode else None
+    best_friend = (
+        max(by_mode, key=lambda row: row.get("avg_mean_friend_norm_assigned", 0.0))
+        if by_mode
+        else None
+    )
+    best_social_opportunity_fairness = (
+        min(by_mode, key=lambda row: row.get("avg_gini_friend_opportunity_norm", 1.0))
+        if by_mode
+        else None
+    )
     return {
         "ok": True,
         "run_history_ids": history_ids,
@@ -1180,6 +1340,8 @@ def _run_mode_comparison_payload(payload: dict[str, Any]) -> dict[str, Any]:
             "runs_total": len(by_mode) * batch_size,
             "best_avg_utility_mode": best_utility,
             "best_avg_fairness_mode": best_fairness,
+            "best_avg_friend_mode": best_friend,
+            "best_avg_social_opportunity_fairness_mode": best_social_opportunity_fairness,
         },
     }
 

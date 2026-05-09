@@ -253,7 +253,7 @@ class _HbsSocialDraftEngine:
         """
         Order-independent welfare contribution for a single student based on the final allocation.
 
-        W_s = Σ_{c ∈ Alloc(s)} [ Base(s,c) + λ * FriendOverlap(s,c) ]
+        W_s = Σ_{c ∈ Alloc(s)} [(1 - λ_s) * Base(s,c) + λ_s * FriendOverlapNorm(s,c)]
         """
 
         friends = self._friends_list.get(student_id, ())
@@ -1341,20 +1341,44 @@ class _HbsSocialDraftEngine:
         per_student_total: list[float] = []
         per_student_base: list[float] = []
         per_student_friend: list[float] = []
+        per_student_friend_norm: list[float] = []
         per_student_max_base: list[float] = []
         per_student_max_total: list[float] = []
         per_student_max_friend: list[float] = []
+        per_student_max_friend_norm: list[float] = []
         per_student_max_overlaps: list[int] = []
 
         for student_id in self._students:
             base_sum, friend_sum = self._student_welfare_components(student_id)
+            friend_norm_sum = 0.0
+            friend_max = self._max_friend_bonus(student_id)
+            for course_id in sorted(self._alloc_set[student_id]):
+                course_friend_sum = 0.0
+                for friend_id in self._friends_list.get(student_id, ()):
+                    if course_id in self._alloc_set[friend_id]:
+                        course_friend_sum += self._friend_preference_utility(
+                            student_id,
+                            friend_id,
+                            course_id,
+                        )
+                friend_norm_sum += course_friend_sum / friend_max
+
             total = self._student_welfare(student_id)
             per_student_base.append(base_sum)
             per_student_friend.append(friend_sum)
+            per_student_friend_norm.append(friend_norm_sum)
             per_student_total.append(total)
             per_student_max_base.append(self._max_possible_base(student_id))
             per_student_max_total.append(self._max_possible_total_upper(student_id))
             per_student_max_friend.append(self._max_possible_friend_upper(student_id))
+            friend_norm_upper_values = [
+                self._friend_sum_by_student_course.get((student_id, course_id), 0.0) / friend_max
+                for course_id in self._courses
+            ]
+            friend_norm_upper_values.sort(reverse=True)
+            per_student_max_friend_norm.append(
+                sum(friend_norm_upper_values[: self._config.max_courses])
+            )
             per_student_max_overlaps.append(self._max_possible_overlap_count(student_id))
 
         per_student_base_norm = [
@@ -1383,11 +1407,13 @@ class _HbsSocialDraftEngine:
             per_student_total=per_student_total,
             per_student_base=per_student_base,
             per_student_friend=per_student_friend,
+            per_student_friend_norm=per_student_friend_norm,
             per_student_total_norm=per_student_total_norm,
             per_student_base_norm=per_student_base_norm,
             per_student_max_total=per_student_max_total,
             per_student_max_base=per_student_max_base,
             per_student_max_friend=per_student_max_friend,
+            per_student_max_friend_norm=per_student_max_friend_norm,
             per_student_max_overlaps=per_student_max_overlaps,
         )
         return summary, metrics
@@ -1398,19 +1424,23 @@ class _HbsSocialDraftEngine:
         per_student_total: list[float],
         per_student_base: list[float],
         per_student_friend: list[float],
+        per_student_friend_norm: list[float],
         per_student_total_norm: list[float],
         per_student_base_norm: list[float],
         per_student_max_total: list[float],
         per_student_max_base: list[float],
         per_student_max_friend: list[float],
+        per_student_max_friend_norm: list[float],
         per_student_max_overlaps: list[int],
     ) -> ExtendedMetrics:
         n_students = len(self._students)
         total_base = sum(per_student_base)
         total_friend = sum(per_student_friend)
+        total_friend_norm = sum(per_student_friend_norm)
         total_max_base = sum(per_student_max_base)
         total_max_total = sum(per_student_max_total)
         total_max_friend = sum(per_student_max_friend)
+        total_max_friend_norm = sum(per_student_max_friend_norm)
 
         avg_courses = sum(len(self._alloc_set[s]) for s in self._students) / n_students
         full_alloc = sum(1 for s in self._students if len(self._alloc_set[s]) >= self._config.max_courses)
@@ -1424,10 +1454,28 @@ class _HbsSocialDraftEngine:
         course_fill_rate_mean = sum(fill_rates) / len(fill_rates) if fill_rates else 0.0
 
         positions: list[int] = []
+        assigned_base_values: list[float] = []
+        assigned_friend_norm_values: list[float] = []
+        assigned_friend_norm_base_ratios: list[float] = []
         top1 = 0
         top3 = 0
+        assignments_with_zero_friend_norm = 0
         for student_id in self._students:
+            friend_max = self._max_friend_bonus(student_id)
             for course_id in self._alloc_set[student_id]:
+                base = self._base_utility(student_id, course_id)
+                friend_raw = 0.0
+                for friend_id in self._friends_list.get(student_id, ()):
+                    if course_id in self._alloc_set[friend_id]:
+                        friend_raw += self._friend_preference_utility(student_id, friend_id, course_id)
+                friend_norm = friend_raw / friend_max
+                assigned_base_values.append(base)
+                assigned_friend_norm_values.append(friend_norm)
+                if base > 0.0:
+                    assigned_friend_norm_base_ratios.append(friend_norm / base)
+                if friend_norm <= 1e-12:
+                    assignments_with_zero_friend_norm += 1
+
                 row = self._indiv_by_key.get((student_id, course_id))
                 if row is None:
                     continue
@@ -1441,6 +1489,18 @@ class _HbsSocialDraftEngine:
         median_position = positions_sorted[len(positions_sorted) // 2] if positions_sorted else 0.0
         share_top1 = top1 / len(positions) if positions else 0.0
         share_top3 = top3 / len(positions) if positions else 0.0
+        assigned_base_sorted = sorted(assigned_base_values)
+        assigned_friend_norm_sorted = sorted(assigned_friend_norm_values)
+        assigned_ratio_sorted = sorted(assigned_friend_norm_base_ratios)
+        assignments_count = len(assigned_base_values)
+
+        def _median(values: list[float]) -> float:
+            if not values:
+                return 0.0
+            mid = len(values) // 2
+            if len(values) % 2 == 1:
+                return values[mid]
+            return (values[mid - 1] + values[mid]) / 2.0
 
         overlaps_total = 0
         students_with_overlap = 0
@@ -1463,6 +1523,17 @@ class _HbsSocialDraftEngine:
 
         total_utility = compute_total_utility(per_student_total)
         avg_utility = total_utility / n_students if n_students else 0.0
+        total_utility_norm = total_utility / total_max_total if total_max_total > 0.0 else 0.0
+        per_student_friend_opportunity_norm = [
+            (u / max_u if max_u > 0.0 else 1.0)
+            for u, max_u in zip(per_student_friend_norm, per_student_max_friend_norm)
+        ]
+        students_no_friend_bonus_opportunity = sum(
+            1 for max_u in per_student_max_friend_norm if max_u <= 0.0
+        )
+        students_no_observed_friend_bonus = sum(
+            1 for u in per_student_friend_norm if u <= 1e-12
+        )
 
         sorted_total = sorted(per_student_total)
 
@@ -1474,8 +1545,11 @@ class _HbsSocialDraftEngine:
 
         metrics = {
             "total_utility": total_utility,
+            "total_utility_norm": total_utility_norm,
             "total_base_utility": total_base,
             "total_friend_utility": total_friend,
+            "total_friend_utility_raw": total_friend,
+            "total_friend_utility_norm": total_friend_norm,
             "avg_utility_per_student": avg_utility,
             "avg_courses_per_student": avg_courses,
             "students_full_alloc_rate": students_full_alloc_rate,
@@ -1485,10 +1559,49 @@ class _HbsSocialDraftEngine:
             "median_position": float(median_position),
             "share_top1": share_top1,
             "share_top3": share_top3,
+            "mean_base_assigned": (
+                sum(assigned_base_values) / assignments_count if assignments_count else 0.0
+            ),
+            "median_base_assigned": _median(assigned_base_sorted),
+            "min_base_assigned": min(assigned_base_values) if assigned_base_values else 0.0,
+            "max_base_assigned": max(assigned_base_values) if assigned_base_values else 0.0,
+            "mean_friend_norm_assigned": (
+                sum(assigned_friend_norm_values) / assignments_count if assignments_count else 0.0
+            ),
+            "median_friend_norm_assigned": _median(assigned_friend_norm_sorted),
+            "min_friend_norm_assigned": (
+                min(assigned_friend_norm_values) if assigned_friend_norm_values else 0.0
+            ),
+            "max_friend_norm_assigned": (
+                max(assigned_friend_norm_values) if assigned_friend_norm_values else 0.0
+            ),
+            "friend_norm_base_ratio_mean": (
+                sum(assigned_friend_norm_base_ratios) / len(assigned_friend_norm_base_ratios)
+                if assigned_friend_norm_base_ratios
+                else 0.0
+            ),
+            "friend_norm_base_ratio_median": _median(assigned_ratio_sorted),
+            "friend_norm_base_ratio_max": (
+                max(assigned_friend_norm_base_ratios) if assigned_friend_norm_base_ratios else 0.0
+            ),
+            "share_assignments_friend_norm_zero": (
+                assignments_with_zero_friend_norm / assignments_count if assignments_count else 0.0
+            ),
+            "share_students_no_friend_bonus_opportunity": (
+                students_no_friend_bonus_opportunity / n_students if n_students else 0.0
+            ),
+            "share_students_no_observed_friend_bonus": (
+                students_no_observed_friend_bonus / n_students if n_students else 0.0
+            ),
             "avg_friend_overlaps_per_student": avg_friend_overlaps,
             "share_students_with_any_friend_overlap": share_students_with_overlap,
+            "gini_total_raw": compute_gini_index(per_student_total),
             "gini_total_norm": compute_gini_index(per_student_total_norm),
+            "gini_base_raw": compute_gini_index(per_student_base),
             "gini_base_norm": compute_gini_index(per_student_base_norm),
+            "gini_friend_raw": compute_gini_index(per_student_friend),
+            "gini_friend_norm": compute_gini_index(per_student_friend_norm),
+            "gini_friend_opportunity_norm": compute_gini_index(per_student_friend_opportunity_norm),
             "jain_index": compute_jain_index(per_student_total),
             "theil_index": compute_theil_index(per_student_total),
             "atkinson_index_e0_5": compute_atkinson_index(per_student_total, epsilon=0.5),
@@ -1507,12 +1620,16 @@ class _HbsSocialDraftEngine:
             students_with_friend_prefs / n_students if n_students else 0.0
         )
         max_course_rank = float(len(self._courses)) if self._courses else 0.0
+        max_friend_norm_base_ratio = max(0.0, max_course_rank - 1.0)
         total_seats = float(len(self._courses) * self._config.default_capacity)
 
         maxima = {
             "total_utility": total_max_total,
+            "total_utility_norm": 1.0,
             "total_base_utility": total_max_base,
             "total_friend_utility": total_max_friend,
+            "total_friend_utility_raw": total_max_friend,
+            "total_friend_utility_norm": total_max_friend_norm,
             "avg_utility_per_student": (total_max_total / n_students if n_students else 0.0),
             "avg_courses_per_student": float(self._config.max_courses),
             "students_full_alloc_rate": 1.0,
@@ -1522,10 +1639,29 @@ class _HbsSocialDraftEngine:
             "median_position": max_course_rank,
             "share_top1": 1.0,
             "share_top3": 1.0,
+            "mean_base_assigned": 1.0,
+            "median_base_assigned": 1.0,
+            "min_base_assigned": 1.0,
+            "max_base_assigned": 1.0,
+            "mean_friend_norm_assigned": 1.0,
+            "median_friend_norm_assigned": 1.0,
+            "min_friend_norm_assigned": 1.0,
+            "max_friend_norm_assigned": 1.0,
+            "friend_norm_base_ratio_mean": max_friend_norm_base_ratio,
+            "friend_norm_base_ratio_median": max_friend_norm_base_ratio,
+            "friend_norm_base_ratio_max": max_friend_norm_base_ratio,
+            "share_assignments_friend_norm_zero": 1.0,
+            "share_students_no_friend_bonus_opportunity": 1.0,
+            "share_students_no_observed_friend_bonus": 1.0,
             "avg_friend_overlaps_per_student": avg_overlaps_max,
             "share_students_with_any_friend_overlap": share_possible_overlap,
+            "gini_total_raw": 1.0,
             "gini_total_norm": 1.0,
+            "gini_base_raw": 1.0,
             "gini_base_norm": 1.0,
+            "gini_friend_raw": 1.0,
+            "gini_friend_norm": 1.0,
+            "gini_friend_opportunity_norm": 1.0,
             "jain_index": 1.0,
             "theil_index": (math.log(n_students) if n_students > 0 else 0.0),
             "atkinson_index_e0_5": 1.0,
