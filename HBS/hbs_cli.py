@@ -46,9 +46,30 @@ def _parse_args() -> argparse.Namespace:
     )
     p.add_argument(
         "--improve-mode",
-        choices=["swap", "add-drop"],
+        choices=["swap", "add-drop", "hybrid"],
         default="swap",
-        help="Режим улучшений после драфта: swap (обмены) или add-drop (HBS-style)",
+        help=(
+            "Режим улучшений после драфта: swap (обмены), add-drop (HBS-style) "
+            "или hybrid (add-drop пас + лучший своп в каждой итерации)"
+        ),
+    )
+    p.add_argument(
+        "--pick-rule",
+        choices=["personal", "social"],
+        default="personal",
+        help=(
+            "Правило выбора на пике: personal (своя полезность) или social "
+            "(маржинальный вклад в глобальное welfare, учитывает внешние эффекты дружбы)"
+        ),
+    )
+    p.add_argument(
+        "--sequence",
+        choices=["snake", "round-robin", "n-first"],
+        default="snake",
+        help=(
+            "Picking sequence: snake (balanced alternation), round-robin (1..n каждый раунд), "
+            "n-first (1..n, затем n..1 в каждом последующем раунде; лучшая MMS-гарантия)"
+        ),
     )
     p.add_argument("--seed", type=int, default=42)
     p.add_argument(
@@ -110,6 +131,8 @@ def main() -> int:
         draft_rounds=args.draft_rounds,
         post_iters=(args.post_iters if args.post_iters is not None else 0),
         improve_mode=args.improve_mode,
+        sequence=args.sequence,
+        pick_rule=args.pick_rule,
         seed=args.seed,
         progress=args.progress,
         sanity_checks=args.sanity_checks,

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 
 @dataclass(frozen=True)
@@ -51,6 +51,9 @@ class RunSummary:
     total_utility: float
     gini_total_norm: float
     gini_base_norm: float
+    total_utility_max: float = 0.0
+    gini_total_norm_max: float = 1.0
+    gini_base_norm_max: float = 1.0
 
 
 @dataclass(frozen=True)
@@ -58,6 +61,7 @@ class ExtendedMetrics:
     """Additional metrics for deeper analysis (exported to metrics_extended CSV)."""
 
     values: dict[str, float]
+    maxima: dict[str, float] = field(default_factory=dict)
 
 
 @dataclass(frozen=True)

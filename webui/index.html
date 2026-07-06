@@ -1,0 +1,1164 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HBS Social — панель экспериментов</title>
+<style>
+  :root {
+    --paper: #f9f9f7;
+    --surface: #fcfcfb;
+    --ink: #0b0b0b;
+    --ink-2: #52514e;
+    --muted: #898781;
+    --hair: #e1e0d9;
+    --ring: rgba(11,11,11,0.10);
+    --accent: #2a78d6;
+    --accent-deep: #184f95;
+    --accent-wash: #eaf2fc;
+    --opt: #1baf7a;
+    --crit: #d03b3b;
+    --crit-wash: #fbeaea;
+    --bar-track: #eeede8;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper: #0d0d0d;
+      --surface: #1a1a19;
+      --ink: #ffffff;
+      --ink-2: #c3c2b7;
+      --muted: #898781;
+      --hair: #2c2c2a;
+      --ring: rgba(255,255,255,0.10);
+      --accent: #3987e5;
+      --accent-deep: #86b6ef;
+      --accent-wash: #14212e;
+      --opt: #199e70;
+      --crit: #e66767;
+      --crit-wash: #2e1414;
+      --bar-track: #242423;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--paper); color: var(--ink);
+    font: 14px/1.55 system-ui, -apple-system, "Segoe UI", sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  code, .mono { font-family: ui-monospace, Consolas, "Cascadia Mono", monospace; }
+
+  header.top {
+    display: flex; align-items: baseline; gap: 14px;
+    padding: 18px 28px; border-bottom: 1px solid var(--hair);
+  }
+  header.top h1 { font-size: 17px; font-weight: 700; margin: 0; letter-spacing: -0.01em; }
+  header.top .sub { color: var(--muted); font-size: 13px; }
+
+  .layout { display: grid; grid-template-columns: 350px 1fr; gap: 24px; padding: 24px 28px 60px; max-width: 1400px; margin: 0 auto; }
+  @media (max-width: 900px) { .layout { grid-template-columns: 1fr; } }
+
+  /* ---------- panels ---------- */
+  .card {
+    background: var(--surface); border: 1px solid var(--ring); border-radius: 8px;
+    padding: 18px; margin-bottom: 16px;
+  }
+  .card h2 {
+    margin: 0 0 14px; font-size: 12px; font-weight: 700; letter-spacing: 0.09em;
+    text-transform: uppercase; color: var(--ink-2);
+  }
+  .field { margin-bottom: 12px; }
+  .field label { display: block; font-size: 12.5px; color: var(--ink-2); margin-bottom: 4px; }
+  .field input, .field select {
+    width: 100%; padding: 7px 10px; font: inherit; color: var(--ink);
+    background: var(--paper); border: 1px solid var(--hair); border-radius: 6px;
+  }
+  .field input:focus-visible, .field select:focus-visible, button:focus-visible {
+    outline: 2px solid var(--accent); outline-offset: 1px;
+  }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+  .hint { font-size: 12px; color: var(--muted); margin-top: 4px; }
+
+  button {
+    font: inherit; font-weight: 600; border-radius: 6px; cursor: pointer;
+    border: 1px solid var(--hair); background: var(--paper); color: var(--ink);
+    padding: 8px 14px;
+  }
+  button:hover { border-color: var(--muted); }
+  button.primary {
+    width: 100%; padding: 12px; font-size: 15px;
+    background: var(--accent); border-color: var(--accent); color: #fff;
+  }
+  button.primary:hover { background: var(--accent-deep); border-color: var(--accent-deep); }
+  button.primary:disabled { opacity: 0.55; cursor: wait; }
+  button.ghost { font-size: 12.5px; padding: 5px 10px; color: var(--ink-2); }
+
+  .warn { font-size: 12.5px; color: var(--ink-2); background: var(--accent-wash); border-radius: 6px; padding: 8px 10px; margin-top: 10px; display: none; }
+
+  /* ---------- results ---------- */
+  .banner-error {
+    display: none; background: var(--crit-wash); border: 1px solid var(--crit);
+    color: var(--ink); border-radius: 8px; padding: 12px 16px; margin-bottom: 16px; font-size: 13.5px;
+  }
+  .banner-error b { color: var(--crit); }
+
+  .empty {
+    border: 1px dashed var(--hair); border-radius: 8px; padding: 48px 24px;
+    text-align: center; color: var(--muted);
+  }
+  .empty .big { font-size: 34px; margin-bottom: 8px; }
+
+  .run-live { display: none; }
+  .run-live .board-wrap { overflow-x: auto; }
+  #viz_board { width: 100%; height: auto; display: block; min-width: 560px; }
+  .stage-note { font-size: 12.5px; color: var(--muted); margin: -6px 0 10px; min-height: 1.4em; }
+  .viz-cap { font: 10.5px ui-monospace, Consolas, monospace; fill: var(--muted); letter-spacing: 0.08em; text-transform: uppercase; }
+  .viz-head-lbl { font: 700 11px ui-monospace, Consolas, monospace; fill: var(--accent-deep); }
+  .viz-room-lbl { font: 10.5px ui-monospace, Consolas, monospace; fill: var(--ink-2); }
+  .viz-float { font: 700 12px ui-monospace, Consolas, monospace; }
+
+  .sparks { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 12px; }
+  @media (max-width: 640px) { .sparks { grid-template-columns: 1fr; } }
+  .spark-card { border: 1px solid var(--hair); border-radius: 8px; padding: 9px 12px 6px; background: var(--paper); }
+  .spark-top { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px; }
+  .spark-k { font-size: 11px; text-transform: uppercase; letter-spacing: 0.07em; color: var(--muted); }
+  .spark-v { font-weight: 700; font-size: 15px; font-variant-numeric: tabular-nums; }
+  .spark-card svg { width: 100%; height: 56px; display: block; }
+
+  .progress-track { background: var(--bar-track); border-radius: 4px; height: 8px; margin: 10px 0 8px; overflow: hidden; }
+  .progress-fill {
+    background: var(--accent); height: 8px; border-radius: 4px; width: 0%;
+    transition: width 0.25s linear;
+  }
+  .run-meta { display: flex; justify-content: space-between; gap: 12px; font-size: 13px; color: var(--ink-2); margin-bottom: 10px; }
+  .run-meta .stage { font-weight: 600; color: var(--ink); }
+  .feed { font-family: ui-monospace, Consolas, "Cascadia Mono", monospace; font-size: 12.5px; line-height: 1.8; min-height: 0; }
+  .feed div { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .feed div:nth-child(1) { opacity: 1; }
+  .feed div:nth-child(2) { opacity: 0.75; }
+  .feed div:nth-child(3) { opacity: 0.55; }
+  .feed div:nth-child(4) { opacity: 0.4; }
+  .feed div:nth-child(5) { opacity: 0.3; }
+  .feed div:nth-child(n+6) { opacity: 0.2; }
+  .feed .d { color: var(--opt); font-weight: 600; }
+
+  .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-bottom: 16px; }
+  .tile { background: var(--surface); border: 1px solid var(--ring); border-radius: 8px; padding: 13px 14px 11px; }
+  .tile .v { font-size: 24px; font-weight: 700; line-height: 1.15; }
+  .tile .v small { font-size: 13px; font-weight: 600; color: var(--ink-2); }
+  .tile .k { font-size: 11.5px; color: var(--muted); margin-top: 3px; letter-spacing: 0.02em; }
+  .tile.acc .v { color: var(--accent-deep); }
+
+  .tbl-wrap { overflow-x: auto; }
+  table { border-collapse: collapse; width: 100%; font-size: 13px; }
+  th, td { padding: 7px 10px; text-align: right; border-top: 1px solid var(--hair); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  th { font-size: 11px; text-transform: uppercase; letter-spacing: 0.07em; color: var(--muted); border-top: none; font-weight: 600; }
+  th:first-child, td:first-child { text-align: left; }
+  td.best { color: var(--accent-deep); font-weight: 700; }
+  tr.sel { background: var(--accent-wash); }
+
+  .bar-row { display: grid; grid-template-columns: 210px 1fr 110px; gap: 10px; align-items: center; margin-bottom: 8px; font-size: 12.5px; }
+  .bar-row .name { color: var(--ink-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .bar-track { background: var(--bar-track); border-radius: 4px; height: 18px; position: relative; }
+  .bar-fill { background: var(--accent); border-radius: 4px; height: 18px; min-width: 2px; }
+  .bar-fill.best { background: var(--opt); }
+  .bar-val { font-variant-numeric: tabular-nums; color: var(--ink); font-weight: 600; }
+  .bar-val small { color: var(--muted); font-weight: 400; }
+
+  details { border-top: 1px solid var(--hair); margin-top: 6px; }
+  details summary { cursor: pointer; padding: 10px 0; font-weight: 600; font-size: 13px; color: var(--ink-2); }
+  details summary:hover { color: var(--ink); }
+
+  .search { display: flex; gap: 10px; margin-bottom: 10px; }
+  .search input { flex: 1; padding: 7px 10px; font: inherit; background: var(--paper); color: var(--ink); border: 1px solid var(--hair); border-radius: 6px; }
+  .chip { display: inline-block; background: var(--bar-track); border-radius: 4px; padding: 1px 7px; margin: 1px 2px 1px 0; font-size: 12px; font-family: ui-monospace, Consolas, monospace; }
+  .section-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+  .section-head h2 { margin: 0; }
+  .section-head .tools { display: flex; align-items: baseline; gap: 10px; }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <h1>HBS Social</h1>
+  <span class="sub">панель экспериментов · снейк-драфт с дружескими предпочтениями</span>
+</header>
+
+<div class="layout">
+
+  <!-- ================= CONFIG ================= -->
+  <aside>
+    <div class="card">
+      <h2>Данные</h2>
+      <div class="field">
+        <label for="csv_a">Таблица 1 — предпочтения по курсам</label>
+        <select id="csv_a"></select>
+      </div>
+      <div class="field">
+        <label for="csv_b">Таблица 2 — дружеские предпочтения</label>
+        <select id="csv_b"></select>
+      </div>
+      <div class="field">
+        <label for="csv_lambda">Таблица 3 — λ по студентам (необязательно)</label>
+        <select id="csv_lambda"><option value="">— не использовать (λ = 0.3) —</option></select>
+      </div>
+
+      <details>
+        <summary>Сгенерировать новые данные</summary>
+        <div class="grid3" style="margin-top:10px">
+          <div class="field"><label for="g_students">Студенты</label><input id="g_students" type="number" value="200" min="2"></div>
+          <div class="field"><label for="g_courses">Курсы</label><input id="g_courses" type="number" value="8" min="2"></div>
+          <div class="field"><label for="g_seed">Seed</label><input id="g_seed" type="number" value="11"></div>
+        </div>
+        <div class="grid2">
+          <div class="field">
+            <label for="g_pop">Популярность (0–1)</label>
+            <input id="g_pop" type="number" value="0.7" min="0" max="1" step="0.1">
+          </div>
+          <div class="field"><label for="g_lambda">λ по умолчанию</label><input id="g_lambda" type="number" value="0.3" min="0" max="1" step="0.05"></div>
+        </div>
+        <p class="hint">Популярность &gt; 0 создаёт конкуренцию за одни и те же курсы — на таких данных методы различимы.</p>
+        <button id="btn_generate" style="width:100%">Сгенерировать в tables/</button>
+      </details>
+    </div>
+
+    <div class="card">
+      <h2>Параметры запуска</h2>
+      <div class="grid3">
+        <div class="field"><label for="p_cap">Мест на курс</label><input id="p_cap" type="number" value="75" min="1"></div>
+        <div class="field"><label for="p_b">Курсов на студента</label><input id="p_b" type="number" value="3" min="1"></div>
+        <div class="field"><label for="p_seed">Seed</label><input id="p_seed" type="number" value="11"></div>
+      </div>
+      <div class="field">
+        <label for="p_sequence">Picking sequence — порядок выбора</label>
+        <select id="p_sequence">
+          <option value="snake">snake — балансная альтернация (1→n, n→1, …)</option>
+          <option value="round-robin">round-robin — 1→n каждый раунд</option>
+          <option value="n-first">n-first — лучшая MMS-гарантия (AAMAS 2026)</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="p_pick">Правило выбора на пике</label>
+        <select id="p_pick">
+          <option value="personal">personal — своя полезность</option>
+          <option value="social">social — вклад в общее welfare (учитывает друзей)</option>
+        </select>
+      </div>
+      <div class="grid2">
+        <div class="field">
+          <label for="p_improve">Постобработка</label>
+          <select id="p_improve">
+            <option value="swap">swap — обмены</option>
+            <option value="add-drop">add-drop — по свободным местам</option>
+            <option value="hybrid">hybrid — add-drop + swap</option>
+          </select>
+        </div>
+        <div class="field"><label for="p_iters">Итераций постфазы</label><input id="p_iters" type="number" value="40" min="0"></div>
+      </div>
+      <div id="swap_warn" class="warn">swap/hybrid с 30+ итерациями на 200 студентах считается ~30–60 секунд — страница дождётся результата.</div>
+      <button id="btn_run" class="primary" style="margin-top:14px">Запустить аллокацию</button>
+    </div>
+  </aside>
+
+  <!-- ================= RESULTS ================= -->
+  <main>
+    <div id="err" class="banner-error"><b>Ошибка.</b> <span id="err_text"></span></div>
+
+    <div id="running" class="card run-live">
+      <div class="section-head">
+        <h2>Идёт распределение</h2>
+        <div class="tools">
+          <span class="mono" id="run_clock" style="color:var(--muted)">0 с</span>
+          <button class="ghost" id="btn_skip" type="button">пропустить анимацию ⏭</button>
+        </div>
+      </div>
+      <div class="stage-note" id="stage_note">подключаюсь…</div>
+      <div class="board-wrap">
+        <svg id="viz_board" viewBox="0 0 960 276" role="img"
+             aria-label="Живая визуализация распределения: очередь студентов, по которой ползёт указатель хода, и аудитории курсов, заполняющиеся точками; на постобработке точки перелетают между аудиториями при обменах и add-drop"></svg>
+      </div>
+      <div class="sparks">
+        <div class="spark-card">
+          <div class="spark-top"><span class="spark-k">общее благо</span><span class="spark-v mono" id="spark_w_v">—</span></div>
+          <svg id="spark_w" viewBox="0 0 300 56" preserveAspectRatio="none" aria-hidden="true"></svg>
+        </div>
+        <div class="spark-card">
+          <div class="spark-top"><span class="spark-k">худший студент</span><span class="spark-v mono" id="spark_min_v">—</span></div>
+          <svg id="spark_min" viewBox="0 0 300 56" preserveAspectRatio="none" aria-hidden="true"></svg>
+        </div>
+      </div>
+      <div class="progress-track"><div class="progress-fill" id="prog_fill"></div></div>
+      <div class="run-meta">
+        <span class="stage" id="run_stage">старт…</span>
+        <span id="run_iter"></span>
+      </div>
+      <div class="feed" id="feed"></div>
+    </div>
+
+    <div id="empty" class="empty">
+      <div class="big">◫◫◫</div>
+      Выбери данные слева (или сгенерируй новые) и нажми «Запустить аллокацию».<br>
+      Каждый запуск добавляется в таблицу сравнения — так удобно сопоставлять методы.
+    </div>
+
+    <div id="results" style="display:none">
+      <div class="tiles" id="tiles"></div>
+
+      <div class="card">
+        <div class="section-head">
+          <h2>Сравнение запусков</h2>
+          <button class="ghost" id="btn_clear">очистить историю</button>
+        </div>
+        <div id="bars"></div>
+        <div class="tbl-wrap">
+          <table id="history">
+            <thead><tr>
+              <th>#</th><th>метод</th><th>полезность</th><th>% от лучшего</th>
+              <th>худший студент</th><th>Джини</th><th>EF1-наруш.</th><th>пересеч. с друзьями</th><th>время</th>
+            </tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <p class="hint" style="margin-top:8px">«% от лучшего» — доля от максимальной суммарной полезности среди запусков в этой таблице. Точный оптимум считается отдельно: <code>experiments/ilp_benchmark.py</code>.</p>
+      </div>
+
+      <div class="card">
+        <h2>Заполняемость курсов (последний запуск)</h2>
+        <div id="fill_bars"></div>
+      </div>
+
+      <div class="card">
+        <h2>Аллокация (последний запуск)</h2>
+        <div class="search">
+          <input id="q_student" type="search" placeholder="Поиск по StudentID, например S17">
+        </div>
+        <div class="tbl-wrap" style="max-height:320px;overflow-y:auto">
+          <table id="alloc_tbl">
+            <thead><tr><th>Студент</th><th style="text-align:left">Курсы</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card">
+        <details>
+          <summary>Все метрики последнего запуска</summary>
+          <div class="tbl-wrap">
+            <table id="metrics_tbl">
+              <thead><tr><th>метрика</th><th>значение</th><th>максимум шкалы</th></tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </details>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+(function () {
+  "use strict";
+  var $ = function (id) { return document.getElementById(id); };
+  var history = [];
+  var lastRun = null;
+  var clockTimer = null;
+
+  // ---------- helpers ----------
+  function fmt(x, digits) {
+    if (x === null || x === undefined) return "—";
+    return Number(x).toLocaleString("ru-RU", { minimumFractionDigits: digits, maximumFractionDigits: digits });
+  }
+  function pct(x) { return fmt(100 * x, 1) + "%"; }
+  function clamp(v, lo, hi) { return v < lo ? lo : (v > hi ? hi : v); }
+  function esc(s) {
+    return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  }
+
+  function api(path, body) {
+    return fetch(path, {
+      method: body ? "POST" : "GET",
+      headers: body ? { "Content-Type": "application/json" } : undefined,
+      body: body ? JSON.stringify(body) : undefined
+    }).then(function (r) {
+      return r.json().then(function (data) {
+        if (!r.ok) throw new Error(data.error || ("HTTP " + r.status));
+        return data;
+      });
+    });
+  }
+
+  function showError(msg) { $("err_text").textContent = msg; $("err").style.display = "block"; }
+  function clearError() { $("err").style.display = "none"; }
+
+  function feedLine(iter, text) {
+    var feed = $("feed");
+    var line = document.createElement("div");
+    var m = String(text).match(/^([\s\S]*?)(\s*Δ\s*(\+[\d.,]+))?$/);
+    line.innerHTML = "#" + iter + "&nbsp;&nbsp;" + esc(m[1]) +
+      (m[3] ? '&nbsp;&nbsp;<span class="d">Δ ' + m[3] + "</span>" : "");
+    feed.insertBefore(line, feed.firstChild);
+    while (feed.children.length > 8) feed.removeChild(feed.lastChild);
+  }
+
+  // ---------- tables list ----------
+  function fillTableSelects(tables, keep) {
+    [["csv_a", "t1"], ["csv_b", "t2"], ["csv_lambda", "t3"]].forEach(function (pair) {
+      var sel = $(pair[0]);
+      var prev = keep ? sel.value : null;
+      var opts = [];
+      if (pair[0] === "csv_lambda") opts.push('<option value="">— не использовать (λ = 0.3) —</option>');
+      tables.forEach(function (name) {
+        opts.push('<option value="' + name + '">' + name + "</option>");
+      });
+      sel.innerHTML = opts.join("");
+      // preselect: previous choice, else first file matching the table prefix
+      var candidates = tables.filter(function (n) { return n.indexOf(pair[1]) === 0; });
+      if (prev && tables.indexOf(prev) >= 0) sel.value = prev;
+      else if (candidates.length) sel.value = candidates[0];
+    });
+  }
+
+  api("/api/tables").then(function (d) {
+    if (!d.tables.length) {
+      showError("В папке tables/ нет CSV — раскрой «Сгенерировать новые данные» слева и создай их.");
+    }
+    fillTableSelects(d.tables, false);
+  }).catch(function (e) { showError(e.message); });
+
+  // ---------- generate ----------
+  $("btn_generate").addEventListener("click", function () {
+    clearError();
+    var btn = this; btn.disabled = true; btn.textContent = "Генерирую…";
+    api("/api/generate", {
+      students: +$("g_students").value, courses: +$("g_courses").value,
+      seed: +$("g_seed").value, popularity_strength: +$("g_pop").value,
+      lambda_default: +$("g_lambda").value
+    }).then(function (d) {
+      fillTableSelects(d.tables, false);
+      $("csv_a").value = d.csv_a; $("csv_b").value = d.csv_b; $("csv_lambda").value = d.csv_lambda;
+    }).catch(function (e) { showError(e.message); })
+      .finally(function () { btn.disabled = false; btn.textContent = "Сгенерировать в tables/"; });
+  });
+
+  // ---------- run warning ----------
+  function swapWarn() {
+    var mode = $("p_improve").value, iters = +$("p_iters").value;
+    $("swap_warn").style.display = (mode !== "add-drop" && iters >= 25) ? "block" : "none";
+  }
+  $("p_improve").addEventListener("change", swapWarn);
+  $("p_iters").addEventListener("input", swapWarn);
+  swapWarn();
+
+  /* =====================================================================
+     Живая визуализация процесса.
+
+     Сервер шлёт структурированные события (viz):
+       init  — очередь студентов (в порядке жеребьёвки), курсы, вместимость;
+       round — начало раунда драфта;
+       pick  — студент s взял курс c (точка летит из очереди в аудиторию);
+       swap  — обмен курсами между двумя студентами (дуги между аудиториями);
+       ad    — add-drop: студент бросил/взял курсы;
+       pass  — итерация постфазы с изменениями; noop — без изменений.
+
+     События проигрываются с комфортной скоростью независимо от того, как
+     быстро идёт расчёт: очередь событий воспроизводится плеером, скорость
+     адаптируется к размеру бэклога. Поэтому анимация видна и на маленьких
+     таблицах, где сам расчёт занимает доли секунды.
+     ===================================================================== */
+  var VIZ = (function () {
+    var svgNS = "http://www.w3.org/2000/svg";
+    var svg = $("viz_board");
+    var reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    var W = 960, H = 276;
+    var STRIP_Y = 32;          // центр линии очереди
+    var ROOM_Y = 96, ROOM_H = 154;
+
+    var STAGE_META = {
+      draft: {
+        label: "Драфт — студенты выбирают курсы",
+        note: function (cfg) {
+          var seq = {
+            "snake": "змейка (1→n, затем n→1 — указатель ползёт туда-обратно)",
+            "round-robin": "round-robin (каждый раунд 1→n)",
+            "n-first": "n-first (раунд 1: 1→n, дальше всегда n→1)"
+          }[cfg.sequence] || cfg.sequence;
+          var rule = cfg.pick_rule === "social"
+            ? "с учётом пользы для друзей (social)"
+            : "по личной полезности (personal)";
+          return "Очередь по жеребьёвке, порядок — " + seq + ". На своём ходе студент берёт лучший доступный курс " + rule + ".";
+        }
+      },
+      swap: {
+        label: "Swap — взаимовыгодные обмены",
+        note: function () {
+          return "Локальный поиск: на каждой итерации применяется лучший обмен курсами между парой студентов, если он повышает общее благо. Δ — прирост welfare, точки перелетают между аудиториями.";
+        }
+      },
+      "add-drop": {
+        label: "Add-drop — пересбор по свободным местам",
+        note: function () {
+          return "Каждый студент заново собирает корзину из своих курсов и курсов со свободными местами — точки перелетают туда, где освободились места.";
+        }
+      },
+      hybrid: {
+        label: "Hybrid — add-drop + обмены",
+        note: function () {
+          return "Каждая итерация: сначала add-drop по свободным местам; если изменений не было — лучший взаимовыгодный обмен (Δ — прирост welfare).";
+        }
+      }
+    };
+
+    var st = null;
+
+    function el(tag, attrs, parent) {
+      var node = document.createElementNS(svgNS, tag);
+      for (var k in attrs) node.setAttribute(k, attrs[k]);
+      (parent || svg).appendChild(node);
+      return node;
+    }
+
+    function freshState(cfg) {
+      return {
+        cfg: cfg, ready: false, stageShown: false,
+        courses: [], cap: 0, order: [], orderIdx: {}, rounds: 1,
+        rooms: {}, ticks: [], tickX: [], seatIdx: {},
+        head: null, headLbl: null, headX: 20, headTX: 20,
+        trail: [], trailX: [], roundLbl: null, roundNo: 1, scan: null,
+        chartW: [], chartMin: [],
+        flights: [], floats: [],
+        queue: [], playing: false, computeDone: false, skip: false,
+        playedIter: 0, totalIter: 1, stage: "draft",
+        dt: 100, dtPick: 40,
+        timer: null, raf: null, drained: null
+      };
+    }
+
+    // ---- сборка доски ----
+    function buildBoard(v) {
+      svg.innerHTML = "";
+      st.courses = v.courses || [];
+      st.cap = v.cap || 1;
+      st.order = v.order || [];
+      st.rounds = v.rounds || 1;
+      st.orderIdx = {};
+      st.order.forEach(function (s, i) { st.orderIdx[s] = i; });
+      st.dtPick = clamp(6500 / Math.max(1, st.order.length * st.rounds), 8, 90);
+      buildStrip();
+      buildRooms();
+      st.ready = true;
+    }
+
+    function buildStrip() {
+      var n = st.order.length;
+      el("text", { x: 20, y: 12, "class": "viz-cap" }).textContent =
+        "очередь студентов (" + n + ")";
+      st.roundLbl = el("text", { x: W - 20, y: 12, "class": "viz-cap", "text-anchor": "end" });
+      st.roundLbl.textContent = "раунд 1/" + st.rounds;
+      st.tickX = []; st.ticks = [];
+      var x0 = 20, x1 = W - 20;
+      var tw = clamp((x1 - x0) / Math.max(1, n) * 0.62, 1.4, 9);
+      for (var i = 0; i < n; i++) {
+        var x = n > 1 ? x0 + i * (x1 - x0) / (n - 1) : (x0 + x1) / 2;
+        st.tickX.push(x);
+        st.ticks.push(el("rect", {
+          x: x - tw / 2, y: STRIP_Y - 9, width: tw, height: 18, rx: 1.5,
+          fill: "var(--bar-track)"
+        }));
+      }
+      // хвост-комета указателя: змейка ползёт по очереди по реальному порядку ходов
+      var headColor = st.cfg.pick_rule === "social" ? "var(--opt)" : "var(--accent)";
+      st.trail = []; st.trailX = [];
+      for (var t = 6; t >= 1; t--) {
+        st.trail.push(el("circle", {
+          cx: 20, cy: STRIP_Y, r: Math.max(1.6, 6 - t * 0.8),
+          fill: headColor, opacity: (0.55 - t * 0.08).toFixed(2)
+        }));
+      }
+      st.headLbl = el("text", { x: 20, y: STRIP_Y + 27, "class": "viz-head-lbl", "text-anchor": "middle", opacity: 0 });
+      st.head = el("circle", { cx: 20, cy: STRIP_Y, r: 7, fill: headColor, opacity: 0 });
+      st.headX = st.headTX = 20;
+    }
+
+    function buildRooms() {
+      var n = st.courses.length;
+      if (!n) return;
+      var pad = 16, gap = 12;
+      var roomW = (W - 2 * pad - gap * (n - 1)) / n;
+      st.rooms = {};
+      st.courses.forEach(function (c, i) {
+        var x = pad + i * (roomW + gap), y = ROOM_Y;
+        el("rect", { x: x, y: y, width: roomW, height: ROOM_H - 26, rx: 7, fill: "var(--surface)", stroke: "var(--hair)" });
+        var flash = el("rect", { x: x, y: y, width: roomW, height: ROOM_H - 26, rx: 7, fill: "var(--accent)", opacity: 0, "pointer-events": "none" });
+        var innerX = x + 5, innerY = y + 6, innerW = roomW - 10, innerH = ROOM_H - 38;
+        var cols = clamp(Math.ceil(Math.sqrt(st.cap * innerW / innerH)), 1, Math.max(1, Math.floor(innerW / 4)));
+        var rows = Math.ceil(st.cap / cols);
+        var cw = innerW / cols, ch = innerH / rows;
+        var r = clamp(Math.min(cw, ch) * 0.36, 1.1, 4.5);
+        var seats = [], occ = [];
+        for (var k = 0; k < st.cap; k++) {
+          var row = Math.floor(k / cols), col = k % cols;
+          var sx = innerX + (col + 0.5) * cw;
+          var sy = innerY + innerH - (row + 0.5) * ch;
+          seats.push({ x: sx, y: sy, r: r, el: el("circle", { cx: sx, cy: sy, r: r, fill: "var(--bar-track)" }) });
+          occ.push(null);
+        }
+        var lbl = el("text", { x: x + roomW / 2, y: y + ROOM_H - 11, "class": "viz-room-lbl", "text-anchor": "middle" });
+        lbl.textContent = c + " · 0/" + st.cap;
+        st.rooms[c] = { seats: seats, occ: occ, cnt: 0, lbl: lbl, flash: flash, cx: x + roomW / 2, top: y };
+      });
+      // сканирующий блик: «ищу лучший ход» в паузах между событиями постфазы
+      st.scan = el("rect", {
+        x: pad, y: ROOM_Y - 2, width: 70, height: ROOM_H - 22, rx: 8,
+        fill: "var(--accent)", opacity: 0, "pointer-events": "none"
+      });
+    }
+
+    // ---- места ----
+    function occupy(c, s) {
+      var room = st.rooms[c];
+      if (!room) return null;
+      for (var i = 0; i < room.occ.length; i++) {
+        if (room.occ[i] === null) {
+          room.occ[i] = s;
+          st.seatIdx[s + "|" + c] = i;
+          room.cnt++;
+          room.lbl.textContent = c + " · " + room.cnt + "/" + st.cap;
+          return { idx: i, x: room.seats[i].x, y: room.seats[i].y, r: room.seats[i].r };
+        }
+      }
+      return null;
+    }
+    function release(c, s) {
+      var room = st.rooms[c], key = s + "|" + c, i = st.seatIdx[key];
+      if (!room || i === undefined || room.occ[i] !== s) return null;
+      delete st.seatIdx[key];
+      room.occ[i] = null;
+      room.cnt--;
+      room.lbl.textContent = c + " · " + room.cnt + "/" + st.cap;
+      room.seats[i].el.setAttribute("fill", "var(--bar-track)");
+      room.seats[i].el.setAttribute("fill-opacity", 1);
+      return { x: room.seats[i].x, y: room.seats[i].y };
+    }
+    // Прозрачность кодирует раунд драфта: ранние пики ярче — в конце видно
+    // «слои» заполнения. Изменения постфазы приходят с полной яркостью.
+    function fillSeat(c, idx, op) {
+      var room = st.rooms[c];
+      if (room && room.seats[idx]) {
+        room.seats[idx].el.setAttribute("fill", "var(--accent)");
+        room.seats[idx].el.setAttribute("fill-opacity", op || 1);
+      }
+    }
+    function fillGuard(c, idx, s, op) {
+      return function () {
+        var room = st.rooms[c];
+        if (room && room.occ[idx] === s) fillSeat(c, idx, op);
+      };
+    }
+    function roomFlash(c, strength) {
+      var room = st.rooms[c];
+      if (room) room.flash.setAttribute("opacity", strength || 0.1);
+    }
+
+    // ---- полёты и всплывашки ----
+    function flight(from, to, opts) {
+      opts = opts || {};
+      if (!from || !to || st.skip || reduced) { if (opts.onEnd) opts.onEnd(); return; }
+      var dot = el("circle", { cx: from.x, cy: from.y, r: opts.r || 4, fill: opts.color || "var(--accent)" });
+      st.flights.push({
+        el: dot, x0: from.x, y0: from.y, x1: to.x, y1: to.y,
+        t0: performance.now(), dur: opts.dur || 340,
+        arc: opts.arc !== undefined ? opts.arc : -26,
+        onEnd: opts.onEnd || null
+      });
+    }
+    function floatText(x, y, text, color) {
+      if (st.skip || reduced || !st.ready) return;
+      var t = el("text", { x: x, y: y, "class": "viz-float", "text-anchor": "middle", fill: color || "var(--opt)" });
+      t.textContent = text;
+      st.floats.push({ el: t, y0: y, t0: performance.now(), dur: 950 });
+    }
+
+    function frame(now) {
+      st.raf = requestAnimationFrame(frame);
+      if (!st.ready) return;
+      // указатель хода + хвост-комета (змейка ползёт по очереди)
+      st.headX += (st.headTX - st.headX) * (reduced ? 1 : 0.28);
+      st.head.setAttribute("cx", st.headX.toFixed(1));
+      st.headLbl.setAttribute("x", clamp(st.headX, 34, W - 34).toFixed(1));
+      st.trailX.unshift(st.headX);
+      if (st.trailX.length > 40) st.trailX.pop();
+      for (var ti = 0; ti < st.trail.length; ti++) {
+        var off = Math.min(st.trailX.length - 1, (st.trail.length - ti) * 5);
+        st.trail[ti].setAttribute("cx", st.trailX[off].toFixed(1));
+      }
+      // скан-блик: виден, когда постфаза считается, а событий пока нет
+      if (st.scan) {
+        var idle = st.stage !== "draft" && !st.queue.length && !st.playing && !st.computeDone;
+        var cur = +st.scan.getAttribute("opacity");
+        var next = cur + ((idle ? 0.07 : 0) - cur) * 0.08;
+        st.scan.setAttribute("opacity", next < 0.004 ? 0 : next.toFixed(3));
+        if (next > 0.004) {
+          st.scan.setAttribute("x", (16 + (W - 32 - 70) * (0.5 + 0.5 * Math.sin(now / 700))).toFixed(1));
+        }
+      }
+      // полёты по квадратичной дуге
+      for (var i = st.flights.length - 1; i >= 0; i--) {
+        var f = st.flights[i];
+        var p = clamp((now - f.t0) / f.dur, 0, 1);
+        var t = 1 - (1 - p) * (1 - p);
+        var q = 1 - t;
+        var mx = (f.x0 + f.x1) / 2, my = Math.min(f.y0, f.y1) + f.arc;
+        f.el.setAttribute("cx", (q * q * f.x0 + 2 * q * t * mx + t * t * f.x1).toFixed(1));
+        f.el.setAttribute("cy", (q * q * f.y0 + 2 * q * t * my + t * t * f.y1).toFixed(1));
+        if (p >= 1) {
+          f.el.remove();
+          if (f.onEnd) f.onEnd();
+          st.flights.splice(i, 1);
+        }
+      }
+      // всплывающие Δ
+      for (var j = st.floats.length - 1; j >= 0; j--) {
+        var fl = st.floats[j];
+        var pp = clamp((now - fl.t0) / fl.dur, 0, 1);
+        fl.el.setAttribute("y", (fl.y0 - 24 * pp).toFixed(1));
+        fl.el.setAttribute("opacity", (1 - pp).toFixed(2));
+        if (pp >= 1) { fl.el.remove(); st.floats.splice(j, 1); }
+      }
+      // затухание подсветки аудиторий
+      for (var c in st.rooms) {
+        var o = +st.rooms[c].flash.getAttribute("opacity");
+        if (o > 0.005) st.rooms[c].flash.setAttribute("opacity", (o * 0.9).toFixed(3));
+        else if (o !== 0) st.rooms[c].flash.setAttribute("opacity", 0);
+      }
+    }
+
+    // ---- стадии/прогресс ----
+    function stageFor(iter) {
+      if (!st.ready || iter <= st.rounds) return "draft";
+      return st.cfg.improve_mode;
+    }
+    function setStage(stg) {
+      var changed = st.stageShown && stg !== st.stage;
+      st.stage = stg;
+      st.stageShown = true;
+      var meta = STAGE_META[stg] || { label: stg, note: function () { return ""; } };
+      $("run_stage").textContent = meta.label;
+      $("stage_note").textContent = meta.note(st.cfg);
+      if (st.ready && stg !== "draft") {
+        st.head.setAttribute("opacity", 0.25);
+        st.headLbl.setAttribute("opacity", 0);
+        st.trail.forEach(function (t) { t.setAttribute("display", "none"); });
+        st.ticks.forEach(function (t) { t.setAttribute("fill", "var(--bar-track)"); });
+        if (st.roundLbl) st.roundLbl.textContent = "постобработка";
+      }
+      if (changed && st.ready) {
+        for (var c in st.rooms) roomFlash(c, 0.1);
+        feedLine(st.playedIter, "фаза: " + meta.label);
+      }
+    }
+    function updateProgress() {
+      var frac = clamp(st.playedIter / Math.max(1, st.totalIter), 0, 1);
+      $("prog_fill").style.width = (100 * frac).toFixed(1) + "%";
+      var lag = st.computeDone && st.queue.length ? " · расчёт готов, анимация догоняет" : "";
+      $("run_iter").textContent = "итерация " + st.playedIter + " / " + st.totalIter + lag;
+    }
+
+    // ---- обработчики событий ----
+    function headTo(s) {
+      var i = st.orderIdx[s];
+      if (i === undefined) return null;
+      st.headTX = st.tickX[i];
+      st.head.setAttribute("opacity", 1);
+      st.headLbl.setAttribute("opacity", 1);
+      st.headLbl.textContent = s;
+      if (st.skip || reduced) st.headX = st.headTX;
+      return { x: st.tickX[i], y: STRIP_Y };
+    }
+    function tickFlash(s, color) {
+      var i = st.orderIdx[s];
+      if (i !== undefined && st.ticks[i]) st.ticks[i].setAttribute("fill", color || "var(--accent)");
+    }
+
+    function onRound(v) {
+      st.roundNo = v.round;
+      st.ticks.forEach(function (t) { t.setAttribute("fill", "var(--bar-track)"); });
+      var dir = { "round-robin": "→" }[st.cfg.sequence];
+      if (!dir) dir = (st.cfg.sequence === "n-first" ? (v.round === 1 ? "→" : "←")
+                                                     : (v.round % 2 === 1 ? "→" : "←"));
+      if (st.roundLbl) st.roundLbl.textContent = "раунд " + v.round + "/" + st.rounds + "  " + dir;
+      feedLine(v.round, "раунд " + v.round + "/" + st.rounds + " · направление очереди " + dir);
+    }
+
+    function onPick(v, entry) {
+      if (!st.ready) return;
+      var from = headTo(v.s);
+      tickFlash(v.s);
+      var seat = occupy(v.c, v.s);
+      roomFlash(v.c, 0.08);
+      if (seat) {
+        var op = Math.max(0.4, 1 - (st.roundNo - 1) * 0.26);
+        flight(from, seat, {
+          r: Math.max(2.4, seat.r), dur: 300,
+          color: st.cfg.pick_rule === "social" ? "var(--opt)" : "var(--accent)",
+          onEnd: fillGuard(v.c, seat.idx, v.s, op)
+        });
+      }
+      feedLine(entry.iter, v.s + " → " + v.c + (typeof v.u === "number" ? "   u=" + v.u.toFixed(2) : ""));
+    }
+
+    function onSwap(v, entry) {
+      if (st.ready) {
+        var p1 = release(v.c1, v.s1), p2 = release(v.c2, v.s2);
+        var t1 = occupy(v.c2, v.s1), t2 = occupy(v.c1, v.s2);
+        if (t1) flight(p1 || t1, t1, { arc: -46, dur: 520, r: 4, onEnd: fillGuard(v.c2, t1.idx, v.s1) });
+        if (t2) flight(p2 || t2, t2, { arc: -70, dur: 520, r: 4, color: "var(--opt)", onEnd: fillGuard(v.c1, t2.idx, v.s2) });
+        roomFlash(v.c1, 0.12); roomFlash(v.c2, 0.12);
+        if (p1 && p2 && typeof v.d === "number") {
+          floatText((p1.x + p2.x) / 2, Math.min(p1.y, p2.y) - 14, "Δ +" + v.d.toFixed(3));
+        }
+        tickFlash(v.s1, "var(--opt)"); tickFlash(v.s2, "var(--opt)");
+      }
+      feedLine(entry.iter, entry.text || (v.s1 + ":" + v.c1 + " ⇄ " + v.s2 + ":" + v.c2 + "   Δ +" + (+v.d).toFixed(4)));
+    }
+
+    function onAd(v, entry) {
+      if (st.ready) {
+        var drops = (v.drop || []).map(function (c) {
+          var room = st.rooms[c];
+          if (room) floatText(room.cx, room.top - 4, "−", "var(--crit)");
+          return release(c, v.s);
+        });
+        (v.add || []).forEach(function (c, i) {
+          var seat = occupy(c, v.s);
+          if (!seat) return;
+          var from = drops[i] || drops[0] || { x: seat.x, y: STRIP_Y };
+          flight(from, seat, { arc: -38, dur: 420, r: Math.max(2.4, seat.r), onEnd: fillGuard(c, seat.idx, v.s) });
+          roomFlash(c, 0.08);
+          var room = st.rooms[c];
+          if (room) floatText(room.cx, room.top - 4, "+", "var(--opt)");
+        });
+        tickFlash(v.s, "var(--opt)");
+      }
+      feedLine(entry.iter, v.s + ":  −" + ((v.drop || []).join(",") || "∅") + "  +" + ((v.add || []).join(",") || "∅"));
+    }
+
+    // ---- живые графики ----
+    function onStat(v, entry) {
+      st.chartW.push({ i: entry.iter, v: v.w });
+      st.chartMin.push({ i: entry.iter, v: v.wmin });
+      renderSpark("spark_w", "spark_w_v", st.chartW, "var(--accent)", 1);
+      renderSpark("spark_min", "spark_min_v", st.chartMin, "var(--opt)", 2);
+    }
+    function renderSpark(svgId, valId, pts, color, digits) {
+      var node = $(svgId);
+      if (!pts.length) { node.innerHTML = ""; $(valId).textContent = "—"; return; }
+      var Wc = 300, Hc = 56, padT = 5, padB = 4;
+      var total = Math.max(st.totalIter, pts[pts.length - 1].i, 1);
+      var vmax = 0;
+      pts.forEach(function (p) { if (p.v > vmax) vmax = p.v; });
+      if (vmax <= 0) vmax = 1;
+      function X(i) { return (i / total) * Wc; }
+      function Y(v) { return Hc - padB - (v / vmax) * (Hc - padT - padB); }
+      var line = "M0," + Y(0).toFixed(1);
+      pts.forEach(function (p) { line += " L" + X(p.i).toFixed(1) + "," + Y(p.v).toFixed(1); });
+      var last = pts[pts.length - 1];
+      var area = line + " L" + X(last.i).toFixed(1) + "," + (Hc - padB) + " L0," + (Hc - padB) + " Z";
+      var divX = X(st.rounds).toFixed(1);
+      node.innerHTML =
+        '<path d="' + area + '" fill="' + color + '" opacity="0.12"></path>' +
+        '<path d="' + line + '" fill="none" stroke="' + color + '" stroke-width="2" stroke-linejoin="round"></path>' +
+        (st.totalIter > st.rounds
+          ? '<line x1="' + divX + '" y1="0" x2="' + divX + '" y2="' + Hc + '" stroke="var(--hair)" stroke-dasharray="3 3"></line>'
+          : "") +
+        '<circle cx="' + X(last.i).toFixed(1) + '" cy="' + Y(last.v).toFixed(1) + '" r="3" fill="' + color + '"></circle>';
+      $(valId).textContent = fmt(last.v, digits);
+    }
+    function resetSparks() {
+      $("spark_w").innerHTML = ""; $("spark_min").innerHTML = "";
+      $("spark_w_v").textContent = "—"; $("spark_min_v").textContent = "—";
+    }
+
+    function consume(entry) {
+      var v = entry.viz;
+      if ((entry.iter || 0) > st.playedIter) st.playedIter = entry.iter;
+      var stg = stageFor(entry.iter || 0);
+      if (stg !== st.stage || !st.stageShown) setStage(stg);
+      if (v) {
+        switch (v.type) {
+          case "init": buildBoard(v); break;
+          case "round": onRound(v); break;
+          case "pick": onPick(v, entry); break;
+          case "swap": onSwap(v, entry); break;
+          case "ad": onAd(v, entry); break;
+          case "stat": onStat(v, entry); break;
+          case "noop": feedLine(entry.iter, "улучшений не найдено — состояние стабильно"); break;
+          default: if (entry.text) feedLine(entry.iter, entry.text);
+        }
+      } else if (entry.text) {
+        feedLine(entry.iter, entry.text);
+      }
+      updateProgress();
+    }
+
+    // ---- плеер ----
+    function baseDt(entry) {
+      var t = entry.viz && entry.viz.type;
+      if (t === "init") return 30;
+      if (t === "round") return 420;
+      if (t === "pick") return st.dtPick;
+      if (t === "swap") return 620;
+      if (t === "ad") return 230;
+      if (t === "pass") return 160;
+      if (t === "noop") return 300;
+      if (t === "stat") return 60;
+      return 160;
+    }
+    function pump() {
+      st.timer = null;
+      if (!st.queue.length) {
+        st.playing = false;
+        maybeDrained();
+        return;
+      }
+      st.playing = true;
+      var entry = st.queue.shift();
+      consume(entry);
+      if (st.skip) {
+        while (st.queue.length) consume(st.queue.shift());
+        st.playing = false;
+        maybeDrained();
+        return;
+      }
+      // скорость адаптируется к бэклогу: чем больше очередь, тем быстрее
+      var dt = baseDt(entry) / (1 + st.queue.length / 15);
+      st.timer = setTimeout(pump, Math.max(6, dt));
+    }
+    function maybeDrained() {
+      updateProgress();
+      if (st.computeDone && !st.queue.length && st.drained) {
+        var cb = st.drained;
+        st.drained = null;
+        setTimeout(cb, st.skip || reduced ? 0 : 500);
+      }
+    }
+
+    // ---- публичный интерфейс ----
+    return {
+      start: function (cfg) {
+        if (st) {
+          if (st.timer) clearTimeout(st.timer);
+          if (st.raf) cancelAnimationFrame(st.raf);
+        }
+        st = freshState(cfg);
+        resetSparks();
+        svg.innerHTML = "";
+        var wait = document.createElementNS(svgNS, "text");
+        wait.setAttribute("x", W / 2); wait.setAttribute("y", H / 2);
+        wait.setAttribute("class", "viz-cap"); wait.setAttribute("text-anchor", "middle");
+        wait.textContent = "жду первые события…";
+        svg.appendChild(wait);
+        st.raf = requestAnimationFrame(frame);
+        updateProgress();
+      },
+      setTotal: function (t) { if (st && t) st.totalIter = t; },
+      push: function (events) {
+        if (!st) return;
+        st.queue = st.queue.concat(events);
+        if (!st.playing && !st.timer) pump();
+      },
+      finish: function (cb) {
+        if (!st) { cb(); return; }
+        st.computeDone = true;
+        st.drained = cb;
+        maybeDrained();
+      },
+      skip: function () {
+        if (!st) return;
+        st.skip = true;
+        st.flights.forEach(function (f) { f.el.remove(); if (f.onEnd) f.onEnd(); });
+        st.flights = [];
+        st.floats.forEach(function (f) { f.el.remove(); });
+        st.floats = [];
+        if (st.timer) { clearTimeout(st.timer); st.timer = null; }
+        pump();
+      },
+      stop: function () {
+        if (!st) return;
+        if (st.timer) clearTimeout(st.timer);
+        if (st.raf) cancelAnimationFrame(st.raf);
+        st.timer = null; st.raf = null; st.drained = null;
+      }
+    };
+  })();
+
+  // ---------- run ----------
+  function pollJob(jobId, onDone, onFail) {
+    var cursor = 0;
+    var timer = setInterval(function () {
+      api("/api/progress?job=" + jobId + "&cursor=" + cursor).then(function (p) {
+        cursor = p.cursor;
+        VIZ.setTotal(p.total);
+        if (p.events.length) VIZ.push(p.events);
+        if (p.done) {
+          clearInterval(timer);
+          if (p.error) { VIZ.stop(); onFail(new Error(p.error)); }
+          else VIZ.finish(function () { onDone(p.result); });
+        }
+      }).catch(function (e) { clearInterval(timer); VIZ.stop(); onFail(e); });
+    }, 300);
+  }
+
+  $("btn_run").addEventListener("click", function () {
+    clearError();
+    var btn = this; btn.disabled = true;
+    $("running").style.display = "block";
+    $("feed").innerHTML = "";
+    $("prog_fill").style.width = "0%";
+    $("run_stage").textContent = "старт…";
+    $("run_iter").textContent = "";
+    $("stage_note").textContent = "запускаю расчёт…";
+
+    var cfg = {
+      csv_a: $("csv_a").value, csv_b: $("csv_b").value, csv_lambda: $("csv_lambda").value,
+      cap_default: +$("p_cap").value, b: +$("p_b").value, seed: +$("p_seed").value,
+      post_iters: +$("p_iters").value, improve_mode: $("p_improve").value,
+      sequence: $("p_sequence").value, pick_rule: $("p_pick").value
+    };
+    VIZ.start(cfg);
+
+    var t0 = Date.now();
+    $("run_clock").textContent = "0 с";
+    clockTimer = setInterval(function () {
+      $("run_clock").textContent = Math.round((Date.now() - t0) / 1000) + " с";
+    }, 500);
+
+    function finish() {
+      btn.disabled = false;
+      $("running").style.display = "none";
+      VIZ.stop();
+      clearInterval(clockTimer);
+    }
+
+    api("/api/run", cfg).then(function (start) {
+      pollJob(start.job, function (d) {
+        lastRun = { cfg: cfg, data: d };
+        history.push({
+          n: history.length + 1,
+          label: cfg.sequence + " / " + cfg.pick_rule + " / " + cfg.improve_mode + "×" + cfg.post_iters,
+          total: d.metrics.total_utility,
+          egal: d.metrics.egalitarian_welfare,
+          gini: d.metrics.gini_total_norm,
+          ef1: d.metrics.ef1_violation_share_total,
+          overlaps: d.metrics.avg_friend_overlaps_per_student,
+          time: d.elapsed_s
+        });
+        renderAll();
+        finish();
+      }, function (e) { showError(e.message); finish(); });
+    }).catch(function (e) { showError(e.message); finish(); });
+  });
+
+  $("btn_skip").addEventListener("click", function () { VIZ.skip(); });
+
+  $("btn_clear").addEventListener("click", function () {
+    history = history.slice(-1);
+    history[0].n = 1;
+    renderAll();
+  });
+
+  // ---------- render ----------
+  function renderAll() {
+    $("empty").style.display = "none";
+    $("results").style.display = "block";
+    renderTiles(); renderHistory(); renderFill(); renderAlloc(""); renderMetrics();
+  }
+
+  function tile(value, unit, label, acc) {
+    return '<div class="tile' + (acc ? " acc" : "") + '"><div class="v">' + value +
+      (unit ? "<small> " + unit + "</small>" : "") + '</div><div class="k">' + label + "</div></div>";
+  }
+
+  function renderTiles() {
+    var m = lastRun.data.metrics;
+    var upper = lastRun.data.maxima.total_utility;
+    $("tiles").innerHTML =
+      tile(fmt(m.total_utility, 1), "", "суммарная полезность", true) +
+      tile(pct(upper > 0 ? m.total_utility / upper : 0), "", "от верхней оценки", true) +
+      tile(fmt(m.egalitarian_welfare, 3), "", "худший студент") +
+      tile(fmt(m.gini_total_norm, 3), "", "индекс Джини") +
+      tile(pct(m.ef1_violation_share_total), "", "студентов с EF1-нарушением") +
+      tile(fmt(m.avg_friend_overlaps_per_student, 2), "", "пересечений с друзьями / студ.") +
+      tile(fmt(lastRun.data.elapsed_s, 1), "с", "время запуска");
+  }
+
+  function renderHistory() {
+    var best = Math.max.apply(null, history.map(function (r) { return r.total; }));
+    var bars = history.map(function (r) {
+      var share = best > 0 ? r.total / best : 0;
+      return '<div class="bar-row"><span class="name">#' + r.n + " · " + r.label + "</span>" +
+        '<div class="bar-track"><div class="bar-fill' + (r.total === best ? " best" : "") +
+        '" style="width:' + (share * 100).toFixed(1) + '%"></div></div>' +
+        '<span class="bar-val">' + fmt(r.total, 1) + " <small>· " + pct(share) + "</small></span></div>";
+    }).join("");
+    $("bars").innerHTML = bars;
+
+    var rows = history.map(function (r) {
+      var share = best > 0 ? r.total / best : 0;
+      return "<tr" + (r === history[history.length - 1] ? ' class="sel"' : "") + "><td>#" + r.n + "</td><td>" + r.label + "</td>" +
+        "<td" + (r.total === best ? ' class="best"' : "") + ">" + fmt(r.total, 1) + "</td>" +
+        "<td>" + pct(share) + "</td><td>" + fmt(r.egal, 3) + "</td><td>" + fmt(r.gini, 3) + "</td>" +
+        "<td>" + pct(r.ef1) + "</td><td>" + fmt(r.overlaps, 2) + "</td><td>" + fmt(r.time, 1) + " с</td></tr>";
+    }).join("");
+    $("history").querySelector("tbody").innerHTML = rows;
+  }
+
+  function renderFill() {
+    var alloc = lastRun.data.alloc, cap = lastRun.cfg.cap_default;
+    var counts = {};
+    Object.keys(alloc).forEach(function (s) {
+      alloc[s].forEach(function (c) { counts[c] = (counts[c] || 0) + 1; });
+    });
+    var courses = Object.keys(counts).sort(function (a, b) {
+      return a.localeCompare(b, undefined, { numeric: true });
+    });
+    $("fill_bars").innerHTML = courses.map(function (c) {
+      var share = Math.min(1, counts[c] / cap);
+      return '<div class="bar-row"><span class="name mono">' + c + "</span>" +
+        '<div class="bar-track"><div class="bar-fill" style="width:' + (share * 100).toFixed(1) + '%"></div></div>' +
+        '<span class="bar-val">' + counts[c] + " <small>/ " + cap + "</small></span></div>";
+    }).join("");
+  }
+
+  function renderAlloc(query) {
+    var alloc = lastRun.data.alloc;
+    var ids = Object.keys(alloc).sort(function (a, b) {
+      return a.localeCompare(b, undefined, { numeric: true });
+    });
+    if (query) {
+      var q = query.toLowerCase();
+      ids = ids.filter(function (s) { return s.toLowerCase().indexOf(q) >= 0; });
+    }
+    var shown = ids.slice(0, query ? 100 : 30);
+    var rows = shown.map(function (s) {
+      var chips = alloc[s].map(function (c) { return '<span class="chip">' + c + "</span>"; }).join("");
+      return "<tr><td class=\"mono\">" + s + '</td><td style="text-align:left">' + (chips || "—") + "</td></tr>";
+    }).join("");
+    if (ids.length > shown.length) {
+      rows += '<tr><td colspan="2" style="color:var(--muted);text-align:left">… ещё ' + (ids.length - shown.length) + " (уточни поиск)</td></tr>";
+    }
+    $("alloc_tbl").querySelector("tbody").innerHTML = rows;
+  }
+  $("q_student").addEventListener("input", function () { renderAlloc(this.value.trim()); });
+
+  function renderMetrics() {
+    var m = lastRun.data.metrics, mx = lastRun.data.maxima;
+    $("metrics_tbl").querySelector("tbody").innerHTML = Object.keys(m).map(function (k) {
+      return "<tr><td class=\"mono\" style=\"text-align:left\">" + k + "</td><td>" + fmt(m[k], 4) +
+        "</td><td>" + (mx && k in mx ? fmt(mx[k], 4) : "—") + "</td></tr>";
+    }).join("");
+  }
+})();
+</script>
+</body>
+</html>

@@ -121,16 +121,45 @@ def generate_table_1(
     score_min: int,
     score_max: int,
     swap_prob: float,
+    popularity_strength: float = 0.0,
 ) -> list[Table1Row]:
+    """
+    popularity_strength (alpha in [0..1]) blends a shared course popularity signal
+    with idiosyncratic taste:
+
+        latent(s,c) = alpha * popularity(c) + (1 - alpha) * uniform(0,1)
+
+    alpha=0 keeps the original independent-preferences behaviour; higher alpha
+    makes students compete for the same popular courses (realistic contention).
+    """
+
+    # Fixed popularity profile: C1 most popular, last course least popular.
+    n_courses = len(course_ids)
+    if n_courses > 1:
+        popularity = [(n_courses - 1 - i) / (n_courses - 1) for i in range(n_courses)]
+    else:
+        popularity = [1.0] * n_courses
+
     rows: list[Table1Row] = []
     for student_id in student_ids:
-        scores = _generate_scores(
-            rng,
-            len(course_ids),
-            score_min=score_min,
-            score_max=score_max,
-        )
-        positions = _rank_positions(rng, scores, swap_prob=swap_prob)
+        if popularity_strength > 0.0:
+            latent = [
+                popularity_strength * popularity[i]
+                + (1.0 - popularity_strength) * rng.random()
+                for i in range(n_courses)
+            ]
+            scores = [
+                int(round(score_min + (score_max - score_min) * v)) for v in latent
+            ]
+            positions = _rank_positions(rng, latent, swap_prob=swap_prob)
+        else:
+            scores = _generate_scores(
+                rng,
+                len(course_ids),
+                score_min=score_min,
+                score_max=score_max,
+            )
+            positions = _rank_positions(rng, scores, swap_prob=swap_prob)
         for course_id, score, position in zip(course_ids, scores, positions):
             rows.append(
                 Table1Row(
@@ -333,6 +362,15 @@ def _parse_args() -> argparse.Namespace:
         help="Вероятность swap соседних позиций (0..1); 0 = Способ A, >0 = Способ B",
     )
     p.add_argument(
+        "--popularity-strength",
+        type=float,
+        default=0.0,
+        help=(
+            "Сила корреляции предпочтений (0..1): 0 = независимые случайные предпочтения, "
+            ">0 = общие 'популярные' курсы + личный шум"
+        ),
+    )
+    p.add_argument(
         "--friend-top-k",
         type=int,
         default=3,
@@ -399,6 +437,8 @@ def main() -> int:
         raise SystemExit("--score-min должен быть меньше --score-max")
     if not (0.0 <= args.swap_prob <= 1.0):
         raise SystemExit("--swap-prob должен быть в диапазоне 0..1")
+    if not (0.0 <= args.popularity_strength <= 1.0):
+        raise SystemExit("--popularity-strength должен быть в диапазоне 0..1")
     if not (0.0 <= args.lambda_default <= 1.0):
         raise SystemExit("--lambda-default должен быть в диапазоне 0..1")
     if args.friend_top_k <= 0:
@@ -422,6 +462,7 @@ def main() -> int:
         score_min=args.score_min,
         score_max=args.score_max,
         swap_prob=args.swap_prob,
+        popularity_strength=args.popularity_strength,
     )
     table2 = generate_table_2(
         student_ids,

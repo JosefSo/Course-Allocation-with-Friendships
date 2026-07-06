@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Callable
 
 
 @dataclass(frozen=True)
@@ -19,3 +20,18 @@ class _RunConfig:
     seed: int
     sanity_checks: bool
     delta_check_every: int
+    # Picking sequence (fair-division terminology):
+    #   "snake"       - balanced alternation: 1..n, n..1, 1..n, ...
+    #   "round-robin" - 1..n every round
+    #   "n-first"     - 1..n, then n..1 in every later round (best MMS guarantee,
+    #                   Celine/Suksompong/Yuen, AAMAS 2026)
+    sequence: str = "snake"
+    # Pick rule during the draft:
+    #   "personal" - each student maximizes their own utility U(s,c).
+    #   "social"   - each student maximizes marginal global welfare
+    #                U(s,c) + SocialGain(s,c) (internalizes friendship externalities).
+    pick_rule: str = "personal"
+    # Optional callback receiving small progress events during the run,
+    # e.g. {"stage": "swap", "iter": 5, "event": "S1:C2 <-> S7:C4", "delta": 0.01}.
+    # Used by the web UI; None keeps the engine silent.
+    progress_cb: Callable[[dict], None] | None = None

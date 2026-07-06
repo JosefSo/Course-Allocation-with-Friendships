@@ -19,9 +19,12 @@ def run_hbs_social(
     draft_rounds: int | None = None,
     post_iters: int = 0,
     improve_mode: str = "swap",
+    sequence: str = "snake",
+    pick_rule: str = "personal",
     progress: bool = False,
     sanity_checks: bool = False,
     delta_check_every: int = 0,
+    progress_cb=None,
 ) -> RunResult:
     """
     Public API function: run a single allocation using the social snake draft.
@@ -40,8 +43,12 @@ def run_hbs_social(
         raise ValueError("b must be > 0")
     if post_iters < 0:
         raise ValueError("post_iters must be >= 0")
-    if improve_mode not in {"swap", "add-drop"}:
-        raise ValueError("improve_mode must be one of: swap, add-drop")
+    if improve_mode not in {"swap", "add-drop", "hybrid"}:
+        raise ValueError("improve_mode must be one of: swap, add-drop, hybrid")
+    if sequence not in {"snake", "round-robin", "n-first"}:
+        raise ValueError("sequence must be one of: snake, round-robin, n-first")
+    if pick_rule not in {"personal", "social"}:
+        raise ValueError("pick_rule must be one of: personal, social")
     if delta_check_every < 0:
         raise ValueError("delta_check_every must be >= 0")
     if draft_rounds is None:
@@ -76,6 +83,9 @@ def run_hbs_social(
         seed=seed,
         sanity_checks=sanity_checks,
         delta_check_every=delta_check_every,
+        sequence=sequence,
+        pick_rule=pick_rule,
+        progress_cb=progress_cb,
     )
     engine = _HbsSocialDraftEngine(
         individual_prefs=rows_a,

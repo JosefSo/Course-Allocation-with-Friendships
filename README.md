@@ -10,8 +10,15 @@ This repository contains the code and experiments for my master's thesis project
 
 ## 1.2 Repository layout
 - `hbs_social.py` - CLI entrypoint.
+- `hbs_web.py` + `webui/` - local web UI: `python hbs_web.py` opens a browser panel
+  to generate data, configure a run (sequence, pick rule, post-phase), execute it,
+  and compare runs side by side. Stdlib only, serves on 127.0.0.1.
 - `HBS/` - core engine, API, metrics, and IO.
 - `generate/` - synthetic data generator for CSV inputs.
+- `experiments/` - ILP optimality benchmark (requires `pip install pulp`):
+  solves the same allocation problem to proven optimality (utilitarian or
+  egalitarian max-min objective) so heuristics can be reported with an
+  optimality gap. See `experiments/ilp_benchmark.py --help`.
 - `tests/` - unit tests.
 
 ## 1.3 Input data
@@ -314,14 +321,20 @@ but differ by a tiny numerical error:
 Without a tolerance, the algorithm would treat `C1` as strictly better and skip all tie-break rules.
 With tau = 1e-9, both are considered equal and the decision is resolved using deterministic tie-breakers.
 
-### 2.6 HBS algorithm order
-Let `pi` be a random permutation of students (seeded). For round `r`:
-- if `r` is odd: order is `pi`
-- if `r` is even: order is `reverse(pi)`
+### 2.6 Picking sequence (draft order)
+Let `pi` be a random permutation of students (seeded). The order per round is controlled
+by `--sequence` (fair-division terminology):
 
-Example: pi=[S2,S1,S3] -> round1: S2,S1,S3; round2: S3,S1,S2.
+- `snake` (balanced alternation, default): odd rounds `pi`, even rounds `reverse(pi)`.
+- `round-robin`: `pi` in every round.
+- `n-first`: `pi` in round 1, then `reverse(pi)` in every later round, so the agent who
+  picked last in round 1 picks first in all subsequent rounds. This sequence has the best
+  maximin-share (MMS) guarantee among recursively balanced picking sequences
+  (Celine, Suksompong, Yuen, AAMAS 2026, arXiv:2512.17604).
 
-Code reference: `HBS/hbs_engine.py:550` (seeded shuffle) and `HBS/hbs_engine.py:558` (snake order).
+Example (snake): pi=[S2,S1,S3] -> round1: S2,S1,S3; round2: S3,S1,S2.
+
+Code reference: `HBS/hbs_engine.py` (`_turn_order`, seeded shuffle in `_run_initial_draft`).
 
 ### 2.7 Post-phase objective (add-drop or swap)
 After the draft, the algorithm can improve the allocation for `post_iters` iterations.
@@ -516,7 +529,11 @@ Example: x=[0, 1] -> Gini=0.5; x=[1, 1, 1] -> Gini=0.
 - `allocation.csv` - draft picks only.
 - `post_allocation.csv` - post-phase events (swap/add-drop).
 - `summary.csv` - total utility and normalized Gini metrics.
-- `metrics_extended.csv` - extended fairness and distribution metrics (Jain, Theil, Atkinson, percentiles, and more).
+- `metrics_extended.csv` - extended fairness and distribution metrics (Jain, Theil, Atkinson, percentiles, and more), including fair-division objectives:
+  - `egalitarian_welfare` / `egalitarian_welfare_norm` - utility of the worst-off student (raw / normalized).
+  - `nash_welfare_geomean` - geometric mean of per-student utilities (Nash welfare).
+  - `envy_pairs_share_{base,friend,total}` - share of ordered student pairs with envy under the course-only, friend-only, and combined valuations.
+  - `ef1_violation_share_{base,friend,total}` - share of students whose envy survives removing the single best course from the envied bundle (EF1 violation). Friend overlap for a hypothetical bundle is evaluated against the current allocation of all other students.
 
 ## 5. Quick start
 Requirements: Python 3.10+ (no external dependencies).
@@ -572,6 +589,10 @@ If `--students` or `--courses` is omitted, the script will prompt for the value.
 - `--score-max INT` - maximum score for Table 1 (default: 5).
 - `--swap-prob P` - probability of swapping adjacent positions when ranking Table 1
   (0..1, default: 0.0). Use `> 0` to introduce small rank noise.
+- `--popularity-strength A` - preference correlation (0..1, default: 0.0). With `A > 0`
+  each student's latent value for a course is `A * popularity(course) + (1-A) * noise`,
+  so students compete for the same popular courses. `A = 0` keeps fully independent
+  random preferences (little contention).
 - `--friend-top-k K` - top-K friends per (student, course) in Table 2 (default: 3).
 - `--friend-score-min INT` - min score for Table 2 friends (default: `--score-min`).
 - `--friend-score-max INT` - max score for Table 2 friends (default: `--score-max`).
@@ -631,7 +652,16 @@ Runs the HBS snake draft with reactive friend bonus and optional post-phase.
 - `--b INT` - max courses per student (default: 3).
 - `--draft-rounds INT` - number of draft rounds (default: `b`).
 - `--post-iters INT` or `--n INT` - post-phase iterations (default: 0).
-- `--improve-mode {swap,add-drop}` - post-phase mode (default: `swap`).
+- `--improve-mode {swap,add-drop,hybrid}` - post-phase mode (default: `swap`).
+  `hybrid` runs one add-drop pass per iteration and, when the pass changes nothing,
+  applies the single best welfare-improving swap (combines both neighborhoods).
+- `--sequence {snake,round-robin,n-first}` - picking sequence for the draft
+  (default: `snake`; see section 2.6).
+- `--pick-rule {personal,social}` - value used to rank candidate courses at pick time
+  (default: `personal`). `personal` maximizes the student's own U(s,c); `social`
+  maximizes the marginal global welfare U(s,c) + SocialGain(s,c), where SocialGain
+  is the welfare gain of already-enrolled followers who list the student among their
+  top-K friends for that course (the pick internalizes friendship externalities).
 - `--seed INT` - RNG seed (default: 42).
 - `--progress` - print progress during draft/improve (flag).
 
