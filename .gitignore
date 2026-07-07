@@ -13,6 +13,8 @@ ENV/
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
+.swift-module-cache/
+.tmp/
 .coverage
 htmlcov/
 
@@ -24,6 +26,11 @@ htmlcov/
 
 # Generated outputs
 results/
+outputs/
+allocation.csv
+post_allocation.csv
+summary.csv
+metrics_extended.csv
 
 # Docs (keep README in repo root)
 *.md

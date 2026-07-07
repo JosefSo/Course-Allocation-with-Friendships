@@ -239,11 +239,19 @@ def generate_table_2(
 def generate_table_3(
     student_ids: Sequence[str],
     *,
-    lambda_default: float = 0.3,
+    lambda_default: float | None = 0.3,
+    rng: random.Random | None = None,
 ) -> list[Table3Row]:
     """
     Генерирует Таблицу 3 с per-student lambda (важность friend bonus).
     """
+    if lambda_default is None:
+        if rng is None:
+            raise ValueError("rng is required when lambda_default is None")
+        return [
+            Table3Row(student_id=student_id, lambda_friend=round(rng.random(), 3))
+            for student_id in student_ids
+        ]
     return [
         Table3Row(student_id=student_id, lambda_friend=lambda_default)
         for student_id in student_ids
@@ -403,13 +411,13 @@ def _parse_args() -> argparse.Namespace:
     p.add_argument(
         "--out1",
         type=Path,
-        default=Path("tables/table1_individual.csv"),
+        default=None,
         help="Путь для CSV Таблицы 1",
     )
     p.add_argument(
         "--out2",
         type=Path,
-        default=Path("tables/table2_pair.csv"),
+        default=None,
         help="Путь для CSV Таблицы 2",
     )
     p.add_argument(
@@ -421,10 +429,36 @@ def _parse_args() -> argparse.Namespace:
     p.add_argument(
         "--out3",
         type=Path,
-        default=Path("tables/table3_lambda.csv"),
+        default=None,
         help="Путь для CSV Таблицы 3 (lambda)",
     )
     return p.parse_args()
+
+
+def _format_lambda_suffix(lambda_default: float | None) -> str:
+    if lambda_default is None:
+        return "lambda-random"
+    normalized = f"{lambda_default:.3f}".rstrip("0").rstrip(".")
+    return f"lambda-{normalized}"
+
+
+def _default_table_paths(
+    n_students: int,
+    n_courses: int,
+    *,
+    lambda_default: float | None = 0.3,
+) -> tuple[Path, Path, Path]:
+    suffix = f"{n_students}×{n_courses}"
+    return (
+        Path(f"tables/table1_{suffix}.csv"),
+        Path(f"tables/table2_{suffix}.csv"),
+        Path(f"tables/table3_{suffix}_{_format_lambda_suffix(lambda_default)}.csv"),
+    )
+
+
+def _ensure_parent_dirs(*paths: Path) -> None:
+    for path in paths:
+        path.parent.mkdir(parents=True, exist_ok=True)
 
 
 def main() -> int:
@@ -432,6 +466,18 @@ def main() -> int:
 
     n_students = args.students if args.students is not None else _prompt_positive_int("Количество студентов (N): ")
     n_courses = args.courses if args.courses is not None else _prompt_positive_int("Количество курсов (K): ")
+    if n_students <= 0:
+        raise SystemExit("--students должен быть > 0")
+    if n_courses <= 0:
+        raise SystemExit("--courses должен быть > 0")
+    default_out1, default_out2, default_out3 = _default_table_paths(
+        n_students,
+        n_courses,
+        lambda_default=args.lambda_default,
+    )
+    out1 = args.out1 if args.out1 is not None else default_out1
+    out2 = args.out2 if args.out2 is not None else default_out2
+    out3 = args.out3 if args.out3 is not None else default_out3
 
     if args.score_min >= args.score_max:
         raise SystemExit("--score-min должен быть меньше --score-max")
@@ -477,6 +523,7 @@ def main() -> int:
     table3 = generate_table_3(
         student_ids,
         lambda_default=args.lambda_default,
+        rng=rng,
     )
 
     _validate_table_1(
@@ -492,13 +539,14 @@ def main() -> int:
         score_max=friend_score_max,
     )
 
-    _write_csv_table_1(args.out1, table1)
-    _write_csv_table_2(args.out2, table2)
-    _write_csv_table_3(args.out3, table3)
+    _ensure_parent_dirs(out1, out2, out3)
+    _write_csv_table_1(out1, table1)
+    _write_csv_table_2(out2, table2)
+    _write_csv_table_3(out3, table3)
 
-    print(f"Готово: {args.out1} ({len(table1)} строк)")
-    print(f"Готово: {args.out2} ({len(table2)} строк)")
-    print(f"Готово: {args.out3} ({len(table3)} строк)")
+    print(f"Готово: {out1} ({len(table1)} строк)")
+    print(f"Готово: {out2} ({len(table2)} строк)")
+    print(f"Готово: {out3} ({len(table3)} строк)")
     return 0
 
 

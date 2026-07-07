@@ -30,7 +30,14 @@ TABLES_DIR = PROJECT_ROOT / "tables"
 
 sys.path.insert(0, str(PROJECT_ROOT))
 
-from HBS.hbs_api import run_hbs_social  # noqa: E402
+from HBS.hbs_api import normalize_improvement_config, run_hbs_social  # noqa: E402
+from HBS.hbs_web import (  # noqa: E402
+    _append_run_history,
+    _build_run_history_stats,
+    _list_run_history,
+    _reset_run_history,
+    _run_mode_comparison_payload,
+)
 
 
 def _api_generate(params: dict) -> dict:
@@ -140,6 +147,32 @@ def _run_job(job_id: str, params: dict) -> None:
         )
         elapsed = time.time() - t0
 
+        move_type, objective_scope, effective_mode = normalize_improvement_config(
+            improve_mode=str(params.get("improve_mode", "swap"))
+        )
+        resolved_rounds = (
+            int(params["draft_rounds"])
+            if params.get("draft_rounds")
+            else int(params.get("b", 3))
+        )
+        history_id = _append_run_history(
+            table1_ref=str(params["csv_a"]),
+            table2_ref=str(params["csv_b"]),
+            lambda_ref=(str(params["csv_lambda"]) if params.get("csv_lambda") else None),
+            cap_default=int(params.get("cap_default", 10)),
+            b=int(params.get("b", 3)),
+            seed=int(params.get("seed", 42)),
+            draft_rounds=resolved_rounds,
+            post_iters=int(params.get("post_iters", 0)),
+            move_type=move_type,
+            objective_scope=objective_scope,
+            improve_mode=effective_mode,
+            total_utility=result.summary.total_utility,
+            gini_total_norm=result.summary.gini_total_norm,
+            gini_base_norm=result.summary.gini_base_norm,
+            metrics_extended=result.metrics_extended.values,
+        )
+
         swaps = sum(1 for r in result.post_log if r.event_type == "SWAP")
         add_drops = sum(1 for r in result.post_log if r.event_type == "ADD_DROP")
         payload = {
@@ -155,6 +188,7 @@ def _run_job(job_id: str, params: dict) -> None:
             "alloc": result.alloc,
             "picks": len(result.pick_log),
             "post_events": {"swaps": swaps, "add_drops": add_drops},
+            "history_id": history_id,
         }
         with _JOBS_LOCK:
             _JOBS[job_id]["result"] = payload
@@ -209,6 +243,23 @@ def _api_progress(job_id: str, cursor: int) -> dict:
     return payload
 
 
+def _api_compare(params: dict) -> dict:
+    payload = {
+        "table1_file": str(params["csv_a"]),
+        "table2_file": str(params["csv_b"]),
+        "lambda_file": (str(params["csv_lambda"]) if params.get("csv_lambda") else None),
+        "cap_default": int(params.get("cap_default", 10)),
+        "b": int(params.get("b", 3)),
+        "seed": int(params.get("seed", 42)),
+        "draft_rounds": params.get("draft_rounds"),
+        "post_iters": int(params.get("post_iters", 0)),
+        "batch_size": int(params.get("batch_size", 10)),
+        "sequence": str(params.get("sequence", "snake")),
+        "pick_rule": str(params.get("pick_rule", "personal")),
+    }
+    return _run_mode_comparison_payload(payload)
+
+
 class _Handler(BaseHTTPRequestHandler):
     def log_message(self, fmt: str, *args) -> None:  # quieter console
         pass
@@ -240,6 +291,20 @@ class _Handler(BaseHTTPRequestHandler):
                 self._send_json(_api_progress(job_id, cursor))
             except ValueError as exc:
                 self._send_json({"error": str(exc)}, status=400)
+        elif parsed.path == "/api/history":
+            query = parse_qs(parsed.query)
+            try:
+                limit = int(query.get("limit", ["200"])[0])
+                self._send_json(_list_run_history(limit=limit))
+            except ValueError as exc:
+                self._send_json({"error": str(exc)}, status=400)
+        elif parsed.path == "/api/history/stats":
+            query = parse_qs(parsed.query)
+            try:
+                limit = int(query.get("limit", ["200"])[0])
+                self._send_json(_build_run_history_stats(limit=limit))
+            except ValueError as exc:
+                self._send_json({"error": str(exc)}, status=400)
         else:
             self._send_json({"error": "not found"}, status=404)
 
@@ -256,6 +321,10 @@ class _Handler(BaseHTTPRequestHandler):
                 self._send_json(_api_run_start(params))
             elif self.path == "/api/generate":
                 self._send_json(_api_generate(params))
+            elif self.path == "/api/compare":
+                self._send_json(_api_compare(params))
+            elif self.path == "/api/history/reset":
+                self._send_json(_reset_run_history())
             else:
                 self._send_json({"error": "not found"}, status=404)
         except (ValueError, KeyError) as exc:

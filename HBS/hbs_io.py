@@ -15,6 +15,10 @@ from .hbs_domain import (
 )
 
 
+def _ensure_output_parent(path: Path) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+
+
 def _read_table_1(path: Path) -> list[IndividualPref]:
     """Read Table 1 CSV (individual preferences) into strongly-typed records."""
 
@@ -90,6 +94,7 @@ def _write_allocation_csv(
     Write draft-only allocation log (round picks only).
     """
 
+    _ensure_output_parent(path)
     with path.open("w", newline="", encoding="utf-8") as f:
         writer = csv.writer(f)
         writer.writerow(["RoundPicked", "StudentID", "CourseID"])
@@ -112,6 +117,7 @@ def _write_post_alloc_csv(
     Write post-allocation events (swap or add/drop) to a separate CSV.
     """
 
+    _ensure_output_parent(path)
     with path.open("w", newline="", encoding="utf-8") as f:
         writer = csv.writer(f)
         writer.writerow(
@@ -161,6 +167,7 @@ def _write_summary_csv(
     Write a one-row summary CSV.
     """
 
+    _ensure_output_parent(path)
     with path.open("w", newline="", encoding="utf-8") as f:
         writer = csv.writer(f)
         writer.writerow(
@@ -199,6 +206,7 @@ def _write_metrics_extended_csv(
     """
 
     keys = list(metrics.values.keys())
+    _ensure_output_parent(path)
     with path.open("w", newline="", encoding="utf-8") as f:
         writer = csv.writer(f)
         writer.writerow(keys)

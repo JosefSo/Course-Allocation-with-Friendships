@@ -229,6 +229,7 @@
         <div class="field"><label for="p_b">Курсов на студента</label><input id="p_b" type="number" value="3" min="1"></div>
         <div class="field"><label for="p_seed">Seed</label><input id="p_seed" type="number" value="11"></div>
       </div>
+      <div class="field"><label for="p_rounds">Раундов draft (пусто = b)</label><input id="p_rounds" type="number" min="0" placeholder="по умолчанию = b"></div>
       <div class="field">
         <label for="p_sequence">Picking sequence — порядок выбора</label>
         <select id="p_sequence">
@@ -248,15 +249,22 @@
         <div class="field">
           <label for="p_improve">Постобработка</label>
           <select id="p_improve">
-            <option value="swap">swap — обмены</option>
-            <option value="add-drop">add-drop — по свободным местам</option>
-            <option value="hybrid">hybrid — add-drop + swap</option>
+            <option value="swap-global">swap · global</option>
+            <option value="swap-personal">swap · personal</option>
+            <option value="drop-add-global">drop-add · global</option>
+            <option value="drop-add-personal">drop-add · personal</option>
+            <option value="hybrid-global">hybrid · global</option>
+            <option value="hybrid-personal">hybrid · personal</option>
           </select>
         </div>
         <div class="field"><label for="p_iters">Итераций постфазы</label><input id="p_iters" type="number" value="40" min="0"></div>
       </div>
       <div id="swap_warn" class="warn">swap/hybrid с 30+ итерациями на 200 студентах считается ~30–60 секунд — страница дождётся результата.</div>
       <button id="btn_run" class="primary" style="margin-top:14px">Запустить аллокацию</button>
+      <div class="grid2" style="margin-top:10px">
+        <div class="field"><label for="p_batch">Seeds в batch</label><input id="p_batch" type="number" value="10" min="1" max="200"></div>
+        <button id="btn_compare" type="button">Сравнить 6 режимов</button>
+      </div>
     </div>
   </aside>
 
@@ -371,7 +379,8 @@
   function pct(x) { return fmt(100 * x, 1) + "%"; }
   function clamp(v, lo, hi) { return v < lo ? lo : (v > hi ? hi : v); }
   function esc(s) {
-    return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
   }
 
   function api(path, body) {
@@ -408,7 +417,7 @@
       var opts = [];
       if (pair[0] === "csv_lambda") opts.push('<option value="">— не использовать (λ = 0.3) —</option>');
       tables.forEach(function (name) {
-        opts.push('<option value="' + name + '">' + name + "</option>");
+        opts.push('<option value="' + esc(name) + '">' + esc(name) + "</option>");
       });
       sel.innerHTML = opts.join("");
       // preselect: previous choice, else first file matching the table prefix
@@ -423,6 +432,22 @@
       showError("В папке tables/ нет CSV — раскрой «Сгенерировать новые данные» слева и создай их.");
     }
     fillTableSelects(d.tables, false);
+  }).catch(function (e) { showError(e.message); });
+
+  api("/api/history?limit=100").then(function (d) {
+    history = (d.items || []).reverse().map(function (item, index) {
+      var m = item.metrics_extended || {};
+      return {
+        n: index + 1,
+        label: item.improve_mode + " · seed " + item.seed,
+        total: item.total_utility,
+        egal: m.egalitarian_welfare,
+        gini: item.gini_total_norm,
+        ef1: m.ef1_violation_share_total,
+        overlaps: m.avg_friend_overlaps_per_student,
+        time: null
+      };
+    });
   }).catch(function (e) { showError(e.message); });
 
   // ---------- generate ----------
@@ -443,7 +468,7 @@
   // ---------- run warning ----------
   function swapWarn() {
     var mode = $("p_improve").value, iters = +$("p_iters").value;
-    $("swap_warn").style.display = (mode !== "add-drop" && iters >= 25) ? "block" : "none";
+    $("swap_warn").style.display = (mode.indexOf("drop-add") !== 0 && iters >= 25) ? "block" : "none";
   }
   $("p_improve").addEventListener("change", swapWarn);
   $("p_iters").addEventListener("input", swapWarn);
@@ -1022,6 +1047,7 @@
     var cfg = {
       csv_a: $("csv_a").value, csv_b: $("csv_b").value, csv_lambda: $("csv_lambda").value,
       cap_default: +$("p_cap").value, b: +$("p_b").value, seed: +$("p_seed").value,
+      draft_rounds: $("p_rounds").value,
       post_iters: +$("p_iters").value, improve_mode: $("p_improve").value,
       sequence: $("p_sequence").value, pick_rule: $("p_pick").value
     };
@@ -1059,12 +1085,45 @@
     }).catch(function (e) { showError(e.message); finish(); });
   });
 
+  $("btn_compare").addEventListener("click", function () {
+    clearError();
+    var btn = this; btn.disabled = true; btn.textContent = "Считаю batch…";
+    api("/api/compare", {
+      csv_a: $("csv_a").value, csv_b: $("csv_b").value,
+      csv_lambda: $("csv_lambda").value,
+      cap_default: +$("p_cap").value, b: +$("p_b").value,
+      seed: +$("p_seed").value, post_iters: +$("p_iters").value,
+      draft_rounds: $("p_rounds").value,
+      sequence: $("p_sequence").value, pick_rule: $("p_pick").value,
+      batch_size: +$("p_batch").value
+    }).then(function (data) {
+      (data.by_mode || []).forEach(function (row) {
+        history.push({
+          n: history.length + 1,
+          label: row.improve_mode + " · avg " + row.runs + " seeds",
+          total: row.avg_total_utility,
+          egal: row.avg_egalitarian_welfare,
+          gini: row.avg_gini_total_norm,
+          ef1: row.avg_ef1_violation_share_total,
+          overlaps: row.avg_avg_friend_overlaps_per_student,
+          time: null
+        });
+      });
+      $("empty").style.display = "none";
+      $("results").style.display = "block";
+      renderHistory();
+    }).catch(function (e) { showError(e.message); })
+      .finally(function () { btn.disabled = false; btn.textContent = "Сравнить 6 режимов"; });
+  });
+
   $("btn_skip").addEventListener("click", function () { VIZ.skip(); });
 
   $("btn_clear").addEventListener("click", function () {
-    history = history.slice(-1);
-    history[0].n = 1;
-    renderAll();
+    api("/api/history/reset", {}).then(function () {
+      history = [];
+      $("bars").innerHTML = "";
+      $("history").querySelector("tbody").innerHTML = "";
+    }).catch(function (e) { showError(e.message); });
   });
 
   // ---------- render ----------
@@ -1124,7 +1183,7 @@
     });
     $("fill_bars").innerHTML = courses.map(function (c) {
       var share = Math.min(1, counts[c] / cap);
-      return '<div class="bar-row"><span class="name mono">' + c + "</span>" +
+      return '<div class="bar-row"><span class="name mono">' + esc(c) + "</span>" +
         '<div class="bar-track"><div class="bar-fill" style="width:' + (share * 100).toFixed(1) + '%"></div></div>' +
         '<span class="bar-val">' + counts[c] + " <small>/ " + cap + "</small></span></div>";
     }).join("");
@@ -1141,8 +1200,8 @@
     }
     var shown = ids.slice(0, query ? 100 : 30);
     var rows = shown.map(function (s) {
-      var chips = alloc[s].map(function (c) { return '<span class="chip">' + c + "</span>"; }).join("");
-      return "<tr><td class=\"mono\">" + s + '</td><td style="text-align:left">' + (chips || "—") + "</td></tr>";
+      var chips = alloc[s].map(function (c) { return '<span class="chip">' + esc(c) + "</span>"; }).join("");
+      return "<tr><td class=\"mono\">" + esc(s) + '</td><td style="text-align:left">' + (chips || "—") + "</td></tr>";
     }).join("");
     if (ids.length > shown.length) {
       rows += '<tr><td colspan="2" style="color:var(--muted);text-align:left">… ещё ' + (ids.length - shown.length) + " (уточни поиск)</td></tr>";

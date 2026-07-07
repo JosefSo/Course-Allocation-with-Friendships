@@ -27,8 +27,6 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-import pulp
-
 from HBS.hbs_config import _RunConfig
 from HBS.hbs_engine import _HbsSocialDraftEngine
 from HBS.hbs_io import _read_table_1, _read_table_2, _read_table_lambda
@@ -50,7 +48,9 @@ def _build_engine(args: argparse.Namespace) -> _HbsSocialDraftEngine:
         draft_rounds=0,
         post_iters=0,
         total_iters=0,
-        improve_mode="swap",
+        move_type="swap",
+        objective_scope="global",
+        effective_improve_mode="swap-global",
         progress=False,
         seed=0,
         sanity_checks=False,
@@ -65,13 +65,16 @@ def _build_engine(args: argparse.Namespace) -> _HbsSocialDraftEngine:
 
 
 def solve(args: argparse.Namespace) -> int:
+    try:
+        import pulp
+    except ModuleNotFoundError as exc:
+        raise SystemExit("PuLP is required: python3 -m pip install pulp") from exc
+
     engine = _build_engine(args)
     students = engine._students
     courses = engine._courses
     cap = args.cap_default
     b = args.b
-    norm = engine._max_friend_bonus if engine._max_friend_bonus > 0 else 1.0
-
     problem = pulp.LpProblem("course_allocation_friendships", pulp.LpMaximize)
 
     x = {
@@ -89,6 +92,7 @@ def solve(args: argparse.Namespace) -> int:
     welfare = {}
     for s in students:
         lambda_s = engine._lambda_by_student[s]
+        norm = engine._max_friend_bonus(s)
         terms = []
         for c in courses:
             base = engine._base_utility(s, c)
@@ -128,6 +132,9 @@ def solve(args: argparse.Namespace) -> int:
     print(f"solve_time_s:  {elapsed:.1f}")
     print(f"total_utility: {total:.4f}")
     print(f"egalitarian:   {min(per_student):.4f}")
+    if status != pulp.LpStatusOptimal:
+        print("No proven optimum was found; allocation output was not written.")
+        return 2
     if args.out_csv:
         import csv
 

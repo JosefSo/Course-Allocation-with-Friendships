@@ -4,7 +4,13 @@ import argparse
 import logging
 from pathlib import Path
 
-from .hbs_api import run_hbs_social
+from .hbs_api import (
+    CANONICAL_MOVE_TYPES,
+    CANONICAL_OBJECTIVE_SCOPES,
+    CANONICAL_IMPROVE_MODES,
+    normalize_improve_mode,
+    run_hbs_social,
+)
 from .hbs_io import (
     _write_allocation_csv,
     _write_metrics_extended_csv,
@@ -46,12 +52,17 @@ def _parse_args() -> argparse.Namespace:
     )
     p.add_argument(
         "--improve-mode",
-        choices=["swap", "add-drop", "hybrid"],
-        default="swap",
+        choices=[*CANONICAL_IMPROVE_MODES, "swap", "add-drop", "drop-add", "hybrid"],
+        default=None,
         help=(
-            "Режим улучшений после драфта: swap (обмены), add-drop (HBS-style) "
-            "или hybrid (add-drop пас + лучший своп в каждой итерации)"
+            "Полный режим улучшений; короткие aliases означают global objective"
         ),
+    )
+    p.add_argument("--move-type", choices=CANONICAL_MOVE_TYPES, default=None)
+    p.add_argument(
+        "--objective-scope",
+        choices=CANONICAL_OBJECTIVE_SCOPES,
+        default=None,
     )
     p.add_argument(
         "--pick-rule",
@@ -131,6 +142,8 @@ def main() -> int:
         draft_rounds=args.draft_rounds,
         post_iters=(args.post_iters if args.post_iters is not None else 0),
         improve_mode=args.improve_mode,
+        move_type=args.move_type,
+        objective_scope=args.objective_scope,
         sequence=args.sequence,
         pick_rule=args.pick_rule,
         seed=args.seed,

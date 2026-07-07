@@ -61,7 +61,7 @@ def _run_once(workdir: Path) -> tuple[str, str]:
         b=2,
         draft_rounds=2,
         post_iters=1,
-        improve_mode="add-drop",
+        improve_mode="drop-add",
         seed=42,
     )
 

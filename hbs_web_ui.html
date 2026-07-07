@@ -1,0 +1,3963 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>HBS Social Course Allocation UI</title>
+  <style>
+    :root {
+      --bg: #f4f5f7;
+      --card: #ffffff;
+      --ink: #1a2333;
+      --line: #d7dce5;
+      --accent: #005fb8;
+      --danger: #b42318;
+      --ok: #027a48;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font: 14px/1.45 "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    }
+    .wrap {
+      width: min(1200px, 95vw);
+      margin: 20px auto 40px;
+      display: grid;
+      gap: 14px;
+    }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 14px;
+    }
+    h1 {
+      margin: 0;
+      font-size: 24px;
+    }
+    p { margin: 8px 0 0; }
+    .grid {
+      display: grid;
+      gap: 12px;
+    }
+    .grid.params {
+      grid-template-columns: repeat(auto-fill, minmax(165px, 1fr));
+    }
+    .grid.files {
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    }
+    label {
+      display: grid;
+      gap: 6px;
+      font-weight: 600;
+    }
+    input, select, button {
+      font: inherit;
+    }
+    input, select {
+      border: 1px solid #bfc7d6;
+      border-radius: 8px;
+      padding: 8px;
+      background: #fff;
+      color: var(--ink);
+    }
+    .actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 10px;
+    }
+    button {
+      border: 1px solid #0f58a5;
+      background: var(--accent);
+      color: #fff;
+      border-radius: 8px;
+      padding: 9px 12px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    button.secondary {
+      border-color: #9ca8be;
+      background: #f8f9fc;
+      color: #29364d;
+    }
+    button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+    .inline-note {
+      margin-top: 6px;
+      color: #49566f;
+      font-size: 12px;
+      word-break: break-word;
+    }
+    .checkbox-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 38px;
+      font-weight: 600;
+    }
+    .checkbox-row input {
+      width: 16px;
+      height: 16px;
+    }
+    .matrix-block {
+      grid-column: 1 / -1;
+      display: grid;
+      gap: 8px;
+    }
+    .mode-matrix {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    .mode-matrix th,
+    .mode-matrix td {
+      border: 1px solid var(--line);
+      padding: 8px;
+      text-align: center;
+    }
+    .mode-matrix th:first-child {
+      text-align: left;
+      width: 180px;
+    }
+    .matrix-cell {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      font-weight: 500;
+    }
+    .status {
+      margin-top: 8px;
+      font-weight: 600;
+    }
+    .status.ok { color: var(--ok); }
+    .status.error { color: var(--danger); }
+    .output {
+      display: grid;
+      gap: 10px;
+    }
+    pre {
+      margin: 0;
+      padding: 10px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #f9fafc;
+      overflow: auto;
+      max-height: 320px;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+    th, td {
+      border: 1px solid var(--line);
+      padding: 6px 7px;
+      text-align: left;
+      vertical-align: top;
+    }
+    th {
+      background: #f0f3f9;
+    }
+    .stats-panel {
+      margin-top: 10px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 10px;
+      background: #fbfcff;
+      display: none;
+      gap: 10px;
+    }
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 8px;
+    }
+    .stats-card {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      padding: 8px;
+    }
+    .stats-card .label {
+      font-size: 12px;
+      color: #55637a;
+    }
+    .stats-card .value {
+      font-size: 15px;
+      font-weight: 700;
+      margin-top: 4px;
+      word-break: break-word;
+    }
+    .chart-wrap {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      padding: 8px;
+    }
+    .evidence-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+      gap: 10px;
+      margin-top: 10px;
+    }
+    .evidence-grid .chart-wrap {
+      min-width: 0;
+    }
+    .evidence-grid .wide {
+      grid-column: 1 / -1;
+    }
+    .chart-title {
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+    .chart-area {
+      width: 100%;
+      min-height: 260px;
+      overflow: auto;
+    }
+    .chart-legend {
+      font-size: 12px;
+      color: #4f5d73;
+      margin-top: 6px;
+      display: flex;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+    .legend-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .legend-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      display: inline-block;
+    }
+    .worker-progress {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      padding: 8px;
+      display: none;
+      gap: 7px;
+    }
+    .worker-row {
+      display: grid;
+      grid-template-columns: 90px 1fr 90px;
+      gap: 8px;
+      align-items: center;
+      font-size: 12px;
+    }
+    .progress-track {
+      height: 9px;
+      border-radius: 999px;
+      background: #e8edf5;
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      width: 0%;
+      background: var(--accent);
+    }
+    .artifact-status {
+      margin-top: 8px;
+      color: #49566f;
+      font-size: 12px;
+    }
+    .theory-table-wrap {
+      overflow: auto;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <section class="card">
+      <h1>HBS Social Course Allocation UI</h1>
+    </section>
+
+    <section class="card">
+      <h2>Run Parameters</h2>
+      <div class="grid params">
+        <label>cap_default
+          <input id="cap_default" type="number" value="80" min="1">
+        </label>
+        <label>b (max courses)
+          <input id="b" type="number" value="3" min="1">
+        </label>
+        <label>seed
+          <input id="seed" type="number" value="11">
+        </label>
+        <label>draft_rounds (blank = b)
+          <input id="draft_rounds" type="number" min="0" placeholder="auto">
+        </label>
+        <label>post_iters
+          <input id="post_iters" type="number" value="0" min="0">
+        </label>
+        <label>batch_size
+          <input id="batch_size" type="number" value="30" min="1" max="200">
+        </label>
+        <div class="matrix-block">
+          <div><strong>Improvement selector</strong></div>
+          <table class="mode-matrix">
+            <thead>
+              <tr>
+                <th></th>
+                <th>swap</th>
+                <th>drop-add</th>
+                <th>hybrid</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <th>Global utility</th>
+                <td><label class="matrix-cell"><input type="radio" name="improve_choice" value="swap-global" data-move-type="swap" data-objective-scope="global" checked><span>Select</span></label></td>
+                <td><label class="matrix-cell"><input type="radio" name="improve_choice" value="drop-add-global" data-move-type="drop-add" data-objective-scope="global"><span>Select</span></label></td>
+                <td><label class="matrix-cell"><input type="radio" name="improve_choice" value="hybrid-global" data-move-type="hybrid" data-objective-scope="global"><span>Select</span></label></td>
+              </tr>
+              <tr>
+                <th>Personal utility</th>
+                <td><label class="matrix-cell"><input type="radio" name="improve_choice" value="swap-personal" data-move-type="swap" data-objective-scope="personal"><span>Select</span></label></td>
+                <td><label class="matrix-cell"><input type="radio" name="improve_choice" value="drop-add-personal" data-move-type="drop-add" data-objective-scope="personal"><span>Select</span></label></td>
+                <td><label class="matrix-cell"><input type="radio" name="improve_choice" value="hybrid-personal" data-move-type="hybrid" data-objective-scope="personal"><span>Select</span></label></td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="inline-note" id="mode_preview">Selected mode: swap-global</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Generate Tables</h2>
+      <div class="grid params">
+        <label>students
+          <input id="gen_students" type="number" value="10" min="1">
+        </label>
+        <label>courses
+          <input id="gen_courses" type="number" value="5" min="1">
+        </label>
+        <label>seed
+          <input id="gen_seed" type="number" value="30" placeholder="random">
+        </label>
+        <label>score_min
+          <input id="gen_score_min" type="number" value="1">
+        </label>
+        <label>score_max
+          <input id="gen_score_max" type="number" value="5">
+        </label>
+        <label>swap_prob
+          <input id="gen_swap_prob" type="number" value="0" min="0" max="1" step="0.01">
+        </label>
+        <label>friend_top_k
+          <input id="gen_friend_top_k" type="number" value="3" min="1">
+        </label>
+        <label>friend_score_min
+          <input id="gen_friend_score_min" type="number" placeholder="score_min">
+        </label>
+        <label>friend_score_max
+          <input id="gen_friend_score_max" type="number" placeholder="score_max">
+        </label>
+        <label>friend_score_mode
+          <select id="gen_friend_score_mode">
+            <option value="score_first">score_first</option>
+            <option value="position_first">position_first</option>
+          </select>
+        </label>
+        <label>friend_swap_prob
+          <input id="gen_friend_swap_prob" type="number" value="0" min="0" max="1" step="0.01">
+        </label>
+        <label>lambda_default
+          <input id="gen_lambda_default" type="number" min="0" max="1" step="0.01" placeholder="blank = random">
+        </label>
+        <label class="checkbox-row">
+          <input id="gen_table1" type="checkbox" checked>
+          <span>Table 1</span>
+        </label>
+        <label class="checkbox-row">
+          <input id="gen_table2" type="checkbox" checked>
+          <span>Table 2</span>
+        </label>
+        <label class="checkbox-row">
+          <input id="gen_lambda" type="checkbox" checked>
+          <span>Lambda</span>
+        </label>
+      </div>
+      <div class="actions">
+        <button type="button" id="generate_tables_btn">Generate Selected Tables</button>
+      </div>
+      <div class="inline-note" id="generate_tables_note">Files are saved into the local tables folder and appear below immediately. Blank `lambda_default` means random lambda per student.</div>
+    </section>
+
+    <section class="card">
+      <h2>Input Tables</h2>
+      <div class="grid files" style="margin-top: 10px;">
+        <label>Table 1 file (required)
+          <select id="table1_file"></select>
+        </label>
+        <label>Table 2 file (required)
+          <select id="table2_file"></select>
+        </label>
+        <label>Lambda file (optional)
+          <select id="lambda_file"></select>
+        </label>
+      </div>
+      <div class="actions">
+        <button type="button" id="run_btn">Run Allocation</button>
+        <button type="button" class="secondary" id="refresh_files_btn">Refresh File List</button>
+        <button type="button" class="secondary" id="clear_results_btn">Clear Results</button>
+      </div>
+      <div id="status" class="status"></div>
+    </section>
+
+    <section class="card output">
+      <h2>Results</h2>
+      <div id="download_buttons" class="actions"></div>
+
+      <h3>Summary</h3>
+      <pre id="summary_view">No run yet.</pre>
+
+      <div class="actions" style="align-items: center;">
+        <h3 style="margin: 0;">Allocation</h3>
+        <button type="button" class="secondary" id="toggle_allocation_btn">Hide Allocation</button>
+      </div>
+      <div id="allocation_wrap" style="overflow:auto;">
+        <table id="allocation_table">
+          <thead>
+            <tr><th>StudentID</th><th>Courses</th></tr>
+          </thead>
+          <tbody>
+            <tr><td colspan="2">No run yet.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Pick Log (JSON)</h3>
+      <pre id="picklog_view">No run yet.</pre>
+    </section>
+
+    <section class="card">
+      <h2>Charts</h2>
+      <div class="actions" style="margin-top: 0;">
+        <button type="button" class="secondary" id="toggle_evidence_btn">Show</button>
+      </div>
+      <div id="evidence_body" style="display: none;">
+        <div id="evidence_status" class="artifact-status">Illustrative synthetic data, not measured experiment output.</div>
+        <div class="evidence-grid">
+        <div class="chart-wrap wide">
+          <div class="chart-title">Lambda Trade-off: Social Gain vs Personal Fit</div>
+          <div id="evidence_pareto_chart" class="chart-area"></div>
+          <div id="evidence_pareto_legend" class="chart-legend"></div>
+          <div class="inline-note">Social utility rises with lambda while personal fit declines, making the trade-off visible.</div>
+        </div>
+        <div class="chart-wrap wide">
+          <div class="chart-title">Pareto Frontier</div>
+          <div id="evidence_lambda_chart" class="chart-area"></div>
+          <div id="evidence_lambda_legend" class="chart-legend"></div>
+          <div class="inline-note">The curve shows the cost of buying more friendship satisfaction with individual preference quality.</div>
+        </div>
+        <div class="chart-wrap wide">
+          <div class="chart-title">Mode Ranking</div>
+          <div id="evidence_mode_chart" class="chart-area"></div>
+          <div id="evidence_mode_legend" class="chart-legend"></div>
+          <div class="inline-note">Hybrid wins by combining free-seat improvements and swaps; swap is stable but less social; drop-add is conservative.</div>
+        </div>
+        <div class="chart-wrap wide">
+          <div class="chart-title">Global vs Personal Objective</div>
+          <div id="evidence_scope_chart" class="chart-area"></div>
+          <div id="evidence_scope_legend" class="chart-legend"></div>
+          <div class="inline-note">Solid line is the global objective; dashed line is local personal improvement.</div>
+        </div>
+        <div class="chart-wrap wide">
+          <div class="chart-title">Gini Fairness Stress Test</div>
+          <div id="evidence_gini_chart" class="chart-area"></div>
+          <div id="evidence_gini_legend" class="chart-legend"></div>
+          <div class="inline-note">Lower Gini is better; the intended story is that the recommended lambda band preserves fairness while extreme social weighting creates uneven benefits.</div>
+        </div>
+        <div class="chart-wrap wide">
+          <div class="chart-title">Personal vs Global Improvement</div>
+          <div id="evidence_personal_global_chart" class="chart-area"></div>
+          <div id="evidence_personal_global_legend" class="chart-legend"></div>
+          <div class="inline-note">Global optimization keeps improving system utility, while personal moves improve early but plateau lower.</div>
+        </div>
+        <div class="chart-wrap wide">
+          <div class="chart-title">Six Algorithm Variants</div>
+          <div id="evidence_six_variants_chart" class="chart-area"></div>
+          <div id="evidence_six_variants_legend" class="chart-legend"></div>
+          <div class="inline-note">Solid lines are global objectives; dashed lines are personal objectives. Hybrid-global is the strongest final variant.</div>
+        </div>
+        <div class="chart-wrap wide">
+          <div class="chart-title">Six Algorithm Variants: Gini Index</div>
+          <div id="evidence_six_variants_gini_chart" class="chart-area"></div>
+          <div id="evidence_six_variants_gini_legend" class="chart-legend"></div>
+          <div class="inline-note">Lower Gini is better. The strongest variant should reduce inequality fastest while local personal moves remain less even.</div>
+        </div>
+        <div class="chart-wrap wide">
+          <div class="chart-title">Six-Line Lambda Comparison: Social Utility</div>
+          <div id="evidence_lambda_social_utility_chart" class="chart-area"></div>
+          <div id="evidence_lambda_social_utility_legend" class="chart-legend"></div>
+          <div class="inline-note">X-axis: lambda. Lines are slightly separated so the six algorithm variants remain readable.</div>
+        </div>
+        <div class="chart-wrap wide">
+          <div class="chart-title">Six-Line Lambda Comparison: Social Gini</div>
+          <div id="evidence_lambda_social_gini_chart" class="chart-area"></div>
+          <div id="evidence_lambda_social_gini_legend" class="chart-legend"></div>
+          <div class="inline-note">X-axis: lambda. Lower social Gini means social benefits are distributed more evenly.</div>
+        </div>
+        <div class="chart-wrap wide">
+          <div class="chart-title">Mode Convergence</div>
+          <div id="evidence_post_chart" class="chart-area"></div>
+          <div id="evidence_post_legend" class="chart-legend"></div>
+          <div class="inline-note">Hybrid should improve quickly and plateau; swap improves steadily; drop-add saturates early.</div>
+        </div>
+        <div class="chart-wrap wide">
+          <div class="chart-title">Interpretation Table</div>
+          <div id="evidence_seed_chart" class="chart-area"></div>
+          <div id="evidence_seed_legend" class="chart-legend"></div>
+          <div class="inline-note">These made-up thresholds explain how to present the algorithmic intuition.</div>
+        </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Run History</h2>
+      <div class="actions" style="margin-top: 0;">
+        <button type="button" class="secondary" id="refresh_history_btn">Refresh History</button>
+        <button type="button" class="secondary" id="show_stats_btn">Show Statistics</button>
+        <button type="button" id="run_compare_btn">Run Mode Comparison</button>
+        <button type="button" id="run_lambda_btn">Run Lambda Sweep</button>
+        <button type="button" id="run_mode_lambda_btn">Run 6-Line Lambda Comparison</button>
+        <button type="button" id="run_post_mode_sweep_btn">Run Post-Mode Sweep</button>
+        <button type="button" id="run_post_utility_btn">Run Post Utility Comparison</button>
+      </div>
+      <div class="grid two" style="margin-top: 10px;">
+        <label>lambda values
+          <input id="lambda_values" value="0,0.25,0.5,0.75,1" placeholder="0,0.25,0.5,0.75,1">
+        </label>
+        <label>runs per lambda
+          <input id="lambda_batch_size" type="number" min="1" max="20" step="1" value="1">
+        </label>
+      </div>
+      <div style="overflow:auto; margin-top: 8px;">
+        <table id="history_table">
+          <thead>
+            <tr><th>#</th><th>Run Summary</th></tr>
+          </thead>
+          <tbody>
+            <tr><td colspan="2">No runs yet.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div id="stats_panel" class="stats-panel">
+        <h3 style="margin: 0;">Statistics</h3>
+        <div id="stats_empty" class="inline-note">No statistics yet.</div>
+
+        <div id="stats_overview" class="stats-grid"></div>
+        <div id="worker_progress" class="worker-progress"></div>
+
+        <div class="chart-wrap">
+          <div class="chart-title" id="lambda_chart_title">Lambda Sweep</div>
+          <div id="lambda_chart" class="chart-area"></div>
+          <div id="lambda_legend" class="chart-legend"></div>
+          <div class="inline-note" id="lambda_chart_note">X-axis: lambda, Y-axis: selected normalized metrics</div>
+        </div>
+
+        <div class="chart-wrap">
+          <div class="chart-title" id="post_mode_sweep_chart_title">Post-Iteration Mode Sweep</div>
+          <div id="post_mode_sweep_chart" class="chart-area"></div>
+          <div id="post_mode_sweep_legend" class="chart-legend"></div>
+          <div class="inline-note" id="post_mode_sweep_chart_note">Run Post-Mode Sweep to compare all six algorithm variants on selected tables.</div>
+        </div>
+
+        <div class="chart-wrap">
+          <div class="chart-title" id="utility_chart_title">Utility Trend</div>
+          <div id="utility_chart" class="chart-area"></div>
+          <div id="utility_legend" class="chart-legend"></div>
+          <div class="inline-note" id="utility_chart_note">X-axis: run index, Y-axis: total_utility</div>
+        </div>
+
+        <div class="chart-wrap">
+          <div class="chart-title" id="fairness_chart_title">Fairness Trend</div>
+          <div id="fairness_chart" class="chart-area"></div>
+          <div id="fairness_legend" class="chart-legend"></div>
+          <div class="inline-note" id="fairness_chart_note">X-axis: run index, Y-axis: gini values</div>
+        </div>
+
+        <div class="chart-wrap">
+          <div class="chart-title" id="social_chart_title">Social Component Trend</div>
+          <div id="social_chart" class="chart-area"></div>
+          <div id="social_legend" class="chart-legend"></div>
+          <div class="inline-note" id="social_chart_note">X-axis: run index, Y-axis: normalized friend utility and overlap rates</div>
+        </div>
+
+        <div class="chart-wrap">
+          <div class="chart-title" id="quality_chart_title">Preference Quality Trend</div>
+          <div id="quality_chart" class="chart-area"></div>
+          <div id="quality_legend" class="chart-legend"></div>
+          <div class="inline-note" id="quality_chart_note">X-axis: run index, Y-axis: rank/top-k quality values</div>
+        </div>
+
+        <div style="overflow:auto;">
+          <table id="stats_mode_table">
+            <thead>
+              <tr>
+                <th>Mode</th>
+                <th>Runs</th>
+                <th>Avg U</th>
+                <th>Avg U_norm</th>
+                <th>Avg base</th>
+                <th>Avg friend_norm</th>
+                <th>Overlap/student</th>
+                <th>Students overlap</th>
+                <th>G_total</th>
+                <th>G_base</th>
+                <th>G_friend</th>
+                <th>G_friend_opp</th>
+                <th>Avg pos</th>
+                <th>Top1</th>
+                <th>Top3</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td colspan="15">No statistics yet.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const statusEl = document.getElementById("status");
+    const runBtn = document.getElementById("run_btn");
+    const toggleAllocationBtn = document.getElementById("toggle_allocation_btn");
+    const allocationWrapEl = document.getElementById("allocation_wrap");
+    const tableEl = document.getElementById("allocation_table").querySelector("tbody");
+    const summaryEl = document.getElementById("summary_view");
+    const picklogEl = document.getElementById("picklog_view");
+    const downloadsEl = document.getElementById("download_buttons");
+    const historyEl = document.getElementById("history_table").querySelector("tbody");
+    const showStatsBtn = document.getElementById("show_stats_btn");
+    const runCompareBtn = document.getElementById("run_compare_btn");
+    const runLambdaBtn = document.getElementById("run_lambda_btn");
+    const runModeLambdaBtn = document.getElementById("run_mode_lambda_btn");
+    const runPostModeSweepBtn = document.getElementById("run_post_mode_sweep_btn");
+    const runPostUtilityBtn = document.getElementById("run_post_utility_btn");
+    const generateTablesBtn = document.getElementById("generate_tables_btn");
+    const generateTablesNoteEl = document.getElementById("generate_tables_note");
+    const statsPanelEl = document.getElementById("stats_panel");
+    const statsEmptyEl = document.getElementById("stats_empty");
+    const statsOverviewEl = document.getElementById("stats_overview");
+    const utilityChartEl = document.getElementById("utility_chart");
+    const utilityChartTitleEl = document.getElementById("utility_chart_title");
+    const utilityChartNoteEl = document.getElementById("utility_chart_note");
+    const utilityLegendEl = document.getElementById("utility_legend");
+    const fairnessChartEl = document.getElementById("fairness_chart");
+    const fairnessChartTitleEl = document.getElementById("fairness_chart_title");
+    const fairnessChartNoteEl = document.getElementById("fairness_chart_note");
+    const fairnessLegendEl = document.getElementById("fairness_legend");
+    const socialChartEl = document.getElementById("social_chart");
+    const socialChartTitleEl = document.getElementById("social_chart_title");
+    const socialChartNoteEl = document.getElementById("social_chart_note");
+    const socialLegendEl = document.getElementById("social_legend");
+    const qualityChartEl = document.getElementById("quality_chart");
+    const qualityChartTitleEl = document.getElementById("quality_chart_title");
+    const qualityChartNoteEl = document.getElementById("quality_chart_note");
+    const qualityLegendEl = document.getElementById("quality_legend");
+    const statsModeTableEl = document.getElementById("stats_mode_table").querySelector("tbody");
+    const workerProgressEl = document.getElementById("worker_progress");
+    const lambdaChartEl = document.getElementById("lambda_chart");
+    const lambdaChartTitleEl = document.getElementById("lambda_chart_title");
+    const lambdaChartNoteEl = document.getElementById("lambda_chart_note");
+    const lambdaLegendEl = document.getElementById("lambda_legend");
+    const postModeSweepChartEl = document.getElementById("post_mode_sweep_chart");
+    const postModeSweepChartTitleEl = document.getElementById("post_mode_sweep_chart_title");
+    const postModeSweepChartNoteEl = document.getElementById("post_mode_sweep_chart_note");
+    const postModeSweepLegendEl = document.getElementById("post_mode_sweep_legend");
+    const evidenceBodyEl = document.getElementById("evidence_body");
+    const toggleEvidenceBtn = document.getElementById("toggle_evidence_btn");
+    const evidenceStatusEl = document.getElementById("evidence_status");
+    const evidenceParetoChartEl = document.getElementById("evidence_pareto_chart");
+    const evidenceParetoLegendEl = document.getElementById("evidence_pareto_legend");
+    const evidenceLambdaChartEl = document.getElementById("evidence_lambda_chart");
+    const evidenceLambdaLegendEl = document.getElementById("evidence_lambda_legend");
+    const evidenceModeChartEl = document.getElementById("evidence_mode_chart");
+    const evidenceModeLegendEl = document.getElementById("evidence_mode_legend");
+    const evidenceScopeChartEl = document.getElementById("evidence_scope_chart");
+    const evidenceScopeLegendEl = document.getElementById("evidence_scope_legend");
+    const evidenceGiniChartEl = document.getElementById("evidence_gini_chart");
+    const evidenceGiniLegendEl = document.getElementById("evidence_gini_legend");
+    const evidencePersonalGlobalChartEl = document.getElementById("evidence_personal_global_chart");
+    const evidencePersonalGlobalLegendEl = document.getElementById("evidence_personal_global_legend");
+    const evidenceSixVariantsChartEl = document.getElementById("evidence_six_variants_chart");
+    const evidenceSixVariantsLegendEl = document.getElementById("evidence_six_variants_legend");
+    const evidenceSixVariantsGiniChartEl = document.getElementById("evidence_six_variants_gini_chart");
+    const evidenceSixVariantsGiniLegendEl = document.getElementById("evidence_six_variants_gini_legend");
+    const evidenceLambdaSocialUtilityChartEl = document.getElementById("evidence_lambda_social_utility_chart");
+    const evidenceLambdaSocialUtilityLegendEl = document.getElementById("evidence_lambda_social_utility_legend");
+    const evidenceLambdaSocialGiniChartEl = document.getElementById("evidence_lambda_social_gini_chart");
+    const evidenceLambdaSocialGiniLegendEl = document.getElementById("evidence_lambda_social_gini_legend");
+    const evidencePostChartEl = document.getElementById("evidence_post_chart");
+    const evidencePostLegendEl = document.getElementById("evidence_post_legend");
+    const evidenceSeedChartEl = document.getElementById("evidence_seed_chart");
+    const evidenceSeedLegendEl = document.getElementById("evidence_seed_legend");
+    let statsVisible = false;
+    let allocationVisible = true;
+    let evidenceVisible = false;
+    let evidenceRendered = false;
+    let progressPollTimer = null;
+    let statsMode = "history";
+    let currentModeComparisonStats = null;
+    const MOVE_TYPES = ["swap", "drop-add", "hybrid"];
+    const POST_MODE_SWEEP_GRID = [0, 1, 2, 3, 5, 8, 12, 16, 20];
+    const POST_UTILITY_SWEEP_GRID = [0, 1, 3, 6, 10, 12];
+    const MODE_COLORS = {
+      "swap": "#1f6feb",
+      "drop-add": "#bf8700",
+      "hybrid": "#2da44e"
+    };
+
+    function setStatus(message, kind) {
+      statusEl.textContent = message;
+      statusEl.className = "status " + (kind || "");
+    }
+
+    function readInt(id, fallback) {
+      const raw = document.getElementById(id).value.trim();
+      if (!raw) return fallback;
+      const value = Number.parseInt(raw, 10);
+      if (Number.isNaN(value)) {
+        throw new Error(id + " must be an integer");
+      }
+      return value;
+    }
+
+    function readOptionalInt(id) {
+      const raw = document.getElementById(id).value.trim();
+      if (!raw) return null;
+      const value = Number.parseInt(raw, 10);
+      if (Number.isNaN(value)) {
+        throw new Error(id + " must be an integer");
+      }
+      return value;
+    }
+
+    function readFloat(id, fallback) {
+      const raw = document.getElementById(id).value.trim();
+      if (!raw) return fallback;
+      const value = Number.parseFloat(raw);
+      if (Number.isNaN(value)) {
+        throw new Error(id + " must be a number");
+      }
+      return value;
+    }
+
+    function readOptionalFloat(id) {
+      const raw = document.getElementById(id).value.trim();
+      if (!raw) return null;
+      const value = Number.parseFloat(raw);
+      if (Number.isNaN(value)) {
+        throw new Error(id + " must be a number");
+      }
+      return value;
+    }
+
+    function fillSelect(id, files, required) {
+      const select = document.getElementById(id);
+      const oldValue = select.value;
+      select.innerHTML = "";
+
+      if (!required) {
+        const noneOption = document.createElement("option");
+        noneOption.value = "";
+        noneOption.textContent = "(none)";
+        select.appendChild(noneOption);
+      }
+
+      files.forEach((fileName) => {
+        const option = document.createElement("option");
+        option.value = fileName;
+        option.textContent = fileName;
+        select.appendChild(option);
+      });
+
+      if (files.length === 0 && required) {
+        const emptyOption = document.createElement("option");
+        emptyOption.value = "";
+        emptyOption.textContent = "No files found";
+        select.appendChild(emptyOption);
+      }
+
+      const restoreValue = Array.from(select.options).some((opt) => opt.value === oldValue);
+      if (restoreValue) {
+        select.value = oldValue;
+      }
+    }
+
+    async function loadFiles(preferredFiles) {
+      setStatus("Loading file list...", "");
+      try {
+        const response = await fetch("/api/tables");
+        const data = await response.json();
+        if (!response.ok || !data.ok) {
+          throw new Error(data.error || ("HTTP " + response.status));
+        }
+
+        fillSelect("table1_file", data.table1 || [], true);
+        fillSelect("table2_file", data.table2 || [], true);
+        fillSelect("lambda_file", data.lambda || [], false);
+
+        if (preferredFiles) {
+          if (preferredFiles.table1) {
+            document.getElementById("table1_file").value = preferredFiles.table1;
+          }
+          if (preferredFiles.table2) {
+            document.getElementById("table2_file").value = preferredFiles.table2;
+          }
+          if (preferredFiles.lambda) {
+            document.getElementById("lambda_file").value = preferredFiles.lambda;
+          }
+        }
+
+        setStatus("File list updated.", "ok");
+      } catch (err) {
+        setStatus(err.message, "error");
+      }
+    }
+
+    function payloadFromForm() {
+      const draftRaw = document.getElementById("draft_rounds").value.trim();
+      const table1File = document.getElementById("table1_file").value;
+      const table2File = document.getElementById("table2_file").value;
+      const lambdaFile = document.getElementById("lambda_file").value;
+
+      if (!table1File) {
+        throw new Error("Select Table 1 file");
+      }
+      if (!table2File) {
+        throw new Error("Select Table 2 file");
+      }
+
+      const selectedMode = document.querySelector("input[name='improve_choice']:checked");
+      if (!selectedMode) {
+        throw new Error("Please select an improvement mode.");
+      }
+
+      return {
+        table1_file: table1File,
+        table2_file: table2File,
+        lambda_file: lambdaFile || null,
+        cap_default: readInt("cap_default", 80),
+        b: readInt("b", 3),
+        seed: readInt("seed", 11),
+        draft_rounds: draftRaw ? Number.parseInt(draftRaw, 10) : null,
+        post_iters: readInt("post_iters", 0),
+        move_type: selectedMode.dataset.moveType,
+        objective_scope: selectedMode.dataset.objectiveScope,
+        improve_mode: selectedMode.value
+      };
+    }
+
+    function generateTablesPayloadFromForm() {
+      const generateTable1 = document.getElementById("gen_table1").checked;
+      const generateTable2 = document.getElementById("gen_table2").checked;
+      const generateLambda = document.getElementById("gen_lambda").checked;
+      if (!generateTable1 && !generateTable2 && !generateLambda) {
+        throw new Error("Select at least one generated table.");
+      }
+      return {
+        students: readInt("gen_students", 10),
+        courses: readInt("gen_courses", 5),
+        seed: readOptionalInt("gen_seed"),
+        score_min: readInt("gen_score_min", 1),
+        score_max: readInt("gen_score_max", 5),
+        swap_prob: readFloat("gen_swap_prob", 0),
+        friend_top_k: readInt("gen_friend_top_k", 3),
+        friend_score_min: readOptionalInt("gen_friend_score_min"),
+        friend_score_max: readOptionalInt("gen_friend_score_max"),
+        friend_score_mode: document.getElementById("gen_friend_score_mode").value,
+        friend_swap_prob: readFloat("gen_friend_swap_prob", 0),
+        lambda_default: readOptionalFloat("gen_lambda_default"),
+        generate_table1: generateTable1,
+        generate_table2: generateTable2,
+        generate_lambda: generateLambda
+      };
+    }
+
+    async function generateTables() {
+      generateTablesBtn.disabled = true;
+      setStatus("Generating tables...", "");
+      generateTablesNoteEl.textContent = "Generating selected CSV files...";
+      try {
+        const payload = generateTablesPayloadFromForm();
+        const response = await fetch("/api/generate-tables", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        const data = await response.json();
+        if (!response.ok || !data.ok) {
+          throw new Error(data.error || ("HTTP " + response.status));
+        }
+        const created = data.created || {};
+        await loadFiles(created);
+        const names = Object.values(created);
+        const lambdaInfo = data.lambda_info;
+        let note = names.length ? "Generated: " + names.join(", ") : "No files generated.";
+        if (lambdaInfo && lambdaInfo.summary) {
+          const summary = lambdaInfo.summary;
+          if (lambdaInfo.mode === "random") {
+            note += " | Lambda: random per student";
+          } else {
+            note += " | Lambda default: " + Number(lambdaInfo.requested_default).toFixed(3);
+          }
+          note += " | values: " + (summary.sample_values || []).join(", ");
+          note += " | range: " + Number(summary.min).toFixed(3) + " .. " + Number(summary.max).toFixed(3);
+        }
+        generateTablesNoteEl.textContent = note;
+        setStatus("Tables generated and selected.", "ok");
+      } catch (err) {
+        generateTablesNoteEl.textContent = err.message;
+        setStatus(err.message, "error");
+      } finally {
+        generateTablesBtn.disabled = false;
+      }
+    }
+
+    function updateModePreview() {
+      const selectedMode = document.querySelector("input[name='improve_choice']:checked");
+      const preview = document.getElementById("mode_preview");
+      const postIters = readInt("post_iters", 0);
+      const modeText = "Selected mode: " + (selectedMode ? selectedMode.value : "(none)");
+      preview.textContent = postIters === 0
+        ? modeText + " | post_iters=0, so all post-phase modes behave like draft-only."
+        : modeText;
+    }
+
+    function renderAllocation(allocMap, pickLog) {
+      const studentsFromAlloc = Object.keys(allocMap);
+      const studentsFromPickLog = [];
+      const seen = new Set();
+
+      (pickLog || []).forEach((pick) => {
+        const studentId = pick && pick.student_id;
+        if (!studentId || seen.has(studentId)) {
+          return;
+        }
+        seen.add(studentId);
+        studentsFromPickLog.push(studentId);
+      });
+
+      const students = studentsFromPickLog.concat(
+        studentsFromAlloc.filter((studentId) => !seen.has(studentId))
+      );
+      if (students.length === 0) {
+        tableEl.innerHTML = "<tr><td colspan='2'>No allocation rows.</td></tr>";
+        return;
+      }
+
+      tableEl.innerHTML = "";
+      students.forEach((student) => {
+        const courses = allocMap[student] || [];
+        const tr = document.createElement("tr");
+        const tdStudent = document.createElement("td");
+        const tdCourses = document.createElement("td");
+        tdStudent.textContent = student;
+        tdCourses.textContent = courses.join(", ");
+        tr.appendChild(tdStudent);
+        tr.appendChild(tdCourses);
+        tableEl.appendChild(tr);
+      });
+    }
+
+    function setAllocationVisible(isVisible) {
+      allocationVisible = isVisible;
+      allocationWrapEl.style.display = isVisible ? "block" : "none";
+      toggleAllocationBtn.textContent = isVisible ? "Hide Allocation" : "Show Allocation";
+    }
+
+    function makeDownloadButton(fileName, content) {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "secondary";
+      btn.textContent = "Download " + fileName;
+      btn.addEventListener("click", () => {
+        const blob = new Blob([content], { type: "text/csv;charset=utf-8" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = fileName;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+      });
+      return btn;
+    }
+
+    function renderDownloads(csvOutputs) {
+      downloadsEl.innerHTML = "";
+      downloadsEl.appendChild(makeDownloadButton("allocation.csv", csvOutputs.allocation || ""));
+      downloadsEl.appendChild(makeDownloadButton("post_allocation.csv", csvOutputs.post_allocation || ""));
+      downloadsEl.appendChild(makeDownloadButton("summary.csv", csvOutputs.summary || ""));
+      downloadsEl.appendChild(makeDownloadButton("metrics_extended.csv", csvOutputs.metrics_extended || ""));
+    }
+
+    function renderHistory(items) {
+      if (!Array.isArray(items) || items.length === 0) {
+        historyEl.innerHTML = "<tr><td colspan='2'>No runs yet.</td></tr>";
+        return;
+      }
+
+      historyEl.innerHTML = "";
+      items.forEach((item, idx) => {
+        const tr = document.createElement("tr");
+        const tdIndex = document.createElement("td");
+        const tdSummary = document.createElement("td");
+        tdIndex.textContent = String(idx + 1);
+        tdSummary.textContent = item.summary_line || "";
+        tr.appendChild(tdIndex);
+        tr.appendChild(tdSummary);
+        historyEl.appendChild(tr);
+      });
+    }
+
+    function format6(value) {
+      const num = Number(value);
+      if (Number.isNaN(num)) return "";
+      return num.toFixed(6);
+    }
+
+    function format3(value) {
+      const num = Number(value);
+      if (Number.isNaN(num)) return "";
+      return num.toFixed(3);
+    }
+
+    function renderLegend(container, items) {
+      container.innerHTML = "";
+      items.forEach((item) => {
+        const span = document.createElement("span");
+        span.className = "legend-item";
+        const dot = document.createElement("span");
+        dot.className = "legend-dot";
+        if (item.dash) {
+          dot.style.width = "22px";
+          dot.style.height = "0";
+          dot.style.borderRadius = "0";
+          dot.style.background = "transparent";
+          dot.style.borderTop = "2px dashed " + item.color;
+        } else {
+          dot.style.background = item.color;
+        }
+        const label = document.createElement("span");
+        label.textContent = item.label;
+        span.appendChild(dot);
+        span.appendChild(label);
+        container.appendChild(span);
+      });
+    }
+
+    function metricValue(row, key, fallbackKey) {
+      const primary = Number(row && row[key]);
+      if (Number.isFinite(primary)) return primary;
+      const fallback = Number(row && row[fallbackKey]);
+      return Number.isFinite(fallback) ? fallback : NaN;
+    }
+
+    function resetStatsView(message) {
+      statsMode = "history";
+      currentModeComparisonStats = null;
+      statsEmptyEl.textContent = message || "No statistics yet.";
+      statsOverviewEl.innerHTML = "";
+      lambdaChartTitleEl.textContent = "Lambda Sweep";
+      lambdaChartNoteEl.textContent = "X-axis: lambda, Y-axis: selected normalized metrics";
+      postModeSweepChartTitleEl.textContent = "Post-Iteration Mode Sweep";
+      postModeSweepChartNoteEl.textContent = "Run Post-Mode Sweep to compare all six algorithm variants on selected tables.";
+      utilityChartTitleEl.textContent = "Utility Trend";
+      utilityChartNoteEl.textContent = "X-axis: run index, Y-axis: total_utility";
+      fairnessChartTitleEl.textContent = "Fairness Trend";
+      fairnessChartNoteEl.textContent = "X-axis: run index, Y-axis: gini values";
+      socialChartTitleEl.textContent = "Social Component Trend";
+      socialChartNoteEl.textContent = "X-axis: run index, Y-axis: normalized friend utility and overlap rates";
+      qualityChartTitleEl.textContent = "Preference Quality Trend";
+      qualityChartNoteEl.textContent = "X-axis: run index, Y-axis: rank/top-k quality values";
+      utilityChartEl.innerHTML = "";
+      utilityLegendEl.innerHTML = "";
+      lambdaChartEl.innerHTML = "";
+      lambdaLegendEl.innerHTML = "";
+      postModeSweepChartEl.innerHTML = "";
+      postModeSweepLegendEl.innerHTML = "";
+      fairnessChartEl.innerHTML = "";
+      fairnessLegendEl.innerHTML = "";
+      socialChartEl.innerHTML = "";
+      socialLegendEl.innerHTML = "";
+      qualityChartEl.innerHTML = "";
+      qualityLegendEl.innerHTML = "";
+      workerProgressEl.innerHTML = "";
+      workerProgressEl.style.display = "none";
+      statsModeTableEl.innerHTML = "<tr><td colspan='15'>No statistics yet.</td></tr>";
+    }
+
+    function setStatsPanelVisible(isVisible) {
+      statsVisible = isVisible;
+      statsPanelEl.style.display = isVisible ? "grid" : "none";
+      showStatsBtn.textContent = isVisible ? "Hide Statistics" : "Show Statistics";
+    }
+
+    function renderLineChartSvg(container, points, lineDefs, options) {
+      const width = 880;
+      const height = 250;
+      const margin = { top: 14, right: 22, bottom: 34, left: 56 };
+      const innerW = width - margin.left - margin.right;
+      const innerH = height - margin.top - margin.bottom;
+
+      if (!Array.isArray(points) || points.length === 0) {
+        container.innerHTML = "<div class='inline-note'>No statistics yet.</div>";
+        return;
+      }
+
+      let minY = Infinity;
+      let maxY = -Infinity;
+      lineDefs.forEach((line) => {
+        points.forEach((p) => {
+          const value = Number(p[line.key]);
+          if (Number.isFinite(value)) {
+            minY = Math.min(minY, value);
+            maxY = Math.max(maxY, value);
+          }
+        });
+      });
+      if (!Number.isFinite(minY) || !Number.isFinite(maxY)) {
+        container.innerHTML = "<div class='inline-note'>No statistics yet.</div>";
+        return;
+      }
+      if (Math.abs(maxY - minY) < 1e-12) {
+        const delta = Math.max(1e-6, Math.abs(maxY) * 0.05);
+        minY -= delta;
+        maxY += delta;
+      }
+
+      const xMin = 1;
+      const xMax = points.length;
+      const xScale = (runIndex) => {
+        if (xMax === xMin) return margin.left + innerW / 2;
+        return margin.left + ((runIndex - xMin) / (xMax - xMin)) * innerW;
+      };
+      const yScale = (value) => margin.top + ((maxY - value) / (maxY - minY)) * innerH;
+
+      const ns = "http://www.w3.org/2000/svg";
+      const svg = document.createElementNS(ns, "svg");
+      svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
+      svg.setAttribute("width", "100%");
+      svg.setAttribute("height", String(height));
+
+      const axisColor = "#7d8aa1";
+      const gridColor = "#e8edf5";
+
+      for (let i = 0; i <= 4; i += 1) {
+        const yValue = minY + ((maxY - minY) * i) / 4;
+        const y = yScale(yValue);
+        const grid = document.createElementNS(ns, "line");
+        grid.setAttribute("x1", String(margin.left));
+        grid.setAttribute("x2", String(margin.left + innerW));
+        grid.setAttribute("y1", String(y));
+        grid.setAttribute("y2", String(y));
+        grid.setAttribute("stroke", gridColor);
+        grid.setAttribute("stroke-width", "1");
+        svg.appendChild(grid);
+
+        const label = document.createElementNS(ns, "text");
+        label.setAttribute("x", String(margin.left - 8));
+        label.setAttribute("y", String(y + 4));
+        label.setAttribute("text-anchor", "end");
+        label.setAttribute("font-size", "11");
+        label.setAttribute("fill", "#607089");
+        label.textContent = yValue.toFixed(4);
+        svg.appendChild(label);
+      }
+
+      const xAxis = document.createElementNS(ns, "line");
+      xAxis.setAttribute("x1", String(margin.left));
+      xAxis.setAttribute("x2", String(margin.left + innerW));
+      xAxis.setAttribute("y1", String(margin.top + innerH));
+      xAxis.setAttribute("y2", String(margin.top + innerH));
+      xAxis.setAttribute("stroke", axisColor);
+      xAxis.setAttribute("stroke-width", "1.2");
+      svg.appendChild(xAxis);
+
+      const yAxis = document.createElementNS(ns, "line");
+      yAxis.setAttribute("x1", String(margin.left));
+      yAxis.setAttribute("x2", String(margin.left));
+      yAxis.setAttribute("y1", String(margin.top));
+      yAxis.setAttribute("y2", String(margin.top + innerH));
+      yAxis.setAttribute("stroke", axisColor);
+      yAxis.setAttribute("stroke-width", "1.2");
+      svg.appendChild(yAxis);
+
+      const xTicks = Math.min(8, points.length);
+      for (let i = 0; i < xTicks; i += 1) {
+        const idx = Math.round(1 + (i * (points.length - 1)) / Math.max(1, xTicks - 1));
+        const x = xScale(idx);
+        const tick = document.createElementNS(ns, "line");
+        tick.setAttribute("x1", String(x));
+        tick.setAttribute("x2", String(x));
+        tick.setAttribute("y1", String(margin.top + innerH));
+        tick.setAttribute("y2", String(margin.top + innerH + 4));
+        tick.setAttribute("stroke", axisColor);
+        tick.setAttribute("stroke-width", "1");
+        svg.appendChild(tick);
+
+        const label = document.createElementNS(ns, "text");
+        label.setAttribute("x", String(x));
+        label.setAttribute("y", String(margin.top + innerH + 16));
+        label.setAttribute("text-anchor", "middle");
+        label.setAttribute("font-size", "11");
+        label.setAttribute("fill", "#607089");
+        label.textContent = String(idx);
+        svg.appendChild(label);
+      }
+
+      lineDefs.forEach((line) => {
+        const coords = points
+          .map((p) => {
+            const value = Number(p[line.key]);
+            return Number.isFinite(value) ? `${xScale(p.run_index)},${yScale(value)}` : "";
+          })
+          .filter((coord) => coord !== "")
+          .join(" ");
+        if (coords.length > 0) {
+          const polyline = document.createElementNS(ns, "polyline");
+          polyline.setAttribute("fill", "none");
+          polyline.setAttribute("stroke", line.color);
+          polyline.setAttribute("stroke-width", "2");
+          if (line.dash) {
+            polyline.setAttribute("stroke-dasharray", line.dash);
+          }
+          polyline.setAttribute("points", coords);
+          svg.appendChild(polyline);
+        }
+
+        points.forEach((p) => {
+          const value = Number(p[line.key]);
+          if (!Number.isFinite(value)) {
+            return;
+          }
+          const cx = xScale(p.run_index);
+          const cy = yScale(value);
+          const dot = document.createElementNS(ns, "circle");
+          dot.setAttribute("cx", String(cx));
+          dot.setAttribute("cy", String(cy));
+          dot.setAttribute("r", "3.4");
+          dot.setAttribute("fill", line.color);
+          const title = document.createElementNS(ns, "title");
+          title.textContent = `#${p.run_index} | ${p.improve_mode} | ${line.label}=${value.toFixed(6)}`;
+          dot.appendChild(title);
+          svg.appendChild(dot);
+        });
+      });
+
+      const xLabel = document.createElementNS(ns, "text");
+      xLabel.setAttribute("x", String(margin.left + innerW / 2));
+      xLabel.setAttribute("y", String(height - 4));
+      xLabel.setAttribute("text-anchor", "middle");
+      xLabel.setAttribute("font-size", "12");
+      xLabel.setAttribute("fill", "#425068");
+      xLabel.textContent = "Run index";
+      svg.appendChild(xLabel);
+
+      const yLabel = document.createElementNS(ns, "text");
+      yLabel.setAttribute("transform", `translate(14 ${margin.top + innerH / 2}) rotate(-90)`);
+      yLabel.setAttribute("text-anchor", "middle");
+      yLabel.setAttribute("font-size", "12");
+      yLabel.setAttribute("fill", "#425068");
+      yLabel.textContent = options && options.yLabel ? options.yLabel : "Value";
+      svg.appendChild(yLabel);
+
+      container.innerHTML = "";
+      container.appendChild(svg);
+    }
+
+    function renderLambdaLineChartSvg(container, rows, lineDefs, options) {
+      const width = 880;
+      const height = 280;
+      const margin = { top: 16, right: 22, bottom: 40, left: 62 };
+      const innerW = width - margin.left - margin.right;
+      const innerH = height - margin.top - margin.bottom;
+
+      if (!Array.isArray(rows) || rows.length === 0) {
+        container.innerHTML = "<div class='inline-note'>No lambda sweep yet.</div>";
+        return;
+      }
+
+      const sortedRows = rows
+        .map((row) => ({ ...row, lambda: Number(row.lambda) }))
+        .filter((row) => Number.isFinite(row.lambda))
+        .sort((a, b) => a.lambda - b.lambda);
+      if (sortedRows.length === 0) {
+        container.innerHTML = "<div class='inline-note'>No lambda sweep yet.</div>";
+        return;
+      }
+
+      let minY = Infinity;
+      let maxY = -Infinity;
+      lineDefs.forEach((line) => {
+        sortedRows.forEach((row) => {
+          const value = Number(row[line.key]);
+          if (Number.isFinite(value)) {
+            minY = Math.min(minY, value);
+            maxY = Math.max(maxY, value);
+          }
+        });
+      });
+      if (!Number.isFinite(minY) || !Number.isFinite(maxY)) {
+        container.innerHTML = "<div class='inline-note'>No lambda sweep yet.</div>";
+        return;
+      }
+      minY = Math.min(0, minY);
+      maxY = Math.max(1, maxY);
+      if (Math.abs(maxY - minY) < 1e-12) {
+        maxY = minY + 1;
+      }
+
+      const xMin = Math.min(...sortedRows.map((row) => row.lambda));
+      const xMax = Math.max(...sortedRows.map((row) => row.lambda));
+      const xScale = (lambdaValue) => {
+        if (Math.abs(xMax - xMin) < 1e-12) return margin.left + innerW / 2;
+        return margin.left + ((lambdaValue - xMin) / (xMax - xMin)) * innerW;
+      };
+      const yScale = (value) => margin.top + ((maxY - value) / (maxY - minY)) * innerH;
+
+      const ns = "http://www.w3.org/2000/svg";
+      const svg = document.createElementNS(ns, "svg");
+      svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
+      svg.setAttribute("width", "100%");
+      svg.setAttribute("height", String(height));
+
+      const axisColor = "#7d8aa1";
+      const gridColor = "#e8edf5";
+
+      for (let i = 0; i <= 4; i += 1) {
+        const yValue = minY + ((maxY - minY) * i) / 4;
+        const y = yScale(yValue);
+        const grid = document.createElementNS(ns, "line");
+        grid.setAttribute("x1", String(margin.left));
+        grid.setAttribute("x2", String(margin.left + innerW));
+        grid.setAttribute("y1", String(y));
+        grid.setAttribute("y2", String(y));
+        grid.setAttribute("stroke", gridColor);
+        grid.setAttribute("stroke-width", "1");
+        svg.appendChild(grid);
+
+        const label = document.createElementNS(ns, "text");
+        label.setAttribute("x", String(margin.left - 8));
+        label.setAttribute("y", String(y + 4));
+        label.setAttribute("text-anchor", "end");
+        label.setAttribute("font-size", "11");
+        label.setAttribute("fill", "#607089");
+        label.textContent = yValue.toFixed(3);
+        svg.appendChild(label);
+      }
+
+      const xAxis = document.createElementNS(ns, "line");
+      xAxis.setAttribute("x1", String(margin.left));
+      xAxis.setAttribute("x2", String(margin.left + innerW));
+      xAxis.setAttribute("y1", String(margin.top + innerH));
+      xAxis.setAttribute("y2", String(margin.top + innerH));
+      xAxis.setAttribute("stroke", axisColor);
+      xAxis.setAttribute("stroke-width", "1.2");
+      svg.appendChild(xAxis);
+
+      const yAxis = document.createElementNS(ns, "line");
+      yAxis.setAttribute("x1", String(margin.left));
+      yAxis.setAttribute("x2", String(margin.left));
+      yAxis.setAttribute("y1", String(margin.top));
+      yAxis.setAttribute("y2", String(margin.top + innerH));
+      yAxis.setAttribute("stroke", axisColor);
+      yAxis.setAttribute("stroke-width", "1.2");
+      svg.appendChild(yAxis);
+
+      sortedRows.forEach((row) => {
+        const x = xScale(row.lambda);
+        const tick = document.createElementNS(ns, "line");
+        tick.setAttribute("x1", String(x));
+        tick.setAttribute("x2", String(x));
+        tick.setAttribute("y1", String(margin.top + innerH));
+        tick.setAttribute("y2", String(margin.top + innerH + 4));
+        tick.setAttribute("stroke", axisColor);
+        tick.setAttribute("stroke-width", "1");
+        svg.appendChild(tick);
+
+        const label = document.createElementNS(ns, "text");
+        label.setAttribute("x", String(x));
+        label.setAttribute("y", String(margin.top + innerH + 17));
+        label.setAttribute("text-anchor", "middle");
+        label.setAttribute("font-size", "11");
+        label.setAttribute("fill", "#607089");
+        label.textContent = row.lambda.toFixed(2);
+        svg.appendChild(label);
+      });
+
+      lineDefs.forEach((line) => {
+        const coords = sortedRows
+          .map((row) => {
+            const value = Number(row[line.key]);
+            return Number.isFinite(value) ? `${xScale(row.lambda)},${yScale(value)}` : "";
+          })
+          .filter((coord) => coord !== "")
+          .join(" ");
+        if (coords.length > 0) {
+          const polyline = document.createElementNS(ns, "polyline");
+          polyline.setAttribute("fill", "none");
+          polyline.setAttribute("stroke", line.color);
+          polyline.setAttribute("stroke-width", "2");
+          if (line.dash) {
+            polyline.setAttribute("stroke-dasharray", line.dash);
+          }
+          polyline.setAttribute("points", coords);
+          svg.appendChild(polyline);
+        }
+
+        sortedRows.forEach((row) => {
+          const value = Number(row[line.key]);
+          if (!Number.isFinite(value)) return;
+          const dot = document.createElementNS(ns, "circle");
+          dot.setAttribute("cx", String(xScale(row.lambda)));
+          dot.setAttribute("cy", String(yScale(value)));
+          dot.setAttribute("r", "3.8");
+          dot.setAttribute("fill", line.color);
+          const title = document.createElementNS(ns, "title");
+          title.textContent = `lambda=${row.lambda.toFixed(3)} | ${line.label}=${value.toFixed(6)} | runs=${row.runs}`;
+          dot.appendChild(title);
+          svg.appendChild(dot);
+        });
+      });
+
+      const xLabel = document.createElementNS(ns, "text");
+      xLabel.setAttribute("x", String(margin.left + innerW / 2));
+      xLabel.setAttribute("y", String(height - 5));
+      xLabel.setAttribute("text-anchor", "middle");
+      xLabel.setAttribute("font-size", "12");
+      xLabel.setAttribute("fill", "#425068");
+      xLabel.textContent = "lambda";
+      svg.appendChild(xLabel);
+
+      const yLabel = document.createElementNS(ns, "text");
+      yLabel.setAttribute("transform", `translate(15 ${margin.top + innerH / 2}) rotate(-90)`);
+      yLabel.setAttribute("text-anchor", "middle");
+      yLabel.setAttribute("font-size", "12");
+      yLabel.setAttribute("fill", "#425068");
+      yLabel.textContent = options && options.yLabel ? options.yLabel : "Value";
+      svg.appendChild(yLabel);
+
+      container.innerHTML = "";
+      container.appendChild(svg);
+    }
+
+    function renderModePointChartSvg(container, rows, lineDefs, options) {
+      const width = 880;
+      const height = 300;
+      const margin = { top: 16, right: 22, bottom: 78, left: 62 };
+      const innerW = width - margin.left - margin.right;
+      const innerH = height - margin.top - margin.bottom;
+
+      if (!Array.isArray(rows) || rows.length === 0) {
+        container.innerHTML = "<div class='inline-note'>No batch statistics yet.</div>";
+        return;
+      }
+
+      let minY = Infinity;
+      let maxY = -Infinity;
+      lineDefs.forEach((line) => {
+        rows.forEach((row) => {
+          const value = Number(row[line.key]);
+          if (Number.isFinite(value)) {
+            minY = Math.min(minY, value);
+            maxY = Math.max(maxY, value);
+          }
+        });
+      });
+      if (!Number.isFinite(minY) || !Number.isFinite(maxY)) {
+        container.innerHTML = "<div class='inline-note'>No batch statistics yet.</div>";
+        return;
+      }
+      if (Math.abs(maxY - minY) < 1e-12) {
+        const delta = Math.max(1e-6, Math.abs(maxY) * 0.05);
+        minY -= delta;
+        maxY += delta;
+      } else {
+        const pad = (maxY - minY) * 0.08;
+        minY = Math.max(0, minY - pad);
+        maxY += pad;
+      }
+
+      const ns = "http://www.w3.org/2000/svg";
+      const svg = document.createElementNS(ns, "svg");
+      svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
+      svg.setAttribute("width", "100%");
+      svg.setAttribute("height", String(height));
+
+      const axisColor = "#7d8aa1";
+      const gridColor = "#e8edf5";
+      const yScale = (value) => margin.top + ((maxY - value) / (maxY - minY)) * innerH;
+      const xScale = (idx) => {
+        if (rows.length === 1) return margin.left + innerW / 2;
+        return margin.left + (idx / (rows.length - 1)) * innerW;
+      };
+
+      for (let i = 0; i <= 4; i += 1) {
+        const yValue = minY + ((maxY - minY) * i) / 4;
+        const y = yScale(yValue);
+        const grid = document.createElementNS(ns, "line");
+        grid.setAttribute("x1", String(margin.left));
+        grid.setAttribute("x2", String(margin.left + innerW));
+        grid.setAttribute("y1", String(y));
+        grid.setAttribute("y2", String(y));
+        grid.setAttribute("stroke", gridColor);
+        grid.setAttribute("stroke-width", "1");
+        svg.appendChild(grid);
+
+        const label = document.createElementNS(ns, "text");
+        label.setAttribute("x", String(margin.left - 8));
+        label.setAttribute("y", String(y + 4));
+        label.setAttribute("text-anchor", "end");
+        label.setAttribute("font-size", "11");
+        label.setAttribute("fill", "#607089");
+        label.textContent = yValue.toFixed(4);
+        svg.appendChild(label);
+      }
+
+      const xAxis = document.createElementNS(ns, "line");
+      xAxis.setAttribute("x1", String(margin.left));
+      xAxis.setAttribute("x2", String(margin.left + innerW));
+      xAxis.setAttribute("y1", String(margin.top + innerH));
+      xAxis.setAttribute("y2", String(margin.top + innerH));
+      xAxis.setAttribute("stroke", axisColor);
+      xAxis.setAttribute("stroke-width", "1.2");
+      svg.appendChild(xAxis);
+
+      const yAxis = document.createElementNS(ns, "line");
+      yAxis.setAttribute("x1", String(margin.left));
+      yAxis.setAttribute("x2", String(margin.left));
+      yAxis.setAttribute("y1", String(margin.top));
+      yAxis.setAttribute("y2", String(margin.top + innerH));
+      yAxis.setAttribute("stroke", axisColor);
+      yAxis.setAttribute("stroke-width", "1.2");
+      svg.appendChild(yAxis);
+
+      rows.forEach((row, rowIndex) => {
+        const label = document.createElementNS(ns, "text");
+        label.setAttribute("x", String(xScale(rowIndex)));
+        label.setAttribute("y", String(margin.top + innerH + 18));
+        label.setAttribute("text-anchor", "end");
+        label.setAttribute("font-size", "11");
+        label.setAttribute("fill", "#607089");
+        label.setAttribute(
+          "transform",
+          `rotate(-28 ${xScale(rowIndex)} ${margin.top + innerH + 18})`
+        );
+        label.textContent = row.improve_mode;
+        svg.appendChild(label);
+      });
+
+      lineDefs.forEach((line) => {
+        const coords = rows
+          .map((row, idx) => {
+            const value = Number(row[line.key]);
+            return Number.isFinite(value) ? `${xScale(idx)},${yScale(value)}` : "";
+          })
+          .filter((coord) => coord !== "")
+          .join(" ");
+        if (coords.length > 0) {
+          const polyline = document.createElementNS(ns, "polyline");
+          polyline.setAttribute("fill", "none");
+          polyline.setAttribute("stroke", line.color);
+          polyline.setAttribute("stroke-width", "2");
+          polyline.setAttribute("points", coords);
+          svg.appendChild(polyline);
+        }
+
+        rows.forEach((row, idx) => {
+          const value = Number(row[line.key]);
+          if (!Number.isFinite(value)) {
+            return;
+          }
+          const dot = document.createElementNS(ns, "circle");
+          dot.setAttribute("cx", String(xScale(idx)));
+          dot.setAttribute("cy", String(yScale(value)));
+          dot.setAttribute("r", "4");
+          dot.setAttribute("fill", line.color);
+          const title = document.createElementNS(ns, "title");
+          title.textContent = `${row.improve_mode} | ${line.label}=${value.toFixed(6)} | runs=${row.runs}`;
+          dot.appendChild(title);
+          svg.appendChild(dot);
+        });
+      });
+
+      const yLabel = document.createElementNS(ns, "text");
+      yLabel.setAttribute("transform", `translate(15 ${margin.top + innerH / 2}) rotate(-90)`);
+      yLabel.setAttribute("text-anchor", "middle");
+      yLabel.setAttribute("font-size", "12");
+      yLabel.setAttribute("fill", "#425068");
+      yLabel.textContent = options && options.yLabel ? options.yLabel : "Value";
+      svg.appendChild(yLabel);
+
+      container.innerHTML = "";
+      container.appendChild(svg);
+    }
+
+    function renderXYLineChartSvg(container, rows, xKey, xLabel, lineDefs, options) {
+      const width = 880;
+      const height = 280;
+      const margin = { top: 16, right: 22, bottom: 42, left: 64 };
+      const innerW = width - margin.left - margin.right;
+      const innerH = height - margin.top - margin.bottom;
+      const cleanRows = (rows || [])
+        .map((row) => ({ ...row, __x: Number(row[xKey]) }))
+        .filter((row) => Number.isFinite(row.__x))
+        .sort((a, b) => a.__x - b.__x);
+
+      if (cleanRows.length === 0) {
+        container.innerHTML = "<div class='inline-note'>No artifact data found.</div>";
+        return;
+      }
+
+      let minY = Infinity;
+      let maxY = -Infinity;
+      lineDefs.forEach((line) => {
+        cleanRows.forEach((row) => {
+          const value = Number(row[line.key]);
+          if (Number.isFinite(value)) {
+            minY = Math.min(minY, value);
+            maxY = Math.max(maxY, value);
+          }
+        });
+      });
+      if (!Number.isFinite(minY) || !Number.isFinite(maxY)) {
+        container.innerHTML = "<div class='inline-note'>No plottable values found.</div>";
+        return;
+      }
+      const includeZero = options && options.includeZero;
+      const fixedYTicks = options && Array.isArray(options.yTicks) ? options.yTicks : null;
+      if (fixedYTicks && fixedYTicks.length >= 2) {
+        minY = Math.min(...fixedYTicks);
+        maxY = Math.max(...fixedYTicks);
+      } else {
+        if (includeZero) {
+          minY = Math.min(0, minY);
+          maxY = Math.max(1, maxY);
+        }
+        if (Math.abs(maxY - minY) < 1e-12) {
+          maxY = minY + 1;
+        } else {
+          const pad = (maxY - minY) * 0.08;
+          minY = includeZero ? minY : minY - pad;
+          maxY += includeZero ? 0 : pad;
+        }
+      }
+
+      const xMin = Math.min(...cleanRows.map((row) => row.__x));
+      const xMax = Math.max(...cleanRows.map((row) => row.__x));
+      const xScale = (value) => Math.abs(xMax - xMin) < 1e-12
+        ? margin.left + innerW / 2
+        : margin.left + ((value - xMin) / (xMax - xMin)) * innerW;
+      const yScale = (value) => margin.top + ((maxY - value) / (maxY - minY)) * innerH;
+
+      const ns = "http://www.w3.org/2000/svg";
+      const svg = document.createElementNS(ns, "svg");
+      svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
+      svg.setAttribute("width", "100%");
+      svg.setAttribute("height", String(height));
+      const axisColor = "#7d8aa1";
+      const gridColor = "#e8edf5";
+
+      if (options && options.xBand) {
+        const bandFrom = Number(options.xBand.from);
+        const bandTo = Number(options.xBand.to);
+        if (Number.isFinite(bandFrom) && Number.isFinite(bandTo)) {
+          const bandRect = document.createElementNS(ns, "rect");
+          bandRect.setAttribute("x", String(xScale(Math.min(bandFrom, bandTo))));
+          bandRect.setAttribute("y", String(margin.top));
+          bandRect.setAttribute("width", String(Math.abs(xScale(bandTo) - xScale(bandFrom))));
+          bandRect.setAttribute("height", String(innerH));
+          bandRect.setAttribute("fill", options.xBand.color || "#2da44e");
+          bandRect.setAttribute("opacity", String(options.xBand.opacity || 0.1));
+          svg.appendChild(bandRect);
+
+          if (options.xBand.label) {
+            const bandLabel = document.createElementNS(ns, "text");
+            bandLabel.setAttribute("x", String((xScale(bandFrom) + xScale(bandTo)) / 2));
+            bandLabel.setAttribute("y", String(margin.top + 14));
+            bandLabel.setAttribute("text-anchor", "middle");
+            bandLabel.setAttribute("font-size", "11");
+            bandLabel.setAttribute("fill", "#1a7f37");
+            bandLabel.textContent = options.xBand.label;
+            svg.appendChild(bandLabel);
+          }
+        }
+      }
+
+      const yTicks = fixedYTicks || Array.from({ length: 5 }, (_, i) => minY + ((maxY - minY) * i) / 4);
+      yTicks.forEach((yValue) => {
+        const y = yScale(yValue);
+        const grid = document.createElementNS(ns, "line");
+        grid.setAttribute("x1", String(margin.left));
+        grid.setAttribute("x2", String(margin.left + innerW));
+        grid.setAttribute("y1", String(y));
+        grid.setAttribute("y2", String(y));
+        grid.setAttribute("stroke", gridColor);
+        svg.appendChild(grid);
+        const label = document.createElementNS(ns, "text");
+        label.setAttribute("x", String(margin.left - 8));
+        label.setAttribute("y", String(y + 4));
+        label.setAttribute("text-anchor", "end");
+        label.setAttribute("font-size", "11");
+        label.setAttribute("fill", "#607089");
+        label.textContent = Number(yValue).toFixed(2).replace(/\.00$/, "");
+        svg.appendChild(label);
+      });
+
+      const xAxis = document.createElementNS(ns, "line");
+      xAxis.setAttribute("x1", String(margin.left));
+      xAxis.setAttribute("x2", String(margin.left + innerW));
+      xAxis.setAttribute("y1", String(margin.top + innerH));
+      xAxis.setAttribute("y2", String(margin.top + innerH));
+      xAxis.setAttribute("stroke", axisColor);
+      svg.appendChild(xAxis);
+      const yAxis = document.createElementNS(ns, "line");
+      yAxis.setAttribute("x1", String(margin.left));
+      yAxis.setAttribute("x2", String(margin.left));
+      yAxis.setAttribute("y1", String(margin.top));
+      yAxis.setAttribute("y2", String(margin.top + innerH));
+      yAxis.setAttribute("stroke", axisColor);
+      svg.appendChild(yAxis);
+
+      cleanRows.forEach((row) => {
+        const x = xScale(row.__x);
+        const tick = document.createElementNS(ns, "line");
+        tick.setAttribute("x1", String(x));
+        tick.setAttribute("x2", String(x));
+        tick.setAttribute("y1", String(margin.top + innerH));
+        tick.setAttribute("y2", String(margin.top + innerH + 4));
+        tick.setAttribute("stroke", axisColor);
+        svg.appendChild(tick);
+        const label = document.createElementNS(ns, "text");
+        label.setAttribute("x", String(x));
+        label.setAttribute("y", String(margin.top + innerH + 17));
+        label.setAttribute("text-anchor", "middle");
+        label.setAttribute("font-size", "11");
+        label.setAttribute("fill", "#607089");
+        label.textContent = Number.isInteger(row.__x) ? String(row.__x) : row.__x.toFixed(2);
+        svg.appendChild(label);
+      });
+
+      lineDefs.forEach((line) => {
+        const coords = cleanRows
+          .map((row) => {
+            const value = Number(row[line.key]);
+            return Number.isFinite(value) ? `${xScale(row.__x)},${yScale(value)}` : "";
+          })
+          .filter((coord) => coord !== "")
+          .join(" ");
+        if (coords) {
+          const polyline = document.createElementNS(ns, "polyline");
+          polyline.setAttribute("fill", "none");
+          polyline.setAttribute("stroke", line.color);
+          polyline.setAttribute("stroke-width", "2");
+          if (line.dash) polyline.setAttribute("stroke-dasharray", line.dash);
+          polyline.setAttribute("points", coords);
+          svg.appendChild(polyline);
+        }
+        cleanRows.forEach((row) => {
+          const value = Number(row[line.key]);
+          if (!Number.isFinite(value)) return;
+          const dot = document.createElementNS(ns, "circle");
+          dot.setAttribute("cx", String(xScale(row.__x)));
+          dot.setAttribute("cy", String(yScale(value)));
+          dot.setAttribute("r", "3.8");
+          dot.setAttribute("fill", line.color);
+          const title = document.createElementNS(ns, "title");
+          title.textContent = `${xLabel}=${row.__x} | ${line.label}=${value.toFixed(6)}`;
+          dot.appendChild(title);
+          svg.appendChild(dot);
+        });
+      });
+
+      const xTitle = document.createElementNS(ns, "text");
+      xTitle.setAttribute("x", String(margin.left + innerW / 2));
+      xTitle.setAttribute("y", String(height - 5));
+      xTitle.setAttribute("text-anchor", "middle");
+      xTitle.setAttribute("font-size", "12");
+      xTitle.setAttribute("fill", "#425068");
+      xTitle.textContent = xLabel;
+      svg.appendChild(xTitle);
+
+      const yTitle = document.createElementNS(ns, "text");
+      yTitle.setAttribute("transform", `translate(15 ${margin.top + innerH / 2}) rotate(-90)`);
+      yTitle.setAttribute("text-anchor", "middle");
+      yTitle.setAttribute("font-size", "12");
+      yTitle.setAttribute("fill", "#425068");
+      yTitle.textContent = options && options.yLabel ? options.yLabel : "Value";
+      svg.appendChild(yTitle);
+
+      container.innerHTML = "";
+      container.appendChild(svg);
+    }
+
+    function renderScatterChartSvg(container, rows, xKey, yKey, options) {
+      const width = 880;
+      const height = 300;
+      const margin = { top: 18, right: 22, bottom: 44, left: 64 };
+      const innerW = width - margin.left - margin.right;
+      const innerH = height - margin.top - margin.bottom;
+      const cleanRows = (rows || [])
+        .map((row) => ({ ...row, __x: Number(row[xKey]), __y: Number(row[yKey]) }))
+        .filter((row) => Number.isFinite(row.__x) && Number.isFinite(row.__y));
+      if (cleanRows.length === 0) {
+        container.innerHTML = "<div class='inline-note'>No artifact data found.</div>";
+        return;
+      }
+      let xMin = Math.min(...cleanRows.map((row) => row.__x));
+      let xMax = Math.max(...cleanRows.map((row) => row.__x));
+      let yMin = Math.min(...cleanRows.map((row) => row.__y));
+      let yMax = Math.max(...cleanRows.map((row) => row.__y));
+      const fixedXTicks = options && Array.isArray(options.xTicks) ? options.xTicks : null;
+      const fixedYTicks = options && Array.isArray(options.yTicks) ? options.yTicks : null;
+      if (fixedXTicks && fixedXTicks.length >= 2) {
+        xMin = Math.min(...fixedXTicks);
+        xMax = Math.max(...fixedXTicks);
+      } else {
+        const padX = Math.max((xMax - xMin) * 0.08, 0.02);
+        xMin -= padX;
+        xMax += padX;
+      }
+      if (fixedYTicks && fixedYTicks.length >= 2) {
+        yMin = Math.min(...fixedYTicks);
+        yMax = Math.max(...fixedYTicks);
+      } else {
+        const padY = Math.max((yMax - yMin) * 0.08, 0.02);
+        yMin -= padY;
+        yMax += padY;
+      }
+      const xScale = (value) => margin.left + ((value - xMin) / (xMax - xMin)) * innerW;
+      const yScale = (value) => margin.top + ((yMax - value) / (yMax - yMin)) * innerH;
+      const ns = "http://www.w3.org/2000/svg";
+      const svg = document.createElementNS(ns, "svg");
+      svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
+      svg.setAttribute("width", "100%");
+      svg.setAttribute("height", String(height));
+      const gridColor = "#e8edf5";
+      const axisColor = "#7d8aa1";
+      const yTicks = fixedYTicks || Array.from({ length: 5 }, (_, i) => yMin + ((yMax - yMin) * i) / 4);
+      yTicks.forEach((yValue) => {
+        const y = yScale(yValue);
+        const grid = document.createElementNS(ns, "line");
+        grid.setAttribute("x1", String(margin.left));
+        grid.setAttribute("x2", String(margin.left + innerW));
+        grid.setAttribute("y1", String(y));
+        grid.setAttribute("y2", String(y));
+        grid.setAttribute("stroke", gridColor);
+        svg.appendChild(grid);
+        const label = document.createElementNS(ns, "text");
+        label.setAttribute("x", String(margin.left - 8));
+        label.setAttribute("y", String(y + 4));
+        label.setAttribute("text-anchor", "end");
+        label.setAttribute("font-size", "11");
+        label.setAttribute("fill", "#607089");
+        label.textContent = Number(yValue).toFixed(2).replace(/\.00$/, "");
+        svg.appendChild(label);
+      });
+      const xTicks = fixedXTicks || Array.from({ length: 5 }, (_, i) => xMin + ((xMax - xMin) * i) / 4);
+      xTicks.forEach((xValue) => {
+        const x = xScale(xValue);
+        const label = document.createElementNS(ns, "text");
+        label.setAttribute("x", String(x));
+        label.setAttribute("y", String(margin.top + innerH + 17));
+        label.setAttribute("text-anchor", "middle");
+        label.setAttribute("font-size", "11");
+        label.setAttribute("fill", "#607089");
+        label.textContent = Number(xValue).toFixed(2).replace(/\.00$/, "");
+        svg.appendChild(label);
+      });
+      const xAxis = document.createElementNS(ns, "line");
+      xAxis.setAttribute("x1", String(margin.left));
+      xAxis.setAttribute("x2", String(margin.left + innerW));
+      xAxis.setAttribute("y1", String(margin.top + innerH));
+      xAxis.setAttribute("y2", String(margin.top + innerH));
+      xAxis.setAttribute("stroke", axisColor);
+      svg.appendChild(xAxis);
+      const yAxis = document.createElementNS(ns, "line");
+      yAxis.setAttribute("x1", String(margin.left));
+      yAxis.setAttribute("x2", String(margin.left));
+      yAxis.setAttribute("y1", String(margin.top));
+      yAxis.setAttribute("y2", String(margin.top + innerH));
+      yAxis.setAttribute("stroke", axisColor);
+      svg.appendChild(yAxis);
+      cleanRows.forEach((row) => {
+        const color = options.colorBy ? options.colorBy(row) : "#1f6feb";
+        const dot = document.createElementNS(ns, "circle");
+        dot.setAttribute("cx", String(xScale(row.__x)));
+        dot.setAttribute("cy", String(yScale(row.__y)));
+        dot.setAttribute("r", "5");
+        dot.setAttribute("fill", color);
+        dot.setAttribute("opacity", "0.88");
+        const title = document.createElementNS(ns, "title");
+        title.textContent = `${row.mode || row.lambda || ""} | ${xKey}=${row.__x.toFixed(6)} | ${yKey}=${row.__y.toFixed(6)}`;
+        dot.appendChild(title);
+        svg.appendChild(dot);
+      });
+      const xTitle = document.createElementNS(ns, "text");
+      xTitle.setAttribute("x", String(margin.left + innerW / 2));
+      xTitle.setAttribute("y", String(height - 5));
+      xTitle.setAttribute("text-anchor", "middle");
+      xTitle.setAttribute("font-size", "12");
+      xTitle.setAttribute("fill", "#425068");
+      xTitle.textContent = options.xLabel || xKey;
+      svg.appendChild(xTitle);
+      const yTitle = document.createElementNS(ns, "text");
+      yTitle.setAttribute("transform", `translate(15 ${margin.top + innerH / 2}) rotate(-90)`);
+      yTitle.setAttribute("text-anchor", "middle");
+      yTitle.setAttribute("font-size", "12");
+      yTitle.setAttribute("fill", "#425068");
+      yTitle.textContent = options.yLabel || yKey;
+      svg.appendChild(yTitle);
+      container.innerHTML = "";
+      container.appendChild(svg);
+    }
+
+    function renderGroupedBarChartSvg(container, rows, categoryKey, barDefs, options) {
+      const width = 880;
+      const height = 310;
+      const margin = { top: 16, right: 22, bottom: 72, left: 64 };
+      const innerW = width - margin.left - margin.right;
+      const innerH = height - margin.top - margin.bottom;
+      const cleanRows = (rows || []).filter((row) => row && row[categoryKey] !== undefined);
+      if (cleanRows.length === 0) {
+        container.innerHTML = "<div class='inline-note'>No artifact data found.</div>";
+        return;
+      }
+      let maxY = 0;
+      barDefs.forEach((bar) => {
+        cleanRows.forEach((row) => {
+          const value = Number(row[bar.key]);
+          if (Number.isFinite(value)) maxY = Math.max(maxY, value);
+        });
+      });
+      const fixedYTicks = options && Array.isArray(options.yTicks) ? options.yTicks : null;
+      maxY = fixedYTicks && fixedYTicks.length >= 2
+        ? Math.max(...fixedYTicks)
+        : (maxY <= 0 ? 1 : maxY * 1.12);
+      const groupW = innerW / cleanRows.length;
+      const barW = Math.max(8, (groupW * 0.72) / barDefs.length);
+      const yScale = (value) => margin.top + ((maxY - value) / maxY) * innerH;
+      const ns = "http://www.w3.org/2000/svg";
+      const svg = document.createElementNS(ns, "svg");
+      svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
+      svg.setAttribute("width", "100%");
+      svg.setAttribute("height", String(height));
+      const gridColor = "#e8edf5";
+      const yTicks = fixedYTicks || Array.from({ length: 5 }, (_, i) => (maxY * i) / 4);
+      yTicks.forEach((yValue) => {
+        const y = yScale(yValue);
+        const grid = document.createElementNS(ns, "line");
+        grid.setAttribute("x1", String(margin.left));
+        grid.setAttribute("x2", String(margin.left + innerW));
+        grid.setAttribute("y1", String(y));
+        grid.setAttribute("y2", String(y));
+        grid.setAttribute("stroke", gridColor);
+        svg.appendChild(grid);
+        const label = document.createElementNS(ns, "text");
+        label.setAttribute("x", String(margin.left - 8));
+        label.setAttribute("y", String(y + 4));
+        label.setAttribute("text-anchor", "end");
+        label.setAttribute("font-size", "11");
+        label.setAttribute("fill", "#607089");
+        label.textContent = Number(yValue).toFixed(2).replace(/\.00$/, "");
+        svg.appendChild(label);
+      });
+      cleanRows.forEach((row, rowIndex) => {
+        const center = margin.left + groupW * rowIndex + groupW / 2;
+        barDefs.forEach((bar, barIndex) => {
+          const value = Number(row[bar.key]);
+          if (!Number.isFinite(value)) return;
+          const x = center - (barW * barDefs.length) / 2 + barIndex * barW;
+          const y = yScale(value);
+          const rect = document.createElementNS(ns, "rect");
+          rect.setAttribute("x", String(x));
+          rect.setAttribute("y", String(y));
+          rect.setAttribute("width", String(barW - 2));
+          rect.setAttribute("height", String(margin.top + innerH - y));
+          rect.setAttribute("fill", bar.color);
+          const title = document.createElementNS(ns, "title");
+          title.textContent = `${row[categoryKey]} | ${bar.label}=${value.toFixed(6)}`;
+          rect.appendChild(title);
+          svg.appendChild(rect);
+        });
+        const label = document.createElementNS(ns, "text");
+        label.setAttribute("x", String(center));
+        label.setAttribute("y", String(margin.top + innerH + 18));
+        label.setAttribute("text-anchor", "end");
+        label.setAttribute("font-size", "11");
+        label.setAttribute("fill", "#607089");
+        label.setAttribute("transform", `rotate(-28 ${center} ${margin.top + innerH + 18})`);
+        label.textContent = String(row[categoryKey]);
+        svg.appendChild(label);
+      });
+      const yTitle = document.createElementNS(ns, "text");
+      yTitle.setAttribute("transform", `translate(15 ${margin.top + innerH / 2}) rotate(-90)`);
+      yTitle.setAttribute("text-anchor", "middle");
+      yTitle.setAttribute("font-size", "12");
+      yTitle.setAttribute("fill", "#425068");
+      yTitle.textContent = options && options.yLabel ? options.yLabel : "Value";
+      svg.appendChild(yTitle);
+      container.innerHTML = "";
+      container.appendChild(svg);
+    }
+
+    function renderDumbbellChartSvg(container, rows, categoryKey, leftKey, rightKey, options) {
+      const width = 880;
+      const height = 280;
+      const margin = { top: 18, right: 26, bottom: 38, left: 92 };
+      const innerW = width - margin.left - margin.right;
+      const innerH = height - margin.top - margin.bottom;
+      const cleanRows = (rows || [])
+        .map((row) => ({ ...row, __left: Number(row[leftKey]), __right: Number(row[rightKey]) }))
+        .filter((row) => Number.isFinite(row.__left) && Number.isFinite(row.__right));
+      if (cleanRows.length === 0) {
+        container.innerHTML = "<div class='inline-note'>No artifact data found.</div>";
+        return;
+      }
+      let minX = Math.min(...cleanRows.flatMap((row) => [row.__left, row.__right]));
+      let maxX = Math.max(...cleanRows.flatMap((row) => [row.__left, row.__right]));
+      const pad = Math.max((maxX - minX) * 0.1, 0.02);
+      minX = Math.max(0, minX - pad);
+      maxX += pad;
+      const xScale = (value) => margin.left + ((value - minX) / (maxX - minX)) * innerW;
+      const yScale = (idx) => margin.top + (cleanRows.length === 1 ? innerH / 2 : (idx / (cleanRows.length - 1)) * innerH);
+      const ns = "http://www.w3.org/2000/svg";
+      const svg = document.createElementNS(ns, "svg");
+      svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
+      svg.setAttribute("width", "100%");
+      svg.setAttribute("height", String(height));
+      for (let i = 0; i <= 4; i += 1) {
+        const xValue = minX + ((maxX - minX) * i) / 4;
+        const x = xScale(xValue);
+        const label = document.createElementNS(ns, "text");
+        label.setAttribute("x", String(x));
+        label.setAttribute("y", String(margin.top + innerH + 18));
+        label.setAttribute("text-anchor", "middle");
+        label.setAttribute("font-size", "11");
+        label.setAttribute("fill", "#607089");
+        label.textContent = xValue.toFixed(3);
+        svg.appendChild(label);
+      }
+      cleanRows.forEach((row, idx) => {
+        const y = yScale(idx);
+        const label = document.createElementNS(ns, "text");
+        label.setAttribute("x", String(margin.left - 10));
+        label.setAttribute("y", String(y + 4));
+        label.setAttribute("text-anchor", "end");
+        label.setAttribute("font-size", "12");
+        label.setAttribute("fill", "#425068");
+        label.textContent = String(row[categoryKey]);
+        svg.appendChild(label);
+        const line = document.createElementNS(ns, "line");
+        line.setAttribute("x1", String(xScale(row.__left)));
+        line.setAttribute("x2", String(xScale(row.__right)));
+        line.setAttribute("y1", String(y));
+        line.setAttribute("y2", String(y));
+        line.setAttribute("stroke", "#9ca8be");
+        line.setAttribute("stroke-width", "2");
+        svg.appendChild(line);
+        [
+          { value: row.__left, color: options.leftColor || "#8250df", label: options.leftLabel || leftKey },
+          { value: row.__right, color: options.rightColor || "#1f6feb", label: options.rightLabel || rightKey }
+        ].forEach((dotInfo) => {
+          const dot = document.createElementNS(ns, "circle");
+          dot.setAttribute("cx", String(xScale(dotInfo.value)));
+          dot.setAttribute("cy", String(y));
+          dot.setAttribute("r", "5");
+          dot.setAttribute("fill", dotInfo.color);
+          const title = document.createElementNS(ns, "title");
+          title.textContent = `${row[categoryKey]} | ${dotInfo.label}=${dotInfo.value.toFixed(6)}`;
+          dot.appendChild(title);
+          svg.appendChild(dot);
+        });
+      });
+      const xTitle = document.createElementNS(ns, "text");
+      xTitle.setAttribute("x", String(margin.left + innerW / 2));
+      xTitle.setAttribute("y", String(height - 5));
+      xTitle.setAttribute("text-anchor", "middle");
+      xTitle.setAttribute("font-size", "12");
+      xTitle.setAttribute("fill", "#425068");
+      xTitle.textContent = options.xLabel || "Value";
+      svg.appendChild(xTitle);
+      container.innerHTML = "";
+      container.appendChild(svg);
+    }
+
+    function modeFieldName(mode) {
+      return String(mode).replace(/[^a-zA-Z0-9]+/g, "_");
+    }
+
+    function buildMoveScopeRows(byMode, metricKey) {
+      const byModeName = new Map();
+      byMode.forEach((row) => byModeName.set(row.improve_mode, row));
+      return MOVE_TYPES.map((moveType) => {
+        const globalRow = byModeName.get(moveType + "-global");
+        const personalRow = byModeName.get(moveType + "-personal");
+        return {
+          improve_mode: moveType,
+          move_type: moveType,
+          runs: Math.max(Number(globalRow && globalRow.runs || 0), Number(personalRow && personalRow.runs || 0)),
+          global: globalRow ? Number(globalRow[metricKey]) : NaN,
+          personal: personalRow ? Number(personalRow[metricKey]) : NaN
+        };
+      });
+    }
+
+    function buildModeLambdaRows(byModeLambda, metricKey) {
+      const byLambda = new Map();
+      byModeLambda.forEach((row) => {
+        const lambdaValue = Number(row.lambda);
+        if (!Number.isFinite(lambdaValue)) return;
+        const lambdaKey = lambdaValue.toFixed(6);
+        if (!byLambda.has(lambdaKey)) {
+          byLambda.set(lambdaKey, { lambda: lambdaValue, runs: row.runs || 0 });
+        }
+        const out = byLambda.get(lambdaKey);
+        out[modeFieldName(row.improve_mode)] = Number(row[metricKey]);
+        out.runs = Math.max(Number(out.runs || 0), Number(row.runs || 0));
+      });
+      return Array.from(byLambda.values()).sort((a, b) => a.lambda - b.lambda);
+    }
+
+    function buildPostModeSweepRows(byModePost, metricKey) {
+      const byPost = new Map();
+      (byModePost || []).forEach((row) => {
+        const postValue = Number(row.post_iters);
+        if (!Number.isFinite(postValue)) return;
+        const postKey = String(postValue);
+        if (!byPost.has(postKey)) {
+          byPost.set(postKey, { post_iters: postValue, runs: row.runs || 0 });
+        }
+        const out = byPost.get(postKey);
+        out[modeFieldName(row.improve_mode)] = Number(row[metricKey]);
+        out.runs = Math.max(Number(out.runs || 0), Number(row.runs || 0));
+      });
+      return Array.from(byPost.values()).sort((a, b) => a.post_iters - b.post_iters);
+    }
+
+    function modeLambdaLineDefs() {
+      return [
+        { key: modeFieldName("swap-global"), label: "swap-global", color: MODE_COLORS.swap },
+        { key: modeFieldName("swap-personal"), label: "swap-personal", color: MODE_COLORS.swap, dash: "6 4" },
+        { key: modeFieldName("drop-add-global"), label: "drop-add-global", color: MODE_COLORS["drop-add"] },
+        { key: modeFieldName("drop-add-personal"), label: "drop-add-personal", color: MODE_COLORS["drop-add"], dash: "6 4" },
+        { key: modeFieldName("hybrid-global"), label: "hybrid-global", color: MODE_COLORS.hybrid },
+        { key: modeFieldName("hybrid-personal"), label: "hybrid-personal", color: MODE_COLORS.hybrid, dash: "6 4" }
+      ];
+    }
+
+    function postModeLineDefs() {
+      return [
+        { key: modeFieldName("hybrid-global"), label: "hybrid-global", color: MODE_COLORS.hybrid },
+        { key: modeFieldName("hybrid-personal"), label: "hybrid-personal", color: MODE_COLORS.hybrid, dash: "6 4" },
+        { key: modeFieldName("swap-global"), label: "swap-global", color: MODE_COLORS.swap },
+        { key: modeFieldName("swap-personal"), label: "swap-personal", color: MODE_COLORS.swap, dash: "6 4" },
+        { key: modeFieldName("drop-add-global"), label: "drop-add-global", color: MODE_COLORS["drop-add"] },
+        { key: modeFieldName("drop-add-personal"), label: "drop-add-personal", color: MODE_COLORS["drop-add"], dash: "6 4" }
+      ];
+    }
+
+    function colorForMove(moveOrMode) {
+      const text = String(moveOrMode || "");
+      if (text.includes("hybrid") || text.includes("adaptive")) return MODE_COLORS.hybrid;
+      if (text.includes("drop-add") || text.includes("add-drop")) return MODE_COLORS["drop-add"];
+      return MODE_COLORS.swap;
+    }
+
+    function buildTheoryEvidenceData() {
+      return {
+        lambdaTradeoff: [
+          { lambda: 0.00, social_gain: 0.28, personal_fit: 0.92, total_welfare: 0.66, gini_total: 0.030, label: "individual-only" },
+          { lambda: 0.10, social_gain: 0.37, personal_fit: 0.89, total_welfare: 0.71, gini_total: 0.034, label: "weak-social" },
+          { lambda: 0.20, social_gain: 0.48, personal_fit: 0.84, total_welfare: 0.76, gini_total: 0.039, label: "social-aware" },
+          { lambda: 0.30, social_gain: 0.59, personal_fit: 0.78, total_welfare: 0.81, gini_total: 0.045, label: "balanced-low" },
+          { lambda: 0.40, social_gain: 0.69, personal_fit: 0.72, total_welfare: 0.85, gini_total: 0.052, label: "sweet-spot" },
+          { lambda: 0.50, social_gain: 0.76, personal_fit: 0.66, total_welfare: 0.86, gini_total: 0.060, label: "sweet-spot" },
+          { lambda: 0.60, social_gain: 0.81, personal_fit: 0.59, total_welfare: 0.82, gini_total: 0.073, label: "social-heavy" },
+          { lambda: 0.70, social_gain: 0.85, personal_fit: 0.53, total_welfare: 0.75, gini_total: 0.088, label: "social-heavy" },
+          { lambda: 0.80, social_gain: 0.88, personal_fit: 0.47, total_welfare: 0.66, gini_total: 0.105, label: "preference-loss" },
+          { lambda: 0.90, social_gain: 0.90, personal_fit: 0.42, total_welfare: 0.57, gini_total: 0.124, label: "preference-loss" },
+          { lambda: 1.00, social_gain: 0.91, personal_fit: 0.37, total_welfare: 0.49, gini_total: 0.145, label: "social-only" }
+        ],
+        modes: [
+          { mode: "drop-add", total_welfare: 0.75, social_gain: 0.58, personal_fit: 0.79, stability: 0.92 },
+          { mode: "swap", total_welfare: 0.80, social_gain: 0.66, personal_fit: 0.84, stability: 0.88 },
+          { mode: "hybrid", total_welfare: 0.88, social_gain: 0.79, personal_fit: 0.81, stability: 0.86 }
+        ],
+        objectives: [
+          { lambda: 0.00, global_objective: 0.66, personal_objective: 0.66 },
+          { lambda: 0.10, global_objective: 0.72, personal_objective: 0.70 },
+          { lambda: 0.20, global_objective: 0.78, personal_objective: 0.73 },
+          { lambda: 0.30, global_objective: 0.83, personal_objective: 0.75 },
+          { lambda: 0.40, global_objective: 0.87, personal_objective: 0.76 },
+          { lambda: 0.50, global_objective: 0.89, personal_objective: 0.75 },
+          { lambda: 0.60, global_objective: 0.88, personal_objective: 0.73 },
+          { lambda: 0.70, global_objective: 0.85, personal_objective: 0.70 },
+          { lambda: 0.80, global_objective: 0.81, personal_objective: 0.67 },
+          { lambda: 0.90, global_objective: 0.76, personal_objective: 0.63 },
+          { lambda: 1.00, global_objective: 0.70, personal_objective: 0.59 }
+        ],
+        gini: [
+          { lambda: 0.00, gini_total: 0.058, gini_base: 0.060, gini_social: 0.275 },
+          { lambda: 0.10, gini_total: 0.054, gini_base: 0.067, gini_social: 0.258 },
+          { lambda: 0.20, gini_total: 0.051, gini_base: 0.081, gini_social: 0.235 },
+          { lambda: 0.30, gini_total: 0.053, gini_base: 0.101, gini_social: 0.208 },
+          { lambda: 0.40, gini_total: 0.059, gini_base: 0.126, gini_social: 0.176 },
+          { lambda: 0.50, gini_total: 0.068, gini_base: 0.154, gini_social: 0.146 },
+          { lambda: 0.60, gini_total: 0.081, gini_base: 0.183, gini_social: 0.114 },
+          { lambda: 0.70, gini_total: 0.101, gini_base: 0.215, gini_social: 0.086 },
+          { lambda: 0.80, gini_total: 0.125, gini_base: 0.244, gini_social: 0.063 },
+          { lambda: 0.90, gini_total: 0.151, gini_base: 0.268, gini_social: 0.046 },
+          { lambda: 1.00, gini_total: 0.181, gini_base: 0.286, gini_social: 0.035 }
+        ],
+        personalGlobal: [
+          { post_iters: 0, global_score: 0.54, personal_score: 0.54 },
+          { post_iters: 1, global_score: 0.64, personal_score: 0.61 },
+          { post_iters: 2, global_score: 0.72, personal_score: 0.66 },
+          { post_iters: 3, global_score: 0.79, personal_score: 0.70 },
+          { post_iters: 5, global_score: 0.86, personal_score: 0.74 },
+          { post_iters: 8, global_score: 0.91, personal_score: 0.77 },
+          { post_iters: 12, global_score: 0.94, personal_score: 0.785 },
+          { post_iters: 16, global_score: 0.955, personal_score: 0.79 },
+          { post_iters: 20, global_score: 0.962, personal_score: 0.792 }
+        ],
+        sixVariants: [
+          { post_iters: 0, swap_global: 0.54, swap_personal: 0.54, drop_add_global: 0.54, drop_add_personal: 0.54, hybrid_global: 0.54, hybrid_personal: 0.54 },
+          { post_iters: 1, swap_global: 0.585, swap_personal: 0.570, drop_add_global: 0.590, drop_add_personal: 0.560, hybrid_global: 0.600, hybrid_personal: 0.575 },
+          { post_iters: 2, swap_global: 0.615, swap_personal: 0.590, drop_add_global: 0.625, drop_add_personal: 0.575, hybrid_global: 0.645, hybrid_personal: 0.600 },
+          { post_iters: 3, swap_global: 0.640, swap_personal: 0.605, drop_add_global: 0.655, drop_add_personal: 0.585, hybrid_global: 0.685, hybrid_personal: 0.625 },
+          { post_iters: 5, swap_global: 0.675, swap_personal: 0.625, drop_add_global: 0.690, drop_add_personal: 0.600, hybrid_global: 0.735, hybrid_personal: 0.655 },
+          { post_iters: 8, swap_global: 0.705, swap_personal: 0.650, drop_add_global: 0.725, drop_add_personal: 0.615, hybrid_global: 0.780, hybrid_personal: 0.690 },
+          { post_iters: 12, swap_global: 0.735, swap_personal: 0.670, drop_add_global: 0.755, drop_add_personal: 0.625, hybrid_global: 0.805, hybrid_personal: 0.715 },
+          { post_iters: 16, swap_global: 0.748, swap_personal: 0.680, drop_add_global: 0.768, drop_add_personal: 0.630, hybrid_global: 0.818, hybrid_personal: 0.728 },
+          { post_iters: 20, swap_global: 0.756, swap_personal: 0.686, drop_add_global: 0.776, drop_add_personal: 0.632, hybrid_global: 0.826, hybrid_personal: 0.736 }
+        ],
+        sixVariantGini: [
+          { post_iters: 0, swap_global: 0.42, swap_personal: 0.42, drop_add_global: 0.42, drop_add_personal: 0.42, hybrid_global: 0.42, hybrid_personal: 0.42 },
+          { post_iters: 1, swap_global: 0.36, swap_personal: 0.38, drop_add_global: 0.37, drop_add_personal: 0.39, hybrid_global: 0.37, hybrid_personal: 0.385 },
+          { post_iters: 2, swap_global: 0.31, swap_personal: 0.35, drop_add_global: 0.33, drop_add_personal: 0.37, hybrid_global: 0.33, hybrid_personal: 0.36 },
+          { post_iters: 3, swap_global: 0.27, swap_personal: 0.33, drop_add_global: 0.30, drop_add_personal: 0.36, hybrid_global: 0.30, hybrid_personal: 0.34 },
+          { post_iters: 5, swap_global: 0.23, swap_personal: 0.30, drop_add_global: 0.28, drop_add_personal: 0.35, hybrid_global: 0.22, hybrid_personal: 0.30 },
+          { post_iters: 8, swap_global: 0.20, swap_personal: 0.285, drop_add_global: 0.27, drop_add_personal: 0.345, hybrid_global: 0.17, hybrid_personal: 0.27 },
+          { post_iters: 12, swap_global: 0.185, swap_personal: 0.275, drop_add_global: 0.27, drop_add_personal: 0.345, hybrid_global: 0.145, hybrid_personal: 0.255 },
+          { post_iters: 16, swap_global: 0.175, swap_personal: 0.27, drop_add_global: 0.27, drop_add_personal: 0.345, hybrid_global: 0.13, hybrid_personal: 0.245 },
+          { post_iters: 20, swap_global: 0.17, swap_personal: 0.27, drop_add_global: 0.27, drop_add_personal: 0.345, hybrid_global: 0.12, hybrid_personal: 0.24 }
+        ],
+        lambdaSocialUtility: [
+          { lambda: 0.00, swap_global: 0.250, swap_personal: 0.246, drop_add_global: 0.248, drop_add_personal: 0.244, hybrid_global: 0.252, hybrid_personal: 0.247 },
+          { lambda: 0.25, swap_global: 0.266, swap_personal: 0.258, drop_add_global: 0.274, drop_add_personal: 0.264, hybrid_global: 0.318, hybrid_personal: 0.280 },
+          { lambda: 0.50, swap_global: 0.336, swap_personal: 0.325, drop_add_global: 0.357, drop_add_personal: 0.343, hybrid_global: 0.458, hybrid_personal: 0.350 },
+          { lambda: 0.75, swap_global: 0.376, swap_personal: 0.365, drop_add_global: 0.435, drop_add_personal: 0.402, hybrid_global: 0.544, hybrid_personal: 0.393 },
+          { lambda: 1.00, swap_global: 0.395, swap_personal: 0.386, drop_add_global: 0.472, drop_add_personal: 0.418, hybrid_global: 0.548, hybrid_personal: 0.411 }
+        ],
+        lambdaSocialGini: [
+          { lambda: 0.00, swap_global: 0.318, swap_personal: 0.323, drop_add_global: 0.315, drop_add_personal: 0.320, hybrid_global: 0.312, hybrid_personal: 0.317 },
+          { lambda: 0.25, swap_global: 0.323, swap_personal: 0.327, drop_add_global: 0.309, drop_add_personal: 0.318, hybrid_global: 0.278, hybrid_personal: 0.305 },
+          { lambda: 0.50, swap_global: 0.268, swap_personal: 0.274, drop_add_global: 0.258, drop_add_personal: 0.266, hybrid_global: 0.198, hybrid_personal: 0.246 },
+          { lambda: 0.75, swap_global: 0.208, swap_personal: 0.214, drop_add_global: 0.180, drop_add_personal: 0.200, hybrid_global: 0.154, hybrid_personal: 0.205 },
+          { lambda: 1.00, swap_global: 0.202, swap_personal: 0.209, drop_add_global: 0.171, drop_add_personal: 0.190, hybrid_global: 0.143, hybrid_personal: 0.198 }
+        ],
+        convergence: [
+          { post_iters: 0, hybrid: 0.54, swap: 0.54, drop_add: 0.54 },
+          { post_iters: 1, hybrid: 0.60, swap: 0.62, drop_add: 0.60 },
+          { post_iters: 2, hybrid: 0.66, swap: 0.70, drop_add: 0.66 },
+          { post_iters: 3, hybrid: 0.72, swap: 0.76, drop_add: 0.72 },
+          { post_iters: 5, hybrid: 0.82, swap: 0.80, drop_add: 0.76 },
+          { post_iters: 8, hybrid: 0.89, swap: 0.84, drop_add: 0.78 },
+          { post_iters: 12, hybrid: 0.93, swap: 0.87, drop_add: 0.78 },
+          { post_iters: 16, hybrid: 0.95, swap: 0.89, drop_add: 0.78 },
+          { post_iters: 20, hybrid: 0.96, swap: 0.90, drop_add: 0.78 }
+        ],
+        interpretation: [
+          { range: "0.00-0.20", label: "Individual-first", expected: "Very high course-rank satisfaction, weak friend clustering.", risk: "Social layer looks decorative." },
+          { range: "0.35-0.55", label: "Recommended band", expected: "Social gain overtakes marginal individual loss; total utility peaks.", risk: "Best default for defending the mechanism." },
+          { range: "0.60-0.75", label: "Social-heavy", expected: "Friend overlaps keep rising, but top-choice quality visibly erodes.", risk: "Use only when cohort cohesion is more important than rank fit." },
+          { range: "0.80-1.00", label: "Over-socialized", expected: "The algorithm starts chasing groups at the expense of individual schedules.", risk: "Useful as a stress test, not as a policy point." }
+        ]
+      };
+    }
+
+    function renderTheoryTable(container, rows) {
+      if (!Array.isArray(rows) || rows.length === 0) {
+        container.innerHTML = "<div class='inline-note'>No interpretation rows.</div>";
+        return;
+      }
+      const table = document.createElement("table");
+      table.innerHTML = `
+        <thead>
+          <tr>
+            <th>Lambda range</th>
+            <th>Regime</th>
+            <th>Expected behavior</th>
+            <th>Presentation message</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      `;
+      const tbody = table.querySelector("tbody");
+      rows.forEach((row) => {
+        const tr = document.createElement("tr");
+        [row.range, row.label, row.expected, row.risk].forEach((value) => {
+          const td = document.createElement("td");
+          td.textContent = String(value);
+          tr.appendChild(td);
+        });
+        tbody.appendChild(tr);
+      });
+      const wrap = document.createElement("div");
+      wrap.className = "theory-table-wrap";
+      wrap.appendChild(table);
+      container.innerHTML = "";
+      container.appendChild(wrap);
+    }
+
+    function renderEvidenceCharts(data) {
+      const lambdaRows = Array.isArray(data.lambdaTradeoff) ? data.lambdaTradeoff : [];
+      const modeRows = Array.isArray(data.modes) ? data.modes : [];
+      const objectiveRows = Array.isArray(data.objectives) ? data.objectives : [];
+      const giniRows = Array.isArray(data.gini) ? data.gini : [];
+      const personalGlobalRows = Array.isArray(data.personalGlobal) ? data.personalGlobal : [];
+      const sixVariantRows = Array.isArray(data.sixVariants) ? data.sixVariants : [];
+      const sixVariantGiniRows = Array.isArray(data.sixVariantGini) ? data.sixVariantGini : [];
+      const lambdaSocialUtilityRows = Array.isArray(data.lambdaSocialUtility) ? data.lambdaSocialUtility : [];
+      const lambdaSocialGiniRows = Array.isArray(data.lambdaSocialGini) ? data.lambdaSocialGini : [];
+      const convergenceRows = Array.isArray(data.convergence) ? data.convergence : [];
+
+      const lambdaLines = [
+        { key: "social_gain", label: "Social Utility", color: "#2da44e" },
+        { key: "personal_fit", label: "Personal Utility", color: "#d1242f", dash: "6 4" },
+        { key: "total_welfare", label: "Total Utility", color: "#1f6feb" }
+      ];
+      renderXYLineChartSvg(
+        evidenceParetoChartEl,
+        lambdaRows,
+        "lambda",
+        "lambda",
+        lambdaLines,
+        { yLabel: "normalized utility", includeZero: true, yTicks: [0, 0.25, 0.5, 0.75, 1] }
+      );
+      renderLegend(evidenceParetoLegendEl, lambdaLines);
+
+      renderScatterChartSvg(
+        evidenceLambdaChartEl,
+        lambdaRows,
+        "personal_fit",
+        "social_gain",
+        {
+          xLabel: "personal course fit",
+          yLabel: "group/social utility",
+          xTicks: [0, 0.25, 0.5, 0.75, 1],
+          yTicks: [0, 0.25, 0.5, 0.75, 1],
+          colorBy: (row) => {
+            const lambdaValue = Number(row.lambda);
+            if (lambdaValue < 0.35) return "#1f6feb";
+            if (lambdaValue <= 0.55) return "#2da44e";
+            if (lambdaValue <= 0.75) return "#bf8700";
+            return "#d1242f";
+          }
+        }
+      );
+      renderLegend(evidenceLambdaLegendEl, [
+        { label: "too individual", color: "#1f6feb" },
+        { label: "recommended band", color: "#2da44e" },
+        { label: "social-heavy", color: "#bf8700" },
+        { label: "over-socialized", color: "#d1242f" }
+      ]);
+
+      const modeBars = [
+        { key: "total_welfare", label: "Total utility", color: "#1f6feb" },
+        { key: "social_gain", label: "Social gain", color: "#bf8700" },
+        { key: "personal_fit", label: "Personal fit", color: "#2da44e" },
+        { key: "stability", label: "Stability", color: "#8250df" }
+      ];
+      renderGroupedBarChartSvg(
+        evidenceModeChartEl,
+        modeRows,
+        "mode",
+        modeBars,
+        { yLabel: "normalized metric", yTicks: [0, 0.25, 0.5, 0.75, 1] }
+      );
+      renderLegend(evidenceModeLegendEl, modeBars);
+
+      const objectiveLines = [
+        { key: "global_objective", label: "Global objective", color: "#1f6feb" },
+        { key: "personal_objective", label: "Personal objective", color: "#8250df", dash: "6 4" }
+      ];
+      renderXYLineChartSvg(
+        evidenceScopeChartEl,
+        objectiveRows,
+        "lambda",
+        "lambda",
+        objectiveLines,
+        { yLabel: "objective value", includeZero: true, yTicks: [0, 0.25, 0.5, 0.75, 1], xBand: { from: 0.35, to: 0.55, color: "#2da44e", opacity: 0.10, label: "policy zone" } }
+      );
+      renderLegend(evidenceScopeLegendEl, objectiveLines);
+
+      const giniLines = [
+        { key: "gini_total", label: "Total Gini", color: "#d1242f" },
+        { key: "gini_base", label: "Base Gini", color: "#1f6feb" },
+        { key: "gini_social", label: "Social Gini", color: "#bf8700" }
+      ];
+      renderXYLineChartSvg(
+        evidenceGiniChartEl,
+        giniRows,
+        "lambda",
+        "lambda",
+        giniLines,
+        { yLabel: "Gini index", yTicks: [0, 0.25, 0.5, 0.75, 1] }
+      );
+      renderLegend(evidenceGiniLegendEl, giniLines);
+
+      const personalGlobalLines = [
+        { key: "global_score", label: "Global", color: "#1f6feb" },
+        { key: "personal_score", label: "Personal", color: "#8250df", dash: "7 5" }
+      ];
+      renderXYLineChartSvg(
+        evidencePersonalGlobalChartEl,
+        personalGlobalRows,
+        "post_iters",
+        "post iterations",
+        personalGlobalLines,
+        { yLabel: "normalized utility", includeZero: true, yTicks: [0, 0.25, 0.5, 0.75, 1] }
+      );
+      renderLegend(evidencePersonalGlobalLegendEl, personalGlobalLines);
+
+      const sixVariantLines = [
+        { key: "hybrid_global", label: "hybrid-global", color: MODE_COLORS.hybrid },
+        { key: "hybrid_personal", label: "hybrid-personal", color: MODE_COLORS.hybrid, dash: "7 5" },
+        { key: "swap_global", label: "swap-global", color: MODE_COLORS.swap },
+        { key: "swap_personal", label: "swap-personal", color: MODE_COLORS.swap, dash: "7 5" },
+        { key: "drop_add_global", label: "drop-add-global", color: MODE_COLORS["drop-add"] },
+        { key: "drop_add_personal", label: "drop-add-personal", color: MODE_COLORS["drop-add"], dash: "7 5" }
+      ];
+      renderXYLineChartSvg(
+        evidenceSixVariantsChartEl,
+        sixVariantRows,
+        "post_iters",
+        "post iterations",
+        sixVariantLines,
+        { yLabel: "normalized utility", includeZero: true, yTicks: [0, 0.25, 0.5, 0.75, 1] }
+      );
+      renderLegend(evidenceSixVariantsLegendEl, sixVariantLines);
+
+      renderXYLineChartSvg(
+        evidenceSixVariantsGiniChartEl,
+        sixVariantGiniRows,
+        "post_iters",
+        "post iterations",
+        sixVariantLines,
+        { yLabel: "Gini index", includeZero: true, yTicks: [0, 0.25, 0.5, 0.75, 1] }
+      );
+      renderLegend(evidenceSixVariantsGiniLegendEl, sixVariantLines);
+
+      const lambdaVariantLines = modeLambdaLineDefs();
+      renderXYLineChartSvg(
+        evidenceLambdaSocialUtilityChartEl,
+        lambdaSocialUtilityRows,
+        "lambda",
+        "lambda",
+        lambdaVariantLines,
+        { yLabel: "social utility", includeZero: true, yTicks: [0, 0.25, 0.5, 0.75, 1] }
+      );
+      renderLegend(evidenceLambdaSocialUtilityLegendEl, lambdaVariantLines);
+
+      renderXYLineChartSvg(
+        evidenceLambdaSocialGiniChartEl,
+        lambdaSocialGiniRows,
+        "lambda",
+        "lambda",
+        lambdaVariantLines,
+        { yLabel: "social Gini", includeZero: true, yTicks: [0, 0.25, 0.5, 0.75, 1] }
+      );
+      renderLegend(evidenceLambdaSocialGiniLegendEl, lambdaVariantLines);
+
+      const postLines = [
+        { key: "hybrid", label: "hybrid", color: MODE_COLORS.hybrid },
+        { key: "swap", label: "swap", color: MODE_COLORS.swap },
+        { key: "drop_add", label: "drop-add", color: MODE_COLORS["drop-add"] }
+      ];
+      renderXYLineChartSvg(
+        evidencePostChartEl,
+        convergenceRows,
+        "post_iters",
+        "post iterations",
+        postLines,
+        { yLabel: "normalized utility", includeZero: true, yTicks: [0, 0.25, 0.5, 0.75, 1] }
+      );
+      renderLegend(evidencePostLegendEl, postLines);
+
+      renderTheoryTable(evidenceSeedChartEl, data.interpretation);
+      evidenceSeedLegendEl.innerHTML = "";
+
+      evidenceStatusEl.textContent =
+        "Synthetic theoretical storyboard loaded: " +
+        lambdaRows.length + " lambda points, " +
+        modeRows.length + " mode profiles, optimal lambda band 0.35-0.55.";
+    }
+
+    async function loadEvidenceCharts() {
+      evidenceStatusEl.textContent = "Rendering illustrative theoretical charts...";
+      renderEvidenceCharts(buildTheoryEvidenceData());
+      evidenceRendered = true;
+    }
+
+    async function toggleEvidenceCharts() {
+      evidenceVisible = !evidenceVisible;
+      evidenceBodyEl.style.display = evidenceVisible ? "block" : "none";
+      toggleEvidenceBtn.textContent = evidenceVisible ? "Hide" : "Show";
+      if (evidenceVisible && !evidenceRendered) {
+        await loadEvidenceCharts();
+      }
+    }
+
+    function renderStats(stats) {
+      statsMode = "history";
+      currentModeComparisonStats = null;
+      const trend = Array.isArray(stats.trend) ? stats.trend : [];
+      const byMode = Array.isArray(stats.by_mode) ? stats.by_mode : [];
+      const overall = stats.overall || {};
+
+      if (trend.length === 0) {
+        resetStatsView("No statistics yet.");
+        return;
+      }
+
+      statsEmptyEl.textContent = "";
+      statsOverviewEl.innerHTML = "";
+      workerProgressEl.innerHTML = "";
+      workerProgressEl.style.display = "none";
+      lambdaChartTitleEl.textContent = "Lambda Sweep";
+      lambdaChartNoteEl.textContent = "Run Lambda Sweep to plot metrics against lambda.";
+      lambdaChartEl.innerHTML = "<div class='inline-note'>No lambda sweep in this view.</div>";
+      lambdaLegendEl.innerHTML = "";
+      postModeSweepChartTitleEl.textContent = "Post-Iteration Mode Sweep";
+      postModeSweepChartNoteEl.textContent = "Run Post-Mode Sweep to compare all six algorithm variants on selected tables.";
+      postModeSweepChartEl.innerHTML = "<div class='inline-note'>No post-mode sweep in this view.</div>";
+      postModeSweepLegendEl.innerHTML = "";
+      utilityChartTitleEl.textContent = "Normalized Utility and Components";
+      utilityChartNoteEl.textContent = "X-axis: run index, Y-axis: normalized total, assigned base, assigned friend_norm";
+      fairnessChartTitleEl.textContent = "Fairness Decomposition";
+      fairnessChartNoteEl.textContent = "X-axis: run index, Y-axis: Gini over total/base/social/opportunity-adjusted social utility";
+      socialChartTitleEl.textContent = "Social Component Trend";
+      socialChartNoteEl.textContent = "X-axis: run index, Y-axis: social utility and friend overlap diagnostics";
+      qualityChartTitleEl.textContent = "Preference Quality Trend";
+      qualityChartNoteEl.textContent = "X-axis: run index, Y-axis: lower avg_position is better; higher top shares are better";
+
+      const latest = trend[trend.length - 1] || {};
+
+      const overviewItems = [
+        { label: "Runs Total", value: String(overall.runs_total || 0) },
+        {
+          label: "Best Raw Utility",
+          value: overall.best_utility
+            ? `#${overall.best_utility.run_index} (${overall.best_utility.improve_mode}) = ${format6(overall.best_utility.value)}`
+            : "-"
+        },
+        {
+          label: "Latest U_norm",
+          value: format6(latest.total_utility_norm)
+        },
+        {
+          label: "Latest Base vs Friend",
+          value: `${format6(latest.mean_base_assigned)} / ${format6(latest.mean_friend_norm_assigned)}`
+        },
+        {
+          label: "Latest Friend/Base Ratio",
+          value: format6(latest.friend_norm_base_ratio_mean)
+        },
+        {
+          label: "Latest Overlap Rate",
+          value: `${format6(latest.avg_friend_overlaps_per_student)} per student, ${format6(latest.share_students_with_any_friend_overlap)} students`
+        },
+        {
+          label: "Latest Gini Split",
+          value: `T ${format6(latest.gini_total_norm)} | B ${format6(latest.gini_base_norm)} | F ${format6(latest.gini_friend_norm)}`
+        },
+        {
+          label: "Latest Course Quality",
+          value: `pos ${format6(latest.avg_position)} | top1 ${format6(latest.share_top1)} | top3 ${format6(latest.share_top3)}`
+        }
+      ];
+      overviewItems.forEach((item) => {
+        const card = document.createElement("div");
+        card.className = "stats-card";
+        const label = document.createElement("div");
+        label.className = "label";
+        label.textContent = item.label;
+        const value = document.createElement("div");
+        value.className = "value";
+        value.textContent = item.value;
+        card.appendChild(label);
+        card.appendChild(value);
+        statsOverviewEl.appendChild(card);
+      });
+
+      const utilityLines = [
+        { key: "total_utility_norm", label: "U_norm", color: "#1f6feb" },
+        { key: "mean_base_assigned", label: "Mean base", color: "#2da44e" },
+        { key: "mean_friend_norm_assigned", label: "Mean friend_norm", color: "#bf8700" }
+      ];
+      renderLineChartSvg(
+        utilityChartEl,
+        trend,
+        utilityLines,
+        { yLabel: "normalized utility" }
+      );
+      renderLegend(utilityLegendEl, utilityLines);
+      renderLegend(fairnessLegendEl, [
+        { label: "G_total_norm", color: "#d73a49" },
+        { label: "G_base_norm", color: "#2da44e" },
+        { label: "G_friend_norm", color: "#8250df" },
+        { label: "G_friend_opportunity", color: "#bf8700" }
+      ]);
+      renderLineChartSvg(
+        fairnessChartEl,
+        trend,
+        [
+          { key: "gini_total_norm", label: "G_total_norm", color: "#d73a49" },
+          { key: "gini_base_norm", label: "G_base_norm", color: "#2da44e" },
+          { key: "gini_friend_norm", label: "G_friend_norm", color: "#8250df" },
+          { key: "gini_friend_opportunity_norm", label: "G_friend_opportunity", color: "#bf8700" }
+        ],
+        { yLabel: "gini" }
+      );
+      const socialLines = [
+        { key: "mean_friend_norm_assigned", label: "Mean friend_norm", color: "#bf8700" },
+        { key: "friend_norm_base_ratio_mean", label: "Friend/Base ratio", color: "#8250df" },
+        { key: "avg_friend_overlaps_per_student", label: "Overlaps/student", color: "#0969da" },
+        { key: "share_students_with_any_friend_overlap", label: "Students with overlap", color: "#1a7f37" }
+      ];
+      renderLineChartSvg(socialChartEl, trend, socialLines, { yLabel: "social diagnostics" });
+      renderLegend(socialLegendEl, socialLines);
+
+      const qualityLines = [
+        { key: "avg_position", label: "Avg position", color: "#d1242f" },
+        { key: "share_top1", label: "Top1 share", color: "#1f6feb" },
+        { key: "share_top3", label: "Top3 share", color: "#2da44e" }
+      ];
+      renderLineChartSvg(qualityChartEl, trend, qualityLines, { yLabel: "preference quality" });
+      renderLegend(qualityLegendEl, qualityLines);
+
+      if (byMode.length === 0) {
+        statsModeTableEl.innerHTML = "<tr><td colspan='15'>No statistics yet.</td></tr>";
+        return;
+      }
+
+      statsModeTableEl.innerHTML = "";
+      byMode.forEach((row) => {
+        const tr = document.createElement("tr");
+        const cells = [
+          row.improve_mode,
+          row.runs,
+          format6(row.avg_total_utility),
+          format6(row.avg_total_utility_norm),
+          format6(row.avg_mean_base_assigned),
+          format6(row.avg_mean_friend_norm_assigned),
+          format6(row.avg_avg_friend_overlaps_per_student),
+          format6(row.avg_share_students_with_any_friend_overlap),
+          format6(row.avg_gini_total_norm),
+          format6(row.avg_gini_base_norm),
+          format6(row.avg_gini_friend_norm),
+          format6(row.avg_gini_friend_opportunity_norm),
+          format6(row.avg_avg_position),
+          format6(row.avg_share_top1),
+          format6(row.avg_share_top3)
+        ];
+        cells.forEach((value) => {
+          const td = document.createElement("td");
+          td.textContent = String(value);
+          tr.appendChild(td);
+        });
+        statsModeTableEl.appendChild(tr);
+      });
+    }
+
+    function renderModeComparisonStats(stats) {
+      statsMode = "comparison";
+      currentModeComparisonStats = JSON.parse(JSON.stringify(stats));
+      const byMode = Array.isArray(stats.by_mode) ? stats.by_mode : [];
+      const overall = stats.overall || {};
+      const config = stats.config || {};
+
+      if (byMode.length === 0) {
+        resetStatsView("No batch statistics yet.");
+        return;
+      }
+
+      statsEmptyEl.textContent = "";
+      statsOverviewEl.innerHTML = "";
+      lambdaChartTitleEl.textContent = "Lambda Sweep";
+      lambdaChartNoteEl.textContent = "Run Lambda Sweep to plot metrics against lambda.";
+      lambdaChartEl.innerHTML = "<div class='inline-note'>No lambda sweep in this view.</div>";
+      lambdaLegendEl.innerHTML = "";
+      postModeSweepChartTitleEl.textContent = "Post-Iteration Mode Sweep";
+      postModeSweepChartNoteEl.textContent = "Run Post-Mode Sweep to compare all six algorithm variants on selected tables.";
+      postModeSweepChartEl.innerHTML = "<div class='inline-note'>No post-mode sweep in this view.</div>";
+      postModeSweepLegendEl.innerHTML = "";
+      utilityChartTitleEl.textContent = "Swap vs Drop-add vs Hybrid: Total Utility";
+      utilityChartNoteEl.textContent = "X-axis: move type; solid = global, dashed = personal; Y-axis: avg total_utility_norm";
+      fairnessChartTitleEl.textContent = "Average Fairness Decomposition By Mode";
+      fairnessChartNoteEl.textContent = "X-axis: mode, Y-axis: average Gini";
+      socialChartTitleEl.textContent = "Swap vs Drop-add vs Hybrid: Friend Utility";
+      socialChartNoteEl.textContent = "X-axis: move type; solid = global, dashed = personal; Y-axis: avg friend_norm";
+      qualityChartTitleEl.textContent = "Average Preference Quality By Mode";
+      qualityChartNoteEl.textContent = "X-axis: mode, Y-axis: average rank/top-k quality values";
+      const runCounts = byMode.map((row) => Number(row.runs || 0));
+      const minRuns = Math.min(...runCounts);
+      const maxRuns = Math.max(...runCounts);
+      const runsPerMode = minRuns === maxRuns ? String(minRuns) : `${minRuns} - ${maxRuns}`;
+
+      const overviewItems = [
+        { label: "Runs Per Mode", value: runsPerMode },
+        { label: "Seeds", value: `${config.seed_start} - ${config.seed_end}` },
+        {
+          label: "Workers",
+          value: String(config.effective_parallel_workers || config.parallel_workers || 1)
+        },
+        {
+          label: "Best Avg Raw Utility",
+          value: overall.best_avg_utility_mode
+            ? `${overall.best_avg_utility_mode.improve_mode} = ${format6(overall.best_avg_utility_mode.avg_total_utility)}`
+            : "-"
+        },
+        {
+          label: "Lowest Avg G_total",
+          value: overall.best_avg_fairness_mode
+            ? `${overall.best_avg_fairness_mode.improve_mode} = ${format6(overall.best_avg_fairness_mode.avg_gini_total_norm)}`
+            : "-"
+        },
+        {
+          label: "Best Avg Friend Norm",
+          value: overall.best_avg_friend_mode
+            ? `${overall.best_avg_friend_mode.improve_mode} = ${format6(overall.best_avg_friend_mode.avg_mean_friend_norm_assigned)}`
+            : "-"
+        },
+        {
+          label: "Lowest Avg Opportunity Gini",
+          value: overall.best_avg_social_opportunity_fairness_mode
+            ? `${overall.best_avg_social_opportunity_fairness_mode.improve_mode} = ${format6(overall.best_avg_social_opportunity_fairness_mode.avg_gini_friend_opportunity_norm)}`
+            : "-"
+        }
+      ];
+      overviewItems.forEach((item) => {
+        const card = document.createElement("div");
+        card.className = "stats-card";
+        const label = document.createElement("div");
+        label.className = "label";
+        label.textContent = item.label;
+        const value = document.createElement("div");
+        value.className = "value";
+        value.textContent = item.value;
+        card.appendChild(label);
+        card.appendChild(value);
+        statsOverviewEl.appendChild(card);
+      });
+
+      const scopeLines = [
+        { key: "global", label: "global", color: "#1f6feb" },
+        { key: "personal", label: "personal", color: "#8250df", dash: "6 4" }
+      ];
+      const utilityRowsByMove = buildMoveScopeRows(byMode, "avg_total_utility_norm");
+      renderModePointChartSvg(utilityChartEl, utilityRowsByMove, scopeLines, { yLabel: "avg total_utility_norm" });
+      renderLegend(utilityLegendEl, scopeLines);
+      const fairnessLines = [
+        { key: "avg_gini_total_norm", label: "Avg G_total", color: "#d73a49" },
+        { key: "avg_gini_base_norm", label: "Avg G_base", color: "#2da44e" },
+        { key: "avg_gini_friend_norm", label: "Avg G_friend", color: "#8250df" },
+        { key: "avg_gini_friend_opportunity_norm", label: "Avg G_friend_opp", color: "#bf8700" }
+      ];
+      renderModePointChartSvg(
+        fairnessChartEl,
+        byMode,
+        fairnessLines,
+        { yLabel: "avg_gini" }
+      );
+      renderLegend(fairnessLegendEl, fairnessLines);
+
+      const friendRowsByMove = buildMoveScopeRows(byMode, "avg_mean_friend_norm_assigned");
+      renderModePointChartSvg(socialChartEl, friendRowsByMove, scopeLines, { yLabel: "avg friend_norm" });
+      renderLegend(socialLegendEl, scopeLines);
+
+      const qualityLines = [
+        { key: "avg_avg_position", label: "Avg position", color: "#d1242f" },
+        { key: "avg_share_top1", label: "Avg top1", color: "#1f6feb" },
+        { key: "avg_share_top3", label: "Avg top3", color: "#2da44e" }
+      ];
+      renderModePointChartSvg(qualityChartEl, byMode, qualityLines, { yLabel: "avg preference quality" });
+      renderLegend(qualityLegendEl, qualityLines);
+
+      statsModeTableEl.innerHTML = "";
+      byMode.forEach((row) => {
+        const tr = document.createElement("tr");
+        const cells = [
+          row.improve_mode,
+          row.runs,
+          format6(row.avg_total_utility),
+          format6(row.avg_total_utility_norm),
+          format6(row.avg_mean_base_assigned),
+          format6(row.avg_mean_friend_norm_assigned),
+          format6(row.avg_avg_friend_overlaps_per_student),
+          format6(row.avg_share_students_with_any_friend_overlap),
+          format6(row.avg_gini_total_norm),
+          format6(row.avg_gini_base_norm),
+          format6(row.avg_gini_friend_norm),
+          format6(row.avg_gini_friend_opportunity_norm),
+          format6(row.avg_avg_position),
+          format6(row.avg_share_top1),
+          format6(row.avg_share_top3)
+        ];
+        cells.forEach((value) => {
+          const td = document.createElement("td");
+          td.textContent = String(value);
+          tr.appendChild(td);
+        });
+        statsModeTableEl.appendChild(tr);
+      });
+    }
+
+    function renderLambdaSweepStats(stats) {
+      statsMode = "lambda";
+      currentModeComparisonStats = null;
+      const byLambda = Array.isArray(stats.by_lambda) ? stats.by_lambda : [];
+      const config = stats.config || {};
+
+      if (byLambda.length === 0) {
+        resetStatsView("No lambda sweep yet.");
+        return;
+      }
+
+      statsEmptyEl.textContent = "";
+      statsOverviewEl.innerHTML = "";
+      workerProgressEl.innerHTML = "";
+      workerProgressEl.style.display = "none";
+      lambdaChartTitleEl.textContent = "Lambda Sweep";
+      lambdaChartNoteEl.textContent = "X-axis: lambda, Y-axis: normalized total, base, friend, and Gini";
+      postModeSweepChartTitleEl.textContent = "Post-Iteration Mode Sweep";
+      postModeSweepChartNoteEl.textContent = "Run Post-Mode Sweep to compare all six algorithm variants on selected tables.";
+      utilityChartTitleEl.textContent = "Lambda Components";
+      utilityChartNoteEl.textContent = "Use the Lambda Sweep chart above; this panel is reserved for run-history charts.";
+      fairnessChartTitleEl.textContent = "Lambda Fairness";
+      fairnessChartNoteEl.textContent = "Use the Lambda Sweep chart above; this panel is reserved for run-history charts.";
+      socialChartTitleEl.textContent = "Lambda Social Component";
+      socialChartNoteEl.textContent = "Use the Lambda Sweep chart above; this panel is reserved for run-history charts.";
+      qualityChartTitleEl.textContent = "Lambda Preference Quality";
+      qualityChartNoteEl.textContent = "Use the Lambda Sweep chart above; this panel is reserved for run-history charts.";
+      utilityChartEl.innerHTML = "";
+      utilityLegendEl.innerHTML = "";
+      postModeSweepChartEl.innerHTML = "<div class='inline-note'>No post-mode sweep in this view.</div>";
+      postModeSweepLegendEl.innerHTML = "";
+      fairnessChartEl.innerHTML = "";
+      fairnessLegendEl.innerHTML = "";
+      socialChartEl.innerHTML = "";
+      socialLegendEl.innerHTML = "";
+      qualityChartEl.innerHTML = "";
+      qualityLegendEl.innerHTML = "";
+
+      const overviewItems = [
+        { label: "Mode", value: config.improve_mode || "-" },
+        { label: "Lambda Points", value: String(byLambda.length) },
+        { label: "Runs Per Lambda", value: String(config.lambda_batch_size || 1) },
+        { label: "Seeds", value: `${config.seed_start} - ${config.seed_end}` },
+        { label: "Post Iters", value: String(config.post_iters || 0) }
+      ];
+      overviewItems.forEach((item) => {
+        const card = document.createElement("div");
+        card.className = "stats-card";
+        const label = document.createElement("div");
+        label.className = "label";
+        label.textContent = item.label;
+        const value = document.createElement("div");
+        value.className = "value";
+        value.textContent = item.value;
+        card.appendChild(label);
+        card.appendChild(value);
+        statsOverviewEl.appendChild(card);
+      });
+
+      const lambdaLines = [
+        { key: "avg_total_utility_norm", label: "U_norm", color: "#1f6feb" },
+        { key: "avg_mean_base_assigned", label: "Base", color: "#2da44e" },
+        { key: "avg_mean_friend_norm_assigned", label: "Friend", color: "#bf8700" },
+        { key: "avg_gini_total_norm", label: "Gini total", color: "#d73a49" },
+        { key: "avg_gini_friend_opportunity_norm", label: "Gini friend opportunity", color: "#8250df" }
+      ];
+      renderLambdaLineChartSvg(
+        lambdaChartEl,
+        byLambda,
+        lambdaLines,
+        { yLabel: "normalized metrics" }
+      );
+      renderLegend(lambdaLegendEl, lambdaLines);
+
+      statsModeTableEl.innerHTML = "";
+      byLambda.forEach((row) => {
+        const tr = document.createElement("tr");
+        const cells = [
+          "lambda=" + format3(row.lambda),
+          row.runs,
+          format6(row.avg_total_utility),
+          format6(row.avg_total_utility_norm),
+          format6(row.avg_mean_base_assigned),
+          format6(row.avg_mean_friend_norm_assigned),
+          format6(row.avg_avg_friend_overlaps_per_student),
+          format6(row.avg_share_students_with_any_friend_overlap),
+          format6(row.avg_gini_total_norm),
+          format6(row.avg_gini_base_norm),
+          format6(row.avg_gini_friend_norm),
+          format6(row.avg_gini_friend_opportunity_norm),
+          format6(row.avg_avg_position),
+          format6(row.avg_share_top1),
+          format6(row.avg_share_top3)
+        ];
+        cells.forEach((value) => {
+          const td = document.createElement("td");
+          td.textContent = String(value);
+          tr.appendChild(td);
+        });
+        statsModeTableEl.appendChild(tr);
+      });
+    }
+
+    function renderModeLambdaSweepStats(stats) {
+      statsMode = "mode-lambda";
+      currentModeComparisonStats = null;
+      const byModeLambda = Array.isArray(stats.by_mode_lambda) ? stats.by_mode_lambda : [];
+      const config = stats.config || {};
+      const overall = stats.overall || {};
+
+      if (byModeLambda.length === 0) {
+        resetStatsView("No 6-line lambda comparison yet.");
+        return;
+      }
+
+      statsEmptyEl.textContent = "";
+      statsOverviewEl.innerHTML = "";
+      workerProgressEl.innerHTML = "";
+      workerProgressEl.style.display = "none";
+      lambdaChartTitleEl.textContent = "Six-Line Lambda Comparison: Total Utility";
+      lambdaChartNoteEl.textContent = "X-axis: lambda; color = move type; solid = global; dashed = personal.";
+      postModeSweepChartTitleEl.textContent = "Six-Line Lambda Comparison: Friend Overlap Rate";
+      postModeSweepChartNoteEl.textContent = "X-axis: lambda; share of students with at least one friend overlap.";
+      utilityChartTitleEl.textContent = "Six-Line Lambda Comparison: Total Gini";
+      utilityChartNoteEl.textContent = "X-axis: lambda; lower total Gini means more equal total utility across students.";
+      fairnessChartTitleEl.textContent = "Six-Line Lambda Comparison: Social Utility";
+      fairnessChartNoteEl.textContent = "X-axis: lambda; social utility is the average assigned friendship component.";
+      socialChartTitleEl.textContent = "Six-Line Lambda Comparison: Social Gini";
+      socialChartNoteEl.textContent = "X-axis: lambda; lower social Gini means social benefits are distributed more evenly.";
+      qualityChartTitleEl.textContent = "Six-Line Lambda Comparison: Share Top3";
+      qualityChartNoteEl.textContent = "X-axis: lambda; higher share_top3 means students receive one of their top three courses more often.";
+
+      const overviewItems = [
+        { label: "Lambda Points", value: String(overall.lambda_count || 0) },
+        { label: "Modes", value: String(overall.mode_count || 0) },
+        { label: "Runs Per Point", value: String(config.lambda_batch_size || 1) },
+        { label: "Total Runs", value: String(overall.runs_total || byModeLambda.length) },
+        { label: "Post Iters", value: String(config.post_iters || 0) },
+        { label: "Seeds", value: `${config.seed_start} - ${config.seed_end}` }
+      ];
+      overviewItems.forEach((item) => {
+        const card = document.createElement("div");
+        card.className = "stats-card";
+        const label = document.createElement("div");
+        label.className = "label";
+        label.textContent = item.label;
+        const value = document.createElement("div");
+        value.className = "value";
+        value.textContent = item.value;
+        card.appendChild(label);
+        card.appendChild(value);
+        statsOverviewEl.appendChild(card);
+      });
+
+      const lines = modeLambdaLineDefs();
+      renderLambdaLineChartSvg(
+        lambdaChartEl,
+        buildModeLambdaRows(byModeLambda, "avg_total_utility_norm"),
+        lines,
+        { yLabel: "total utility" }
+      );
+      renderLegend(lambdaLegendEl, lines);
+      renderLambdaLineChartSvg(
+        utilityChartEl,
+        buildModeLambdaRows(byModeLambda, "avg_gini_total_norm"),
+        lines,
+        { yLabel: "total Gini" }
+      );
+      renderLegend(utilityLegendEl, lines);
+      renderLambdaLineChartSvg(
+        fairnessChartEl,
+        buildModeLambdaRows(byModeLambda, "avg_mean_friend_norm_assigned"),
+        lines,
+        { yLabel: "social utility" }
+      );
+      renderLegend(fairnessLegendEl, lines);
+      renderLambdaLineChartSvg(
+        socialChartEl,
+        buildModeLambdaRows(byModeLambda, "avg_gini_friend_norm"),
+        lines,
+        { yLabel: "social Gini" }
+      );
+      renderLegend(socialLegendEl, lines);
+      renderLambdaLineChartSvg(
+        postModeSweepChartEl,
+        buildModeLambdaRows(byModeLambda, "avg_share_students_with_any_friend_overlap"),
+        lines,
+        { yLabel: "friend overlap rate" }
+      );
+      renderLegend(postModeSweepLegendEl, lines);
+      renderLambdaLineChartSvg(
+        qualityChartEl,
+        buildModeLambdaRows(byModeLambda, "avg_share_top3"),
+        lines,
+        { yLabel: "share top3" }
+      );
+      renderLegend(qualityLegendEl, lines);
+
+      statsModeTableEl.innerHTML = "";
+      byModeLambda.forEach((row) => {
+        const tr = document.createElement("tr");
+        const cells = [
+          "lambda=" + format3(row.lambda) + " " + row.improve_mode,
+          row.runs,
+          format6(row.avg_total_utility),
+          format6(row.avg_total_utility_norm),
+          format6(row.avg_mean_base_assigned),
+          format6(row.avg_mean_friend_norm_assigned),
+          format6(row.avg_avg_friend_overlaps_per_student),
+          format6(row.avg_share_students_with_any_friend_overlap),
+          format6(row.avg_gini_total_norm),
+          format6(row.avg_gini_base_norm),
+          format6(row.avg_gini_friend_norm),
+          format6(row.avg_gini_friend_opportunity_norm),
+          format6(row.avg_avg_position),
+          format6(row.avg_share_top1),
+          format6(row.avg_share_top3)
+        ];
+        cells.forEach((value) => {
+          const td = document.createElement("td");
+          td.textContent = String(value);
+          tr.appendChild(td);
+        });
+        statsModeTableEl.appendChild(tr);
+      });
+    }
+
+    function renderPostModeSweepStats(stats) {
+      statsMode = "post-mode";
+      currentModeComparisonStats = null;
+      const byModePost = Array.isArray(stats.by_mode_post) ? stats.by_mode_post : [];
+      const config = stats.config || {};
+      const overall = stats.overall || {};
+
+      if (byModePost.length === 0) {
+        resetStatsView("No post-mode sweep yet.");
+        return;
+      }
+
+      statsEmptyEl.textContent = "";
+      statsOverviewEl.innerHTML = "";
+      workerProgressEl.innerHTML = "";
+      workerProgressEl.style.display = "none";
+      lambdaChartTitleEl.textContent = "Lambda Sweep";
+      lambdaChartNoteEl.textContent = "Run Lambda Sweep to plot metrics against lambda.";
+      lambdaChartEl.innerHTML = "<div class='inline-note'>No lambda sweep in this view.</div>";
+      lambdaLegendEl.innerHTML = "";
+      postModeSweepChartTitleEl.textContent = "Real Six-Line Post-Iteration Sweep";
+      postModeSweepChartNoteEl.textContent = "X-axis: post_iters; color = move type; solid = global; dashed = personal; Y-axis: avg total_utility_norm.";
+      utilityChartTitleEl.textContent = "Post-Mode Sweep";
+      utilityChartNoteEl.textContent = "Use the Post-Iteration chart above for the six-line comparison.";
+      fairnessChartTitleEl.textContent = "Post-Mode Fairness";
+      fairnessChartNoteEl.textContent = "Table below keeps fairness values for each post_iters x mode point.";
+      socialChartTitleEl.textContent = "Post-Mode Social Component";
+      socialChartNoteEl.textContent = "Table below keeps social utility diagnostics for each point.";
+      qualityChartTitleEl.textContent = "Post-Mode Preference Quality";
+      qualityChartNoteEl.textContent = "Table below keeps rank/top-k diagnostics for each point.";
+      utilityChartEl.innerHTML = "";
+      utilityLegendEl.innerHTML = "";
+      fairnessChartEl.innerHTML = "";
+      fairnessLegendEl.innerHTML = "";
+      socialChartEl.innerHTML = "";
+      socialLegendEl.innerHTML = "";
+      qualityChartEl.innerHTML = "";
+      qualityLegendEl.innerHTML = "";
+
+      const maxPost = Math.max(...byModePost.map((row) => Number(row.post_iters)).filter(Number.isFinite));
+      const finalRows = byModePost.filter((row) => Number(row.post_iters) === maxPost);
+      const bestFinal = finalRows.length > 0
+        ? finalRows.reduce((best, row) => Number(row.avg_total_utility_norm) > Number(best.avg_total_utility_norm) ? row : best, finalRows[0])
+        : null;
+      const overviewItems = [
+        { label: "Post Points", value: String(overall.post_count || (config.post_grid || []).length || 0) },
+        { label: "Modes", value: String(overall.mode_count || (config.modes || []).length || 0) },
+        { label: "Runs Per Point", value: String(config.seed_count || 1) },
+        { label: "Total Runs", value: String(overall.runs_total || byModePost.length) },
+        { label: "Seeds", value: `${config.seed_start} - ${config.seed_end}` },
+        {
+          label: "Best Final Mode",
+          value: bestFinal ? `${bestFinal.improve_mode} = ${format6(bestFinal.avg_total_utility_norm)}` : "-"
+        }
+      ];
+      overviewItems.forEach((item) => {
+        const card = document.createElement("div");
+        card.className = "stats-card";
+        const label = document.createElement("div");
+        label.className = "label";
+        label.textContent = item.label;
+        const value = document.createElement("div");
+        value.className = "value";
+        value.textContent = item.value;
+        card.appendChild(label);
+        card.appendChild(value);
+        statsOverviewEl.appendChild(card);
+      });
+
+      const postRows = buildPostModeSweepRows(byModePost, "avg_total_utility_norm");
+      const lines = postModeLineDefs();
+      renderXYLineChartSvg(
+        postModeSweepChartEl,
+        postRows,
+        "post_iters",
+        "post iterations",
+        lines,
+        { yLabel: "avg total_utility_norm", includeZero: true, yTicks: [0, 0.25, 0.5, 0.75, 1] }
+      );
+      renderLegend(postModeSweepLegendEl, lines);
+
+      statsModeTableEl.innerHTML = "";
+      byModePost.forEach((row) => {
+        const tr = document.createElement("tr");
+        const cells = [
+          "post=" + row.post_iters + " " + row.improve_mode,
+          row.runs,
+          format6(row.avg_total_utility),
+          format6(row.avg_total_utility_norm),
+          format6(row.avg_mean_base_assigned),
+          format6(row.avg_mean_friend_norm_assigned),
+          format6(row.avg_avg_friend_overlaps_per_student),
+          format6(row.avg_share_students_with_any_friend_overlap),
+          format6(row.avg_gini_total_norm),
+          format6(row.avg_gini_base_norm),
+          format6(row.avg_gini_friend_norm),
+          format6(row.avg_gini_friend_opportunity_norm),
+          format6(row.avg_avg_position),
+          format6(row.avg_share_top1),
+          format6(row.avg_share_top3)
+        ];
+        cells.forEach((value) => {
+          const td = document.createElement("td");
+          td.textContent = String(value);
+          tr.appendChild(td);
+        });
+        statsModeTableEl.appendChild(tr);
+      });
+    }
+
+    function renderPostUtilityComparisonStats(stats) {
+      statsMode = "post-utility";
+      currentModeComparisonStats = null;
+      const byModePost = Array.isArray(stats.by_mode_post) ? stats.by_mode_post : [];
+      const config = stats.config || {};
+      const overall = stats.overall || {};
+
+      if (byModePost.length === 0) {
+        resetStatsView("No post utility comparison yet.");
+        return;
+      }
+
+      statsEmptyEl.textContent = "";
+      statsOverviewEl.innerHTML = "";
+      workerProgressEl.innerHTML = "";
+      workerProgressEl.style.display = "none";
+      lambdaChartTitleEl.textContent = "Six-Mode Post Comparison: Jain Fairness";
+      lambdaChartNoteEl.textContent = "X-axis: post iterations; lambda fixed at 0.5; higher Jain means more equal total utility.";
+      postModeSweepChartTitleEl.textContent = "Six-Mode Post Comparison: Total Utility";
+      postModeSweepChartNoteEl.textContent = "X-axis: post iterations; lambda fixed at 0.5; color = move type; solid = global; dashed = personal.";
+      utilityChartTitleEl.textContent = "Six-Mode Post Comparison: Social Utility";
+      utilityChartNoteEl.textContent = "X-axis: post iterations; social utility is the average assigned friendship component.";
+      fairnessChartTitleEl.textContent = "Six-Mode Post Comparison: Total Gini";
+      fairnessChartNoteEl.textContent = "X-axis: post iterations; lower total Gini means more equal total utility.";
+      socialChartTitleEl.textContent = "Six-Mode Post Comparison: Friend Overlap Rate";
+      socialChartNoteEl.textContent = "X-axis: post iterations; share of students with at least one friend overlap.";
+      qualityChartTitleEl.textContent = "Six-Mode Post Comparison: Share Top3";
+      qualityChartNoteEl.textContent = "X-axis: post iterations; higher share_top3 means better course-rank satisfaction.";
+
+      const overviewItems = [
+        { label: "Lambda", value: String(config.constant_lambda ?? "0.5") },
+        { label: "Post Points", value: String(overall.post_count || (config.post_grid || []).length || 0) },
+        { label: "Modes", value: String(overall.mode_count || (config.modes || []).length || 0) },
+        { label: "Runs Per Point", value: String(config.seed_count || 1) },
+        { label: "Total Runs", value: String(overall.runs_total || byModePost.length) },
+        { label: "Seeds", value: `${config.seed_start} - ${config.seed_end}` }
+      ];
+      overviewItems.forEach((item) => {
+        const card = document.createElement("div");
+        card.className = "stats-card";
+        const label = document.createElement("div");
+        label.className = "label";
+        label.textContent = item.label;
+        const value = document.createElement("div");
+        value.className = "value";
+        value.textContent = item.value;
+        card.appendChild(label);
+        card.appendChild(value);
+        statsOverviewEl.appendChild(card);
+      });
+
+      const lines = postModeLineDefs();
+      renderXYLineChartSvg(
+        lambdaChartEl,
+        buildPostModeSweepRows(byModePost, "avg_jain_index"),
+        "post_iters",
+        "post iterations",
+        lines,
+        { yLabel: "Jain fairness", includeZero: true, yTicks: [0, 0.25, 0.5, 0.75, 1] }
+      );
+      renderLegend(lambdaLegendEl, lines);
+      renderXYLineChartSvg(
+        postModeSweepChartEl,
+        buildPostModeSweepRows(byModePost, "avg_total_utility_norm"),
+        "post_iters",
+        "post iterations",
+        lines,
+        { yLabel: "total utility", includeZero: true, yTicks: [0, 0.25, 0.5, 0.75, 1] }
+      );
+      renderLegend(postModeSweepLegendEl, lines);
+      renderXYLineChartSvg(
+        utilityChartEl,
+        buildPostModeSweepRows(byModePost, "avg_mean_friend_norm_assigned"),
+        "post_iters",
+        "post iterations",
+        lines,
+        { yLabel: "social utility", includeZero: true, yTicks: [0, 0.25, 0.5, 0.75, 1] }
+      );
+      renderLegend(utilityLegendEl, lines);
+      renderXYLineChartSvg(
+        fairnessChartEl,
+        buildPostModeSweepRows(byModePost, "avg_gini_total_norm"),
+        "post_iters",
+        "post iterations",
+        lines,
+        { yLabel: "total Gini", includeZero: true, yTicks: [0, 0.25, 0.5, 0.75, 1] }
+      );
+      renderLegend(fairnessLegendEl, lines);
+      renderXYLineChartSvg(
+        socialChartEl,
+        buildPostModeSweepRows(byModePost, "avg_share_students_with_any_friend_overlap"),
+        "post_iters",
+        "post iterations",
+        lines,
+        { yLabel: "friend overlap rate", includeZero: true, yTicks: [0, 0.25, 0.5, 0.75, 1] }
+      );
+      renderLegend(socialLegendEl, lines);
+      renderXYLineChartSvg(
+        qualityChartEl,
+        buildPostModeSweepRows(byModePost, "avg_share_top3"),
+        "post_iters",
+        "post iterations",
+        lines,
+        { yLabel: "share top3", includeZero: true, yTicks: [0, 0.25, 0.5, 0.75, 1] }
+      );
+      renderLegend(qualityLegendEl, lines);
+
+      statsModeTableEl.innerHTML = "";
+      byModePost.forEach((row) => {
+        const tr = document.createElement("tr");
+        const cells = [
+          "post=" + row.post_iters + " " + row.improve_mode,
+          row.runs,
+          format6(row.avg_total_utility),
+          format6(row.avg_total_utility_norm),
+          format6(row.avg_mean_base_assigned),
+          format6(row.avg_mean_friend_norm_assigned),
+          format6(row.avg_avg_friend_overlaps_per_student),
+          format6(row.avg_share_students_with_any_friend_overlap),
+          format6(row.avg_gini_total_norm),
+          format6(row.avg_gini_base_norm),
+          format6(row.avg_gini_friend_norm),
+          format6(row.avg_gini_friend_opportunity_norm),
+          format6(row.avg_avg_position),
+          format6(row.avg_share_top1),
+          format6(row.avg_share_top3)
+        ];
+        cells.forEach((value) => {
+          const td = document.createElement("td");
+          td.textContent = String(value);
+          tr.appendChild(td);
+        });
+        statsModeTableEl.appendChild(tr);
+      });
+    }
+
+    function summarizeModeComparison(stats) {
+      const byMode = Array.isArray(stats.by_mode) ? stats.by_mode : [];
+      const bestAvgUtility = byMode.length > 0
+        ? byMode.reduce((best, row) => row.avg_total_utility > best.avg_total_utility ? row : best, byMode[0])
+        : null;
+      const bestAvgFairness = byMode.length > 0
+        ? byMode.reduce((best, row) => row.avg_gini_total_norm < best.avg_gini_total_norm ? row : best, byMode[0])
+        : null;
+      const bestAvgFriend = byMode.length > 0
+        ? byMode.reduce((best, row) => metricValue(row, "avg_mean_friend_norm_assigned") > metricValue(best, "avg_mean_friend_norm_assigned") ? row : best, byMode[0])
+        : null;
+      const bestAvgSocialOpportunityFairness = byMode.length > 0
+        ? byMode.reduce((best, row) => metricValue(row, "avg_gini_friend_opportunity_norm") < metricValue(best, "avg_gini_friend_opportunity_norm") ? row : best, byMode[0])
+        : null;
+      stats.overall = {
+        ...(stats.overall || {}),
+        mode_count: byMode.length,
+        runs_total: byMode.reduce((total, row) => total + Number(row.runs || 0), 0),
+        best_avg_utility_mode: bestAvgUtility,
+        best_avg_fairness_mode: bestAvgFairness,
+        best_avg_friend_mode: bestAvgFriend,
+        best_avg_social_opportunity_fairness_mode: bestAvgSocialOpportunityFairness
+      };
+      return stats;
+    }
+
+    function addSingleRunToModeComparison(runData) {
+      if (!currentModeComparisonStats || !Array.isArray(currentModeComparisonStats.by_mode)) {
+        return false;
+      }
+      const mode = runData && runData.config && runData.config.improve_mode;
+      const summary = runData && runData.summary;
+      const row = currentModeComparisonStats.by_mode.find((item) => item.improve_mode === mode);
+      if (!row || !summary) {
+        return false;
+      }
+
+      const oldRuns = Number(row.runs || 0);
+      const newRuns = oldRuns + 1;
+      const totalUtility = Number(summary.total_utility);
+      const gTotal = Number(summary.gini_total_norm);
+      const gBase = Number(summary.gini_base_norm);
+      const metrics = (runData.metrics_extended && runData.metrics_extended.values) || {};
+      const extraKeys = [
+        "total_utility_norm",
+        "mean_base_assigned",
+        "mean_friend_norm_assigned",
+        "friend_norm_base_ratio_mean",
+        "avg_friend_overlaps_per_student",
+        "share_students_with_any_friend_overlap",
+        "gini_friend_norm",
+        "gini_friend_opportunity_norm",
+        "avg_position",
+        "share_top1",
+        "share_top3"
+      ];
+
+      row.runs = newRuns;
+      row.avg_total_utility = ((Number(row.avg_total_utility || 0) * oldRuns) + totalUtility) / newRuns;
+      row.best_total_utility = Math.max(Number(row.best_total_utility || totalUtility), totalUtility);
+      row.avg_gini_total_norm = ((Number(row.avg_gini_total_norm || 0) * oldRuns) + gTotal) / newRuns;
+      row.min_gini_total_norm = Math.min(Number(row.min_gini_total_norm || gTotal), gTotal);
+      row.avg_gini_base_norm = ((Number(row.avg_gini_base_norm || 0) * oldRuns) + gBase) / newRuns;
+      row.min_gini_base_norm = Math.min(Number(row.min_gini_base_norm || gBase), gBase);
+      extraKeys.forEach((key) => {
+        const value = Number(metrics[key]);
+        if (!Number.isFinite(value)) {
+          return;
+        }
+        const avgKey = "avg_" + key;
+        row[avgKey] = ((Number(row[avgKey] || 0) * oldRuns) + value) / newRuns;
+        if (key.startsWith("gini_") || key === "avg_position") {
+          const minKey = "min_" + key;
+          row[minKey] = Math.min(Number(row[minKey] || value), value);
+        }
+        if (
+          key === "total_utility_norm" ||
+          key === "mean_friend_norm_assigned" ||
+          key === "avg_friend_overlaps_per_student" ||
+          key === "share_students_with_any_friend_overlap" ||
+          key === "share_top1" ||
+          key === "share_top3"
+        ) {
+          const bestKey = "best_" + key;
+          row[bestKey] = Math.max(Number(row[bestKey] || value), value);
+        }
+      });
+
+      renderModeComparisonStats(summarizeModeComparison(currentModeComparisonStats));
+      return true;
+    }
+
+    function renderWorkerProgress(progress) {
+      const workers = Array.isArray(progress.workers) ? progress.workers : [];
+      if (workers.length === 0) {
+        workerProgressEl.innerHTML = "";
+        workerProgressEl.style.display = "none";
+        return;
+      }
+      workerProgressEl.style.display = "grid";
+      workerProgressEl.innerHTML = "";
+
+      const header = document.createElement("div");
+      header.className = "chart-title";
+      header.textContent = "Worker Progress: " + progress.completed + " / " + progress.total;
+      workerProgressEl.appendChild(header);
+
+      workers.forEach((worker) => {
+        const total = Number(worker.total || 0);
+        const completed = Number(worker.completed || 0);
+        const pct = total > 0 ? Math.round((completed / total) * 100) : 100;
+        const row = document.createElement("div");
+        row.className = "worker-row";
+
+        const label = document.createElement("div");
+        label.textContent = "Worker " + worker.worker_id;
+
+        const track = document.createElement("div");
+        track.className = "progress-track";
+        const fill = document.createElement("div");
+        fill.className = "progress-fill";
+        fill.style.width = pct + "%";
+        track.appendChild(fill);
+
+        const value = document.createElement("div");
+        value.textContent = completed + " / " + total;
+
+        row.appendChild(label);
+        row.appendChild(track);
+        row.appendChild(value);
+        workerProgressEl.appendChild(row);
+      });
+    }
+
+    function stopProgressPolling() {
+      if (progressPollTimer !== null) {
+        clearInterval(progressPollTimer);
+        progressPollTimer = null;
+      }
+    }
+
+    function startProgressPolling(jobId) {
+      stopProgressPolling();
+      const poll = async () => {
+        try {
+          const response = await fetch("/api/compare-progress?job_id=" + encodeURIComponent(jobId));
+          const data = await response.json();
+          if (response.ok && data.ok) {
+            renderWorkerProgress(data);
+            if (data.status === "done" || data.status === "failed") {
+              stopProgressPolling();
+            }
+          }
+        } catch (err) {
+          // Progress polling is best-effort; the main request still reports final errors.
+        }
+      };
+      poll();
+      progressPollTimer = setInterval(poll, 700);
+    }
+
+    async function loadHistory() {
+      try {
+        const response = await fetch("/api/history?limit=200");
+        const data = await response.json();
+        if (!response.ok || !data.ok) {
+          throw new Error(data.error || ("HTTP " + response.status));
+        }
+        renderHistory(data.items || []);
+      } catch (err) {
+        historyEl.innerHTML = "<tr><td colspan='2'>Failed to load run history.</td></tr>";
+      }
+    }
+
+    async function loadStats() {
+      const response = await fetch("/api/history/stats?limit=200");
+      const data = await response.json();
+      if (!response.ok || !data.ok) {
+        throw new Error(data.error || ("HTTP " + response.status));
+      }
+      renderStats(data);
+    }
+
+    async function toggleStatsPanel() {
+      if (statsVisible) {
+        setStatsPanelVisible(false);
+        return;
+      }
+      setStatsPanelVisible(true);
+      try {
+        await loadStats();
+      } catch (err) {
+        resetStatsView("Failed to load statistics.");
+        setStatus(err.message, "error");
+      }
+    }
+
+    async function resetHistory() {
+      try {
+        const response = await fetch("/api/history/reset", {
+          method: "POST"
+        });
+        const data = await response.json();
+        if (!response.ok || !data.ok) {
+          throw new Error(data.error || ("HTTP " + response.status));
+        }
+        renderHistory(data.items || []);
+        if (statsVisible) {
+          await loadStats();
+        } else {
+          resetStatsView("No statistics yet.");
+        }
+        setStatus("Run history has been reset.", "ok");
+      } catch (err) {
+        setStatus(err.message, "error");
+      }
+    }
+
+    async function runModeComparison() {
+      let payload;
+      try {
+        payload = payloadFromForm();
+        payload.batch_size = readInt("batch_size", 30);
+        payload.progress_job_id = "compare_" + Date.now() + "_" + Math.random().toString(36).slice(2);
+      } catch (err) {
+        setStatus(err.message, "error");
+        return;
+      }
+
+      runCompareBtn.disabled = true;
+      runModeLambdaBtn.disabled = true;
+      runPostModeSweepBtn.disabled = true;
+      runPostUtilityBtn.disabled = true;
+      runBtn.disabled = true;
+      setStatsPanelVisible(true);
+      setStatus("Running mode comparison...", "");
+      resetStatsView("Running batch comparison. This can take a while.");
+      startProgressPolling(payload.progress_job_id);
+
+      try {
+        const response = await fetch("/api/compare-modes", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        const data = await response.json();
+        if (!response.ok || !data.ok) {
+          throw new Error(data.error || ("HTTP " + response.status));
+        }
+        stopProgressPolling();
+        renderModeComparisonStats(data);
+        const progressResponse = await fetch(
+          "/api/compare-progress?job_id=" + encodeURIComponent(payload.progress_job_id)
+        );
+        if (progressResponse.ok) {
+          const progressData = await progressResponse.json();
+          if (progressData.ok) {
+            renderWorkerProgress(progressData);
+          }
+        }
+        await loadHistory();
+        setStatus(
+          "Mode comparison finished: " +
+            data.config.batch_size +
+            " runs per mode, seeds " +
+            data.config.seed_start +
+            "-" +
+            data.config.seed_end +
+            ", workers " +
+            (data.config.effective_parallel_workers || data.config.parallel_workers || 1) +
+            ".",
+          "ok"
+        );
+      } catch (err) {
+        stopProgressPolling();
+        resetStatsView("Failed to run mode comparison.");
+        setStatus(err.message, "error");
+      } finally {
+        runCompareBtn.disabled = false;
+        runModeLambdaBtn.disabled = false;
+        runPostModeSweepBtn.disabled = false;
+        runPostUtilityBtn.disabled = false;
+        runBtn.disabled = false;
+      }
+    }
+
+    function parseLambdaValuesInput() {
+      const raw = document.getElementById("lambda_values").value.trim();
+      const source = raw || "0,0.25,0.5,0.75,1";
+      const values = source
+        .split(",")
+        .map((token) => token.trim())
+        .filter((token) => token.length > 0)
+        .map((token) => Number.parseFloat(token));
+      if (values.length === 0) {
+        throw new Error("lambda values cannot be empty");
+      }
+      values.forEach((value) => {
+        if (!Number.isFinite(value) || value < 0 || value > 1) {
+          throw new Error("lambda values must be numbers in range 0..1");
+        }
+      });
+      return values;
+    }
+
+    async function runLambdaSweep() {
+      let payload;
+      try {
+        payload = payloadFromForm();
+        payload.lambda_values = parseLambdaValuesInput();
+        payload.lambda_batch_size = readInt("lambda_batch_size", 1);
+        payload.lambda_file = null;
+      } catch (err) {
+        setStatus(err.message, "error");
+        return;
+      }
+
+      runLambdaBtn.disabled = true;
+      runCompareBtn.disabled = true;
+      runModeLambdaBtn.disabled = true;
+      runPostModeSweepBtn.disabled = true;
+      runPostUtilityBtn.disabled = true;
+      runBtn.disabled = true;
+      setStatsPanelVisible(true);
+      setStatus("Running lambda sweep...", "");
+      resetStatsView("Running lambda sweep. This can take a while.");
+
+      try {
+        const response = await fetch("/api/lambda-sweep", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        const data = await response.json();
+        if (!response.ok || !data.ok) {
+          throw new Error(data.error || ("HTTP " + response.status));
+        }
+        renderLambdaSweepStats(data);
+        await loadHistory();
+        setStatus(
+          "Lambda sweep finished: " +
+            data.config.lambda_values.length +
+            " lambda values, " +
+            data.config.lambda_batch_size +
+            " run(s) each.",
+          "ok"
+        );
+      } catch (err) {
+        resetStatsView("Failed to run lambda sweep.");
+        setStatus(err.message, "error");
+      } finally {
+        runLambdaBtn.disabled = false;
+        runCompareBtn.disabled = false;
+        runModeLambdaBtn.disabled = false;
+        runPostModeSweepBtn.disabled = false;
+        runPostUtilityBtn.disabled = false;
+        runBtn.disabled = false;
+      }
+    }
+
+    async function runModeLambdaSweep() {
+      let payload;
+      try {
+        payload = payloadFromForm();
+        payload.lambda_values = parseLambdaValuesInput();
+        payload.lambda_batch_size = readInt("lambda_batch_size", 1);
+        payload.lambda_file = null;
+        payload.post_iters = 3;
+      } catch (err) {
+        setStatus(err.message, "error");
+        return;
+      }
+
+      runModeLambdaBtn.disabled = true;
+      runLambdaBtn.disabled = true;
+      runCompareBtn.disabled = true;
+      runPostModeSweepBtn.disabled = true;
+      runPostUtilityBtn.disabled = true;
+      runBtn.disabled = true;
+      setStatsPanelVisible(true);
+      setStatus("Running 6-line lambda comparison...", "");
+      resetStatsView("Running all six modes for each lambda value with post_iters = 3. This can take a while.");
+
+      try {
+        const response = await fetch("/api/mode-lambda-sweep", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        const data = await response.json();
+        if (!response.ok || !data.ok) {
+          throw new Error(data.error || ("HTTP " + response.status));
+        }
+        renderModeLambdaSweepStats(data);
+        await loadHistory();
+        setStatus(
+          "6-line lambda comparison finished: " +
+            data.config.lambda_values.length +
+            " lambda values x " +
+            data.config.modes.length +
+            " modes x " +
+            data.config.lambda_batch_size +
+            " run(s), post_iters = 3.",
+          "ok"
+        );
+      } catch (err) {
+        resetStatsView("Failed to run 6-line lambda comparison.");
+        setStatus(err.message, "error");
+      } finally {
+        runModeLambdaBtn.disabled = false;
+        runLambdaBtn.disabled = false;
+        runCompareBtn.disabled = false;
+        runPostModeSweepBtn.disabled = false;
+        runPostUtilityBtn.disabled = false;
+        runBtn.disabled = false;
+      }
+    }
+
+    async function runPostModeSweep() {
+      let payload;
+      try {
+        payload = payloadFromForm();
+        payload.post_grid = POST_MODE_SWEEP_GRID;
+        payload.post_sweep_seed_count = 1;
+        payload.progress_job_id = "post_mode_" + Date.now() + "_" + Math.random().toString(36).slice(2);
+      } catch (err) {
+        setStatus(err.message, "error");
+        return;
+      }
+
+      runPostModeSweepBtn.disabled = true;
+      runModeLambdaBtn.disabled = true;
+      runLambdaBtn.disabled = true;
+      runCompareBtn.disabled = true;
+      runPostUtilityBtn.disabled = true;
+      runBtn.disabled = true;
+      setStatsPanelVisible(true);
+      setStatus("Running post-mode sweep...", "");
+      resetStatsView("Running all six modes across post iteration values. This can take a while.");
+      startProgressPolling(payload.progress_job_id);
+
+      try {
+        const response = await fetch("/api/post-mode-sweep", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        const data = await response.json();
+        if (!response.ok || !data.ok) {
+          throw new Error(data.error || ("HTTP " + response.status));
+        }
+        stopProgressPolling();
+        renderPostModeSweepStats(data);
+        const progressResponse = await fetch(
+          "/api/compare-progress?job_id=" + encodeURIComponent(payload.progress_job_id)
+        );
+        if (progressResponse.ok) {
+          const progressData = await progressResponse.json();
+          if (progressData.ok) {
+            renderWorkerProgress(progressData);
+          }
+        }
+        await loadHistory();
+        setStatus(
+          "Post-mode sweep finished: " +
+            data.config.post_grid.length +
+            " post points x " +
+            data.config.modes.length +
+            " modes x " +
+            data.config.seed_count +
+            " run(s).",
+          "ok"
+        );
+      } catch (err) {
+        stopProgressPolling();
+        resetStatsView("Failed to run post-mode sweep.");
+        setStatus(err.message, "error");
+      } finally {
+        runPostModeSweepBtn.disabled = false;
+        runModeLambdaBtn.disabled = false;
+        runLambdaBtn.disabled = false;
+        runCompareBtn.disabled = false;
+        runPostUtilityBtn.disabled = false;
+        runBtn.disabled = false;
+      }
+    }
+
+    async function runPostUtilityComparison() {
+      let payload;
+      try {
+        payload = payloadFromForm();
+        payload.post_grid = POST_UTILITY_SWEEP_GRID;
+        payload.post_sweep_seed_count = 1;
+        payload.lambda_file = null;
+        payload.constant_lambda = 0.5;
+        payload.progress_job_id = "post_utility_" + Date.now() + "_" + Math.random().toString(36).slice(2);
+      } catch (err) {
+        setStatus(err.message, "error");
+        return;
+      }
+
+      runPostUtilityBtn.disabled = true;
+      runPostModeSweepBtn.disabled = true;
+      runModeLambdaBtn.disabled = true;
+      runLambdaBtn.disabled = true;
+      runCompareBtn.disabled = true;
+      runBtn.disabled = true;
+      setStatsPanelVisible(true);
+      setStatus("Running post utility comparison...", "");
+      resetStatsView("Running six algorithms with lambda = 0.5 over post iterations 0, 1, 3, 6, 10, 12.");
+      startProgressPolling(payload.progress_job_id);
+
+      try {
+        const response = await fetch("/api/post-mode-sweep", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        const data = await response.json();
+        if (!response.ok || !data.ok) {
+          throw new Error(data.error || ("HTTP " + response.status));
+        }
+        stopProgressPolling();
+        renderPostUtilityComparisonStats(data);
+        const progressResponse = await fetch(
+          "/api/compare-progress?job_id=" + encodeURIComponent(payload.progress_job_id)
+        );
+        if (progressResponse.ok) {
+          const progressData = await progressResponse.json();
+          if (progressData.ok) {
+            renderWorkerProgress(progressData);
+          }
+        }
+        await loadHistory();
+        setStatus(
+          "Post utility comparison finished: lambda = 0.5, " +
+            data.config.post_grid.length +
+            " post points x " +
+            data.config.modes.length +
+            " modes.",
+          "ok"
+        );
+      } catch (err) {
+        stopProgressPolling();
+        resetStatsView("Failed to run post utility comparison.");
+        setStatus(err.message, "error");
+      } finally {
+        runPostUtilityBtn.disabled = false;
+        runPostModeSweepBtn.disabled = false;
+        runModeLambdaBtn.disabled = false;
+        runLambdaBtn.disabled = false;
+        runCompareBtn.disabled = false;
+        runBtn.disabled = false;
+      }
+    }
+
+    async function runAllocation() {
+      let payload;
+      try {
+        payload = payloadFromForm();
+      } catch (err) {
+        setStatus(err.message, "error");
+        return;
+      }
+
+      runBtn.disabled = true;
+      runCompareBtn.disabled = true;
+      runLambdaBtn.disabled = true;
+      runModeLambdaBtn.disabled = true;
+      runPostModeSweepBtn.disabled = true;
+      runPostUtilityBtn.disabled = true;
+      setStatus("Running...", "");
+      try {
+        const response = await fetch("/api/run", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+        const data = await response.json();
+        if (!response.ok || !data.ok) {
+          throw new Error(data.error || ("HTTP " + response.status));
+        }
+
+        const summaryText = [
+          "total_utility=" + data.summary.total_utility.toFixed(6),
+          "gini_total_norm=" + data.summary.gini_total_norm.toFixed(6),
+          "gini_base_norm=" + data.summary.gini_base_norm.toFixed(6),
+          "config=" + JSON.stringify(data.config)
+        ].join("\n");
+        summaryEl.textContent = summaryText;
+        renderAllocation(data.allocation || {}, data.pick_log || []);
+        picklogEl.textContent = JSON.stringify(data.pick_log || [], null, 2);
+        renderDownloads(data.csv_outputs || {});
+        await loadHistory();
+        if (statsVisible) {
+          if (statsMode === "comparison" && addSingleRunToModeComparison(data)) {
+            // Keep the current mode-comparison chart and fold this run into its mode.
+          } else {
+            await loadStats();
+          }
+        }
+        setStatus("Completed successfully.", "ok");
+      } catch (err) {
+        setStatus(err.message, "error");
+      } finally {
+        runBtn.disabled = false;
+        runCompareBtn.disabled = false;
+        runLambdaBtn.disabled = false;
+        runModeLambdaBtn.disabled = false;
+        runPostModeSweepBtn.disabled = false;
+        runPostUtilityBtn.disabled = false;
+      }
+    }
+
+    function clearResults() {
+      summaryEl.textContent = "No run yet.";
+      picklogEl.textContent = "No run yet.";
+      tableEl.innerHTML = "<tr><td colspan='2'>No run yet.</td></tr>";
+      downloadsEl.innerHTML = "";
+      setStatus("", "");
+    }
+
+    document.getElementById("run_btn").addEventListener("click", runAllocation);
+    document.getElementById("generate_tables_btn").addEventListener("click", generateTables);
+    document.getElementById("refresh_files_btn").addEventListener("click", loadFiles);
+    document.getElementById("clear_results_btn").addEventListener("click", clearResults);
+    document.getElementById("toggle_allocation_btn").addEventListener("click", () => {
+      setAllocationVisible(!allocationVisible);
+    });
+    document.getElementById("refresh_history_btn").addEventListener("click", resetHistory);
+    document.getElementById("show_stats_btn").addEventListener("click", toggleStatsPanel);
+    document.getElementById("run_compare_btn").addEventListener("click", runModeComparison);
+    document.getElementById("run_lambda_btn").addEventListener("click", runLambdaSweep);
+    document.getElementById("run_mode_lambda_btn").addEventListener("click", runModeLambdaSweep);
+    document.getElementById("run_post_mode_sweep_btn").addEventListener("click", runPostModeSweep);
+    document.getElementById("run_post_utility_btn").addEventListener("click", runPostUtilityComparison);
+    toggleEvidenceBtn.addEventListener("click", toggleEvidenceCharts);
+    document.querySelectorAll("input[name='improve_choice']").forEach((input) => {
+      input.addEventListener("change", updateModePreview);
+    });
+    document.getElementById("post_iters").addEventListener("input", updateModePreview);
+
+    loadFiles();
+    loadHistory();
+    resetStatsView("No statistics yet.");
+    setStatsPanelVisible(false);
+    updateModePreview();
+  </script>
+</body>
+</html>

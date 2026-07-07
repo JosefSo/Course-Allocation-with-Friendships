@@ -1,0 +1,741 @@
+Материалы о проекте для будущего промпта презентации
+Снимок проекта: 2026-05-06
+Проект: HBS Social: Course Allocation with Friendships
+
+ВАЖНО
+Этот файл не является готовой презентацией. Это собранный фактический бриф о проекте, который можно дать другому ИИ как исходные материалы для создания презентации на 15 минут.
+
+
+1. Короткое описание проекта
+
+HBS Social: Course Allocation with Friendships - это детерминированный механизм распределения студентов по курсам на основе HBS-style snake draft, расширенный социальными предпочтениями. В классической постановке студент получает набор мест на курсах с учетом ограниченных вместимостей курсов. В этом проекте добавлено то, что студенту может быть важно не только попасть на конкретный курс, но и попасть туда вместе с друзьями.
+
+Главная идея: индивидуальная полезность курса и социальная полезность от совпадения с друзьями объединяются в одну функцию полезности. Затем алгоритм сначала строит начальное распределение через snake draft, а потом может улучшать его локальным поиском: swap, drop-add или hybrid, с глобальной или персональной целью.
+
+Проект написан на Python 3.10+ и использует только стандартную библиотеку. Есть CLI, локальный web UI, генератор синтетических данных, экспериментальный pipeline, интерактивная HTML-визуализация и набор тестов.
+
+
+2. Академическая постановка задачи
+
+Course allocation можно формулировать как one-sided combinatorial assignment problem: студенты получают допустимые наборы неделимых мест на курсах при ограничениях вместимости курсов и без реальных денежных трансферов.
+
+Классический пробел: многие механизмы распределения курсов предполагают, что предпочтения студентов независимы. В реальности студент может предпочитать курс не только из-за содержания, преподавателя или расписания, но и потому, что там будут друзья.
+
+Вклад проекта:
+- Расширяет HBS-style course allocation механизм directed friendship preferences.
+- Добавляет course-specific социальный слой: студент A может хотеть быть на курсе C вместе со студентом B.
+- Использует student-specific параметр `LambdaFriend`, который задает баланс между индивидуальной и социальной полезностью.
+- Делает социальную полезность reactive: бонус считается только от друзей, которые уже распределены на данный курс.
+- После начального draft запускает local-search улучшения.
+- Оценивает результат не только по total utility, но и по fairness, inequality, ranks и friend overlaps.
+
+Возможный тезис для выступления:
+Стандартное распределение курсов теряет важный социальный фактор, потому что считает предпочтения студентов независимыми. Этот проект показывает, как добавить направленные friendship preferences в HBS-style draft так, чтобы механизм оставался детерминированным, измеримым и экспериментально улучшаемым после первичного распределения.
+
+
+3. Что означает HBS-style snake draft в проекте
+
+Алгоритм строит случайный, но воспроизводимый порядок студентов через seed. Затем проходит несколько раундов:
+- нечетные раунды идут в прямом порядке;
+- четные раунды идут в обратном порядке.
+
+Пример:
+Если seeded permutation = [S2, S1, S3], то:
+- round 1: S2, S1, S3;
+- round 2: S3, S1, S2;
+- round 3: S2, S1, S3.
+
+На каждом ходе студент выбирает лучший доступный курс из feasible set:
+- у курса есть свободная capacity;
+- студент еще не получил этот курс;
+- студент не превышает лимит `b` курсов.
+
+
+4. Входные данные
+
+Проект использует две обязательные CSV-таблицы и одну опциональную.
+
+Table 1: individual course preferences
+Колонки:
+- StudentID: идентификатор студента.
+- CourseID: идентификатор курса.
+- Score: raw score, используется для tie-breaking.
+- Position: ранк курса для студента, 1 = самый предпочтительный.
+
+Смысл: насколько студент хочет конкретный курс.
+
+Table 2: directed friend preferences
+Колонки:
+- StudentID_A: студент, выражающий предпочтение.
+- StudentID_B: друг.
+- CourseID: курс, в контексте которого задана дружеская связь.
+- Position: ранк друга для данного курса.
+- Score: интенсивность предпочтения, может отсутствовать.
+
+Смысл: "Student A хочет быть на CourseID вместе со Student B".
+
+Важная особенность: предпочтения направленные. Если A хочет быть с B, это не означает, что B обязательно хочет быть с A.
+
+Table 3: per-student social weight
+Колонки:
+- StudentID.
+- LambdaFriend.
+
+`LambdaFriend` лежит в [0, 1]:
+- lambda = 0: студенту важны только индивидуальные course preferences.
+- lambda = 1: студенту важна только friendship/social component.
+- если Table 3 не передана, используется default lambda = 0.5.
+
+
+5. Функция полезности
+
+Итоговая полезность курса для студента:
+
+U(s, c) = (1 - lambda_s) * Base(s, c) + lambda_s * FriendBonusNorm(s, c)
+
+где:
+- Base(s, c) - индивидуальная полезность курса из Table 1.
+- FriendBonusNorm(s, c) - нормализованный социальный бонус от друзей.
+- lambda_s - социальный вес конкретного студента.
+
+Base utility:
+Позиция курса переводится в число [0, 1]:
+
+Base(s, c) = (K - position) / (K - 1), если K > 1.
+
+Пример для K = 4:
+- position 1 -> 1.0;
+- position 2 -> 0.6667;
+- position 3 -> 0.3333;
+- position 4 -> 0.0.
+
+Friend preference:
+Если в Table 2 есть Score, он нормализуется min-max scaling в [0, 1].
+Если Score отсутствует, используется fallback по позиции друга:
+
+FriendPreference = (K_friends + 1 - position) / K_friends
+
+Это дает:
+- rank 1 -> 1.0;
+- последний rank -> 1 / K_friends.
+
+Reactive friend bonus:
+Друг учитывается только если он уже распределен на тот курс, который сейчас рассматривает студент.
+
+FriendBonus(s, c) = сумма весов Pref(s, friend, c) для тех друзей, у которых course c уже есть в allocation.
+
+Зачем reactive:
+- Убирает circular dependency.
+- Делает выбор последовательным и совместимым с draft.
+- Позволяет объяснить каждый ход через текущую историю распределения.
+
+
+6. Правило выбора курса и tie-breaking
+
+Для каждого хода алгоритм считает U(s, c) для всех feasible courses и выбирает максимум. Если полезности почти равны, используется deterministic tie-breaking:
+
+1. максимальная utility, с округлением/толерансом около 1e-9;
+2. максимальный Score из Table 1;
+3. минимальная Position из Table 1;
+4. seeded random value;
+5. стабильный CourseID.
+
+Это важно для reproducibility: один и тот же seed дает тот же allocation и те же summary metrics.
+
+
+7. Post-allocation improvement
+
+После начального draft можно запустить `post_iters` итераций улучшения. В проекте есть 3 типа moves и 2 типа objectives, всего 6 режимов:
+
+Move types:
+- swap;
+- drop-add;
+- hybrid.
+
+Objective scopes:
+- global;
+- personal.
+
+Canonical modes:
+- swap-global;
+- swap-personal;
+- drop-add-global;
+- drop-add-personal;
+- hybrid-global;
+- hybrid-personal.
+
+Swap:
+Алгоритм ищет обмен курсами между двумя студентами:
+(s1, c1) <-> (s2, c2)
+
+Global version принимает swap только если растет глобальная welfare:
+Delta W_global > 0.
+
+Personal version принимает oriented swap, если растет utility текущего студента:
+Delta U_student > 0.
+
+Drop-add:
+Для студента строится желаемый top-b набор из:
+- текущих курсов;
+- курсов со свободной capacity.
+
+Затем алгоритм проверяет, стоит ли заменить текущий набор на новый.
+
+Hybrid:
+Комбинирует add/drop и swap:
+- если target course имеет свободное место, пробует 1-for-1 replacement;
+- если target course заполнен, пробует swap с holder этого курса;
+- порядок прохода повторяет snake-order.
+
+Global objective:
+Оптимизирует сумму полезностей всех студентов.
+
+Personal objective:
+Оптимизирует локальный выигрыш текущего студента, даже если глобальный эффект может быть хуже.
+
+
+8. Метрики качества
+
+Проект считает не только total utility. Метрики включают:
+
+Welfare:
+- total_utility;
+- total_base_utility;
+- total_friend_utility;
+- avg_utility_per_student.
+
+Fairness / inequality:
+- gini_total_norm;
+- gini_base_norm;
+- Jain index;
+- Theil index;
+- Atkinson index;
+- utility percentiles p10, p25, p50, p75, p90.
+
+Course/rank satisfaction:
+- avg_position;
+- median_position;
+- share_top1;
+- share_top3.
+
+Social satisfaction:
+- avg_friend_overlaps_per_student;
+- share_students_with_any_friend_overlap.
+
+Feasibility/capacity:
+- avg_courses_per_student;
+- students_full_alloc_rate;
+- unfilled_seats_total;
+- course_fill_rate_mean.
+
+
+9. Архитектура проекта
+
+Корень проекта:
+- `hbs_social.py`: CLI entrypoint.
+- `hbs_web.py`: web entrypoint.
+- `hbs_web_ui.html`: локальный браузерный интерфейс.
+- `hbs_visualization.html`: интерактивная визуализация алгоритма.
+- `HOW2RUN.txt`: краткая русская шпаргалка запуска.
+- `README.md`: основная документация.
+- `course_allocation_abstract_review.txt`: академическая формулировка abstract.
+
+Пакет `HBS/`:
+- `hbs_api.py`: публичная функция `run_hbs_social(...)`, валидация параметров, нормализация режимов.
+- `hbs_cli.py`: аргументы командной строки и запись output CSV.
+- `hbs_config.py`: dataclass конфигурации запуска.
+- `hbs_domain.py`: dataclasses доменной модели: preferences, logs, summary, metrics, result.
+- `hbs_engine.py`: core allocation engine, snake draft, utility model, post-allocation moves, metrics.
+- `hbs_io.py`: чтение и запись CSV.
+- `hbs_metrics.py`: Gini, Jain, Theil, Atkinson, total utility.
+- `hbs_web.py`: HTTP API, web history, mode comparison endpoint, file selection safety.
+- `hbs_experiments.py`: experiment sweep, SQLite persistence, stability checks, aggregate reports.
+
+Генератор:
+- `generate/generate_tables.py`: синтетические Table 1, Table 2, Table 3.
+
+Тесты:
+- `tests/run_all_tests.py`: test runner.
+- `tests/test_base_utility.py`: base utility mapping.
+- `tests/test_friend_bonus.py`: reactive friend bonus.
+- `tests/test_gini_index.py`: Gini and utility metric basics.
+- `tests/test_tie_breaks.py`: tie-breaking logic.
+- `tests/test_reproducibility.py`: reproducibility by seed.
+- `tests/test_input_validation.py`: invalid parameters and mode validation.
+- `tests/test_adaptive_improvement.py`: hybrid/personal/global improvement behavior.
+- `tests/test_web_api.py`: web API payloads, file mode, history, compare modes, path traversal safety.
+- `tests/test_experiments.py`: experiment helper functions, persistence, stability detection.
+
+
+10. CLI usage
+
+Generate sample data:
+
+python3 generate/generate_tables.py --students 200 --courses 8 --seed 11
+
+Run allocator:
+
+python3 hbs_social.py \
+  --csv-a tables/table1_individual.csv \
+  --csv-b tables/table2_pair.csv \
+  --csv-lambda tables/table3_lambda.csv \
+  --cap-default 80 --b 3 --seed 11
+
+Run allocator with post-phase:
+
+python3 hbs_social.py \
+  --csv-a tables/table1_individual.csv \
+  --csv-b tables/table2_pair.csv \
+  --csv-lambda tables/table3_lambda.csv \
+  --cap-default 80 --b 3 \
+  --draft-rounds 3 \
+  --post-iters 10 \
+  --move-type hybrid \
+  --objective-scope global \
+  --seed 11 \
+  --progress
+
+Run tests:
+
+python3 tests/run_all_tests.py
+
+Note:
+The README examples use `python`, but in this local environment `python` was not found. `python3` worked.
+
+
+11. Output files
+
+Standard CLI output:
+- `allocation.csv`: draft picks log.
+- `post_allocation.csv`: post-phase events.
+- `summary.csv`: one-row summary metrics.
+- `metrics_extended.csv`: extended metrics.
+
+`allocation.csv` columns:
+- RoundPicked;
+- StudentID;
+- CourseID.
+
+`post_allocation.csv` columns:
+- Iteration;
+- EventType;
+- StudentID;
+- DroppedCourses;
+- AddedCourses;
+- SwapStudent1;
+- SwapCourse1;
+- SwapStudent2;
+- SwapCourse2;
+- DeltaUtility.
+
+Possible event types:
+- SWAP_GLOBAL;
+- SWAP_PERSONAL;
+- DROP_ADD_GLOBAL;
+- DROP_ADD_PERSONAL;
+- HYBRID_GLOBAL_DROP_ADD;
+- HYBRID_GLOBAL_SWAP;
+- HYBRID_PERSONAL_DROP_ADD;
+- HYBRID_PERSONAL_SWAP;
+- empty event type means no improving move was found.
+
+
+12. Web UI
+
+Run:
+
+python3 hbs_web.py --host 127.0.0.1 --port 8000
+
+Open:
+
+http://127.0.0.1:8000
+
+Capabilities:
+- Select CSV files from `tables/`.
+- Run allocation from browser.
+- Configure cap_default, b, seed, draft_rounds, post_iters and mode.
+- View summary, allocation and pick log.
+- Download generated CSV outputs.
+- Store run history in SQLite.
+- View history and aggregate stats.
+- Compare all 6 modes across a batch of seeds.
+- Track mode comparison progress.
+
+API routes:
+- GET `/api/tables`;
+- POST `/api/run`;
+- POST `/api/compare-modes`;
+- GET `/api/compare-progress`;
+- GET `/api/history`;
+- GET `/api/history/stats`;
+- POST `/api/history/reset`.
+
+Security/safety detail:
+The web API only resolves file selections inside the `tables/` directory and rejects parent traversal such as `../outside.csv`.
+
+
+13. Interactive visualization
+
+File:
+- `hbs_visualization.html`.
+
+This is a standalone browser visualization with:
+- animated bipartite graph: students on one side, courses on the other;
+- allocation edges;
+- friendship links;
+- step-by-step draft playback;
+- Play/Pause;
+- speed control;
+- utility breakdown for candidate courses;
+- formula panel for current pick;
+- snake order track;
+- algorithm log.
+
+Keyboard shortcuts:
+- Space: play/pause.
+- Right Arrow: next step.
+- R: reset.
+
+Built-in scenarios:
+- Toy example: 3 students, 3 courses, Table 2 has scores.
+- Fallback example: 4 students, 3 courses, Table 2 Score is null, so position-based fallback is used.
+
+
+14. Synthetic data generator
+
+File:
+- `generate/generate_tables.py`.
+
+It creates:
+- Table 1: individual preferences.
+- Table 2: top-K friend preferences per student/course.
+- Table 3: LambdaFriend values.
+
+Generator properties:
+- deterministic if seed is set;
+- students are named S1, S2, ...;
+- courses are named C1, C2, ...;
+- scores are sampled from a soft distribution, with more probability around the middle;
+- positions are derived by sorting scores with small random tie noise;
+- optional adjacent swaps can add ranking noise;
+- Table 2 disallows self-pairs;
+- Table 2 validates unique friends and contiguous positions inside each student/course group;
+- Table 3 can assign the same lambda to every student.
+
+Current table files found in `tables/`:
+- `table1_200x8.csv`: 200 students x 8 courses, 1600 data rows.
+- `table2_200x8.csv`: 200 students x 8 courses x top-3 friends, 4800 data rows.
+- `table1_200x10.csv`: 200 students x 10 courses, 2000 data rows.
+- `table2_200x10.csv`: 200 students x 10 courses x top-3 friends, 6000 data rows.
+- `table1_200x12.csv`: 200 students x 12 courses, 2400 data rows.
+- `table2_200x12.csv`: 200 students x 12 courses x top-3 friends, 7200 data rows.
+- lambda files include constant values from 0.0 to 1.0 and random variants.
+
+
+15. Experiment pipeline
+
+File:
+- `HBS/hbs_experiments.py`.
+
+Default planned matrix in code:
+- scenarios: A_200x8, B_200x10, C_200x12;
+- modes: six canonical improvement modes;
+- seeds: default seed_start=11, seed_count=10;
+- post_grid: 0, 1, 5, 10, 20.
+
+The full default matrix would be:
+3 scenarios x 6 modes x 10 seeds x 5 post settings = 900 runs.
+
+Experiment outputs:
+- SQLite database with runs, post events and stability checks.
+- `runs_flat.csv`: one row per run.
+- `mode_post_agg.csv`: aggregates by scenario/mode/post_iters.
+- `stability_by_seed.csv`: stability thresholds by seed.
+- `report.md`: generated experiment summary.
+
+Current saved experiment artifacts:
+- `results/experiments/experiments.sqlite`;
+- `results/experiments/A_200x8_mode_post_agg_partial.csv`;
+- `results/experiments/A_200x8_stability_partial.csv`.
+
+Important caveat:
+The saved partial aggregate uses legacy mode names:
+- `adaptive-global` = current `hybrid-global`;
+- `adaptive-greedy` = current `hybrid-personal`;
+- `add-drop` = current `drop-add-global`;
+- `swap` = current `swap-global`.
+
+
+16. Saved experiment evidence: A_200x8 partial sweep
+
+Source:
+- `results/experiments/A_200x8_mode_post_agg_partial.csv`.
+
+Scenario:
+- 200 students;
+- 8 courses;
+- capacity = 80 per course;
+- b = 3 courses per student;
+- draft_rounds = 3;
+- seeds 11-20;
+- 10 runs per mode/post setting.
+
+Mean total utility:
+
+Baseline, post_iters=0:
+- 371.310059.
+
+hybrid-global, legacy `adaptive-global`:
+- post 1: 382.631291;
+- post 5: 384.804574;
+- post 10: 384.815154;
+- post 20: 384.815154.
+
+swap-global, legacy `swap`:
+- post 1: 372.018039;
+- post 5: 374.308638;
+- post 10: 376.473502;
+- post 20: 379.516450.
+
+drop-add-global, legacy `add-drop`:
+- post 1: 372.164515;
+- post 5: 372.129036;
+- post 10: 372.295586;
+- post 20: 372.274612.
+
+hybrid-personal, legacy `adaptive-greedy`:
+- post 1: 369.007255;
+- post 5: 369.462452;
+- post 10: 369.421339;
+- post 20: 369.861994.
+
+Relative interpretation:
+- hybrid-global at post 5 improves mean total utility from 371.310059 to 384.804574, about +3.63%.
+- swap-global at post 20 improves mean total utility to 379.516450, about +2.21%.
+- drop-add-global at post 20 improves mean total utility to 372.274612, about +0.26%.
+- hybrid-personal at post 20 is below baseline, about -0.39%.
+
+Social metric:
+- avg_friend_overlaps_per_student baseline: 3.7145.
+- hybrid-global at post 5: 4.6965.
+- relative gain: about +26.44%.
+
+Trade-off metrics:
+- avg_position baseline: 2.185667.
+- avg_position hybrid-global post 5: 2.434333.
+- share_top3 baseline: 0.872167.
+- share_top3 hybrid-global post 5: 0.795833.
+- gini_total_norm baseline: 0.052381.
+- gini_total_norm hybrid-global post 5: 0.055760.
+
+Interpretation:
+hybrid-global finds strong social/welfare gains quickly, mostly by post_iters=5. However, the gain is not free: average assigned rank worsens, top-3 share falls, and total normalized Gini rises slightly. This is useful for the presentation because it shows a real trade-off between social satisfaction, individual rank satisfaction and inequality.
+
+
+17. Single-run saved outputs
+
+Current `results/summary.csv`:
+- seed = 11;
+- cap_default = 80;
+- b = 3;
+- draft_rounds = 3;
+- post_iters = 0;
+- total_utility = 370.489668;
+- gini_total_norm = 0.053220;
+- gini_base_norm = 0.022716.
+
+Current `results/metrics_extended.csv` for that run:
+- total_utility = 370.489668;
+- total_base_utility = 497.857143;
+- total_friend_utility = 402.750000;
+- avg_utility_per_student = 1.852448;
+- avg_courses_per_student = 3.000000;
+- students_full_alloc_rate = 1.000000;
+- unfilled_seats_total = 40.000000;
+- course_fill_rate_mean = 0.937500;
+- avg_position = 2.191667;
+- median_position = 2.000000;
+- share_top1 = 0.331667;
+- share_top3 = 0.868333;
+- avg_friend_overlaps_per_student = 3.685000;
+- share_students_with_any_friend_overlap = 0.990000;
+- jain_index = 0.991716;
+- theil_index = 0.004145;
+- atkinson_index_e0_5 = 0.002066.
+
+
+18. Verification status
+
+Command run locally:
+
+python3 tests/run_all_tests.py
+
+Result:
+- 44 tests ran.
+- All passed.
+
+Covered behaviors:
+- base utility;
+- friend bonus;
+- tie-breaking;
+- reproducibility;
+- input validation;
+- Gini and utility metrics;
+- adaptive/hybrid improvements;
+- personal vs global objectives;
+- web API success/error paths;
+- file selection safety;
+- run history and mode comparison;
+- experiment persistence and stability checks.
+
+
+19. Strengths of the project
+
+Reproducibility:
+- seeded RNG;
+- deterministic sorting and tie-breaking;
+- same seed gives same allocation and metrics.
+
+Explainability:
+- pick log records selected course and utility components;
+- post log records swaps/add-drops and delta utility;
+- utility formula is decomposable into base and friend components.
+
+Experimental usefulness:
+- many metrics, not only total utility;
+- built-in experiment sweep;
+- saved run artifacts;
+- SQLite persistence;
+- stability checks across post_iters.
+
+Implementation simplicity:
+- no external dependencies;
+- standard-library-only Python;
+- CLI, API and web UI reuse the same backend function.
+
+Pedagogical value:
+- visualization can demonstrate why reactive friend bonus matters;
+- toy examples can show social preference overriding individual rank.
+
+
+20. Limitations and caveats
+
+This is a research/prototype allocation engine, not a production university registration system.
+
+The current datasets are synthetic, generated by `generate_tables.py`. Real student data would require privacy handling, stronger validation and ethical review.
+
+The model includes friendship preferences but does not include every real scheduling constraint unless extended: for example timetable conflicts, prerequisites, professor preferences, section times or waitlists.
+
+The saved experiment evidence should be presented as preliminary computational evidence from local artifacts, not as a final theoretical result.
+
+The social objective can create trade-offs:
+- more friend overlap;
+- higher total welfare;
+- worse average rank;
+- lower share of top-3 assigned courses;
+- slightly higher inequality in saved hybrid-global evidence.
+
+The current abstract/review notes say that if the paper does not formally define "reactive social utility", use safer wording such as "friendship-based social term" or "social utility term".
+
+
+21. Suggested 15-minute narrative, not a slide deck
+
+Opening, about 1 minute:
+Explain that course allocation usually treats students as independent, but in practice students often care who they take a course with.
+
+Problem and gap, about 2 minutes:
+Define one-sided combinatorial assignment with indivisible course seats and capacity constraints. State that standard mechanisms do not model friendship relations.
+
+Model, about 3 minutes:
+Introduce Table 1, Table 2 and Table 3. Explain Base utility, directed friend preferences and lambda. Emphasize that friendship preferences are directed and course-specific.
+
+Mechanism, about 3 minutes:
+Explain seeded snake draft, reactive friend bonus and deterministic tie-breaking. Show why reactive bonus avoids circular dependency.
+
+Post-allocation improvement, about 2 minutes:
+Explain that draft creates a feasible initial point, then local search can improve it. Present the 3 x 2 matrix: swap/drop-add/hybrid crossed with global/personal.
+
+Experiments and metrics, about 3 minutes:
+Use A_200x8 partial sweep. Main evidence: hybrid-global raises total utility and friend overlap quickly, but worsens rank satisfaction and slightly increases inequality. This is the central trade-off.
+
+Close, about 1 minute:
+Summarize contribution: a deterministic, auditable, friendship-aware extension of course allocation with post-draft improvement and multi-metric evaluation.
+
+
+22. Possible key claims for the presentation AI
+
+Claim 1:
+Course allocation misses an important social component when preferences are modeled as independent.
+
+Claim 2:
+Directed course-specific friendship preferences turn the problem into a socially coupled assignment problem.
+
+Claim 3:
+The project keeps the HBS-style snake draft structure but changes the utility evaluated at each pick.
+
+Claim 4:
+Reactive friend bonus makes the social term sequential and explainable.
+
+Claim 5:
+Post-allocation local search treats the draft result as a feasible starting point rather than the final answer.
+
+Claim 6:
+The 3 x 2 post-phase design separates move operator from objective: swap/drop-add/hybrid and global/personal.
+
+Claim 7:
+In saved A_200x8 experiments, hybrid-global captures most of the welfare gain by post_iters=5.
+
+Claim 8:
+The welfare gain is strongly social: friend overlap per student increases by about 26.44% in the saved hybrid-global post-5 comparison.
+
+Claim 9:
+The improvement creates trade-offs: average rank satisfaction and top-3 share decline, and Gini rises slightly.
+
+Claim 10:
+The implementation is built for reproducible mechanism experiments: deterministic seed, audit logs, metrics and tests.
+
+
+23. Prompt-ready project summary
+
+Use this paragraph as a compact input to a presentation-generating AI:
+
+Create a 15-minute academic presentation about "HBS Social: Course Allocation with Friendships", a Python research prototype for deterministic HBS-style snake draft course allocation with directed friendship preferences. The project models course allocation as a one-sided combinatorial assignment problem with indivisible course seats and capacity constraints. It extends classic individual course preferences with a course-specific directed friendship term. Each student's utility is U(s,c) = (1 - lambda_s) * Base(s,c) + lambda_s * FriendBonusNorm(s,c), where lambda_s controls the individual/social trade-off. The friend bonus is reactive: a friend contributes only if already allocated to the candidate course, avoiding circular dependency. The initial allocation uses seeded snake draft and deterministic tie-breaking by utility, score, position, seeded random and CourseID. After the draft, the system can run post-allocation local search with six modes: swap-global, swap-personal, drop-add-global, drop-add-personal, hybrid-global and hybrid-personal. The framework exports allocation logs, post-phase logs, summary metrics and extended fairness metrics, including total utility, Gini, Jain, Theil, Atkinson, percentiles, rank satisfaction and friend overlap. It includes CLI, local web UI, mode comparison, experiment sweeps, SQLite persistence, interactive visualization and tests. In saved A_200x8 partial experiments with 200 students, 8 courses, capacity 80, b=3, seeds 11-20, hybrid-global improved mean total utility from 371.310 to 384.805 by post_iters=5, about +3.63%, and increased average friend overlaps from 3.7145 to 4.6965, about +26.44%. The trade-off is that average assigned position worsened from 2.186 to 2.434, share_top3 fell from 0.872 to 0.796, and gini_total_norm rose from 0.05238 to 0.05576. Emphasize the contribution, mechanism, utility model, post-allocation improvement matrix, reproducibility and welfare/fairness/social-satisfaction trade-off.
+
+
+24. Source files inspected
+
+Core docs:
+- `README.md`;
+- `HOW2RUN.txt`;
+- `course_allocation_abstract_review.txt`.
+
+Core implementation:
+- `HBS/hbs_api.py`;
+- `HBS/hbs_cli.py`;
+- `HBS/hbs_config.py`;
+- `HBS/hbs_domain.py`;
+- `HBS/hbs_engine.py`;
+- `HBS/hbs_io.py`;
+- `HBS/hbs_metrics.py`;
+- `HBS/hbs_web.py`;
+- `HBS/hbs_experiments.py`.
+
+Entrypoints:
+- `hbs_social.py`;
+- `hbs_web.py`.
+
+Data and outputs:
+- `tables/`;
+- `results/summary.csv`;
+- `results/metrics_extended.csv`;
+- `results/experiments/A_200x8_mode_post_agg_partial.csv`;
+- `results/experiments/A_200x8_stability_partial.csv`;
+- `results/experiments/experiments.sqlite`.
+
+Tests:
+- `tests/`.
+
+Previous presentation artifacts, used only as supporting context:
+- `outputs/019dfee3-ce2f-7993-8732-dcde5acf4c16/presentations/friendship-aware-course-allocation/source-notes.txt`;
+- `outputs/019dfee3-ce2f-7993-8732-dcde5acf4c16/presentations/friendship-aware-course-allocation/claim-spine.txt`;
+- `outputs/019dfee3-ce2f-7993-8732-dcde5acf4c16/presentations/friendship-aware-course-allocation/data.json`.
