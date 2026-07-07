@@ -42,7 +42,7 @@ class TestNewUiIntegration(unittest.TestCase):
                     post_iters=1,
                     improve_mode=mode,
                     sequence="n-first",
-                    pick_rule="social",
+                    pick_rule="utilitarian",
                     progress_cb=events.append,
                     sanity_checks=True,
                 )

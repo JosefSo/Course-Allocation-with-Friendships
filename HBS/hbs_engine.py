@@ -294,8 +294,41 @@ class _HbsSocialDraftEngine:
 
     def _pick_value(self, student_id: str, course_id: str) -> tuple[float, float, float]:
         value, base, friend_bonus = self._utility_components(student_id, course_id)
-        if self._config.pick_rule == "social":
+        if self._config.pick_rule == "utilitarian":
             value += self._social_gain(student_id, course_id)
+        return value, base, friend_bonus
+
+    def _pick_value_in_snapshot(
+        self,
+        student_id: str,
+        course_id: str,
+        allocation: dict[str, set[str]],
+    ) -> tuple[float, float, float]:
+        """Evaluate a candidate against a frozen allocation snapshot."""
+
+        base = self._base_utility(student_id, course_id)
+        friend_bonus = 0.0
+        for friend_id in self._friends_by_sc.get((student_id, course_id), ()):
+            if course_id in allocation.get(friend_id, set()):
+                friend_bonus += self._friend_preference_utility(
+                    student_id, friend_id, course_id
+                )
+        lambda_ = self._lambda_by_student.get(student_id, self._DEFAULT_LAMBDA)
+        value = (
+            (1.0 - lambda_) * base
+            + lambda_ * friend_bonus / self._max_friend_bonus(student_id)
+        )
+        if self._config.pick_rule == "utilitarian":
+            for follower_id in self._followers_by_fc.get((student_id, course_id), ()):
+                if course_id not in allocation.get(follower_id, set()):
+                    continue
+                follower_lambda = self._lambda_by_student.get(
+                    follower_id, self._DEFAULT_LAMBDA
+                )
+                pref = self._friend_preference_utility(
+                    follower_id, student_id, course_id
+                )
+                value += follower_lambda * pref / self._max_friend_bonus(follower_id)
         return value, base, friend_bonus
 
     def _notify(self, event: dict) -> None:
@@ -804,7 +837,12 @@ class _HbsSocialDraftEngine:
                 flush=True,
             )
 
-        pick_log = self._run_initial_draft(draft_rounds)
+        if self._config.initial_method == "sequential":
+            pick_log = self._run_initial_draft(draft_rounds)
+        elif self._config.initial_method == "simultaneous-priority":
+            pick_log = self._run_simultaneous_priority(draft_rounds)
+        else:
+            raise ValueError(f"Unknown initial_method: {self._config.initial_method}")
         move_type = self._config.move_type
         objective_scope = self._config.objective_scope
         if move_type == "swap":
@@ -878,9 +916,123 @@ class _HbsSocialDraftEngine:
     def _turn_order(self, order: list[str], round_index: int) -> list[str]:
         if round_index == 1 or self._config.sequence == "round-robin":
             return order
-        if self._config.sequence == "n-first":
+        if self._config.sequence == "reverse-repeat":
             return list(reversed(order))
+        if self._config.sequence == "last-first-static":
+            return [order[-1], *order[:-1]] if order else []
         return order if round_index % 2 == 1 else list(reversed(order))
+
+    def _run_simultaneous_priority(self, rounds: int) -> list[PickLogRow]:
+        """Run frozen per-round rankings resolved by one seeded global priority."""
+
+        priority = self._students[:]
+        self._rng.shuffle(priority)
+        self._draft_order = priority[:]
+        self._notify({
+            "stage": "draft",
+            "iter": 0,
+            "viz": {
+                "type": "init",
+                "courses": list(self._courses),
+                "cap": self._config.default_capacity,
+                "order": list(priority),
+                "rounds": rounds,
+                "sequence": "simultaneous-priority",
+            },
+        })
+
+        pick_log: list[PickLogRow] = []
+        for round_index in range(1, rounds + 1):
+            if self._config.progress:
+                print(
+                    f"Iter {round_index}/{self._config.total_iters}: SIMULTANEOUS_PRIORITY",
+                    flush=True,
+                )
+            self._notify({
+                "stage": "draft",
+                "iter": round_index,
+                "viz": {"type": "round", "round": round_index},
+            })
+
+            allocation_snapshot = {
+                student_id: set(courses)
+                for student_id, courses in self._alloc_set.items()
+            }
+            capacity_snapshot = dict(self._capacity_left)
+            ranked: dict[str, list[tuple[str, float, float, float]]] = {}
+            for student_id in priority:
+                candidates = [
+                    course_id
+                    for course_id in self._courses
+                    if capacity_snapshot[course_id] > 0
+                    and course_id not in allocation_snapshot[student_id]
+                ]
+                scored: list[
+                    tuple[float, int, int, float, str, float, float, float]
+                ] = []
+                for course_id in candidates:
+                    value, base, friend_bonus = self._pick_value_in_snapshot(
+                        student_id,
+                        course_id,
+                        allocation_snapshot,
+                    )
+                    scored.append(
+                        (
+                            round(value, 9),
+                            self._position_a(student_id, course_id),
+                            self._score_a(student_id, course_id),
+                            self._rng.random(),
+                            course_id,
+                            value,
+                            base,
+                            friend_bonus,
+                        )
+                    )
+                scored.sort(
+                    key=lambda item: (item[0], item[2], -item[1], item[3], item[4]),
+                    reverse=True,
+                )
+                ranked[student_id] = [
+                    (item[4], item[5], item[6], item[7]) for item in scored
+                ]
+
+            for student_id in priority:
+                selected = next(
+                    (
+                        item
+                        for item in ranked[student_id]
+                        if self._capacity_left[item[0]] > 0
+                        and item[0] not in self._alloc_set[student_id]
+                    ),
+                    None,
+                )
+                if selected is None:
+                    continue
+                course_id, value, base, friend_bonus = selected
+                self._alloc_list[student_id].append(course_id)
+                self._alloc_set[student_id].add(course_id)
+                self._capacity_left[course_id] -= 1
+                self._notify({
+                    "stage": "draft",
+                    "iter": round_index,
+                    "viz": {
+                        "type": "pick",
+                        "s": student_id,
+                        "c": course_id,
+                        "u": round(value, 3),
+                    },
+                })
+                pick_log.append(
+                    PickLogRow(
+                        student_id=student_id,
+                        course_id=course_id,
+                        round_picked=round_index,
+                        utility_at_pick=value,
+                        base_at_pick=base,
+                        friend_bonus_at_pick=friend_bonus,
+                    )
+                )
+        return pick_log
 
     def _run_initial_draft(self, rounds: int) -> list[PickLogRow]:
         """

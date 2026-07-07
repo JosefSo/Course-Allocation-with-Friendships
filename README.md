@@ -8,7 +8,8 @@ engine options and browser interface.
 ## Features
 
 - HBS-style sequential course allocation with directed, course-specific friendships.
-- `snake`, `round-robin`, and `n-first` picking sequences.
+- Four sequential picking sequences plus a frozen-ranking `simultaneous-priority`
+  architecture.
 - `personal` and social-welfare-aware (`social`) draft pick rules.
 - Six post-processing variants: three move types × two objectives.
 - Local browser UI with live visualization, persistent SQLite history, and parallel
@@ -135,19 +136,28 @@ U(s,c) = (1 - lambda_s) * Base(s,c)
 
 - `snake`: `1..n`, `n..1`, `1..n`, ...
 - `round-robin`: `1..n` in every round.
-- `n-first`: `1..n` in round one and `n..1` in every later round.
+- `reverse-repeat`: `1..n` in round one and `n..1` in every later round.
+- `last-first-static`: `1..n` in round one and `n,1,..,n-1` later.
+
+The legacy names `n-first` and `last-first` remain aliases for `reverse-repeat` and
+`last-first-static` respectively.
+
+Set `--initial-method simultaneous-priority` to freeze every student's complete course
+ranking at the start of a round and resolve conflicts with one seeded priority fixed for
+the run. The default `sequential` method continues to evaluate reactive utility live.
 
 The initial student permutation and all remaining random tie-breaks are seeded.
 
 ### Pick rules
 
 ```text
-personal: PickValue(s,c) = U(s,c)
-social:   PickValue(s,c) = U(s,c) + SocialGain(s,c)
+personal:    PickValue(s,c) = U(s,c)
+utilitarian: PickValue(s,c) = U(s,c) + SocialGain(s,c)
 ```
 
 `SocialGain` is the marginal friendship utility created for students already enrolled
 in the course who list the picking student as a friend.
+The former name `social` is a deprecated alias for `utilitarian`.
 
 Candidate values are rounded to nine decimal places for near-tie bucketing. Ties are
 resolved by:

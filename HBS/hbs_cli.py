@@ -5,9 +5,13 @@ import logging
 from pathlib import Path
 
 from .hbs_api import (
+    CANONICAL_INITIAL_METHODS,
     CANONICAL_MOVE_TYPES,
     CANONICAL_OBJECTIVE_SCOPES,
     CANONICAL_IMPROVE_MODES,
+    CANONICAL_PICK_RULES,
+    CANONICAL_SEQUENCES,
+    SEQUENCE_ALIASES,
     normalize_improve_mode,
     run_hbs_social,
 )
@@ -66,20 +70,25 @@ def _parse_args() -> argparse.Namespace:
     )
     p.add_argument(
         "--pick-rule",
-        choices=["personal", "social"],
+        choices=[*CANONICAL_PICK_RULES, "social"],
         default="personal",
         help=(
-            "Правило выбора на пике: personal (своя полезность) или social "
+            "Правило выбора на пике: personal (своя полезность) или utilitarian "
             "(маржинальный вклад в глобальное welfare, учитывает внешние эффекты дружбы)"
         ),
     )
     p.add_argument(
+        "--initial-method",
+        choices=CANONICAL_INITIAL_METHODS,
+        default="sequential",
+        help="Архитектура начального распределения",
+    )
+    p.add_argument(
         "--sequence",
-        choices=["snake", "round-robin", "n-first"],
+        choices=[*CANONICAL_SEQUENCES, *SEQUENCE_ALIASES],
         default="snake",
         help=(
-            "Picking sequence: snake (balanced alternation), round-robin (1..n каждый раунд), "
-            "n-first (1..n, затем n..1 в каждом последующем раунде; лучшая MMS-гарантия)"
+            "Picking sequence для sequential architecture; n-first и last-first — aliases"
         ),
     )
     p.add_argument("--seed", type=int, default=42)
@@ -144,6 +153,7 @@ def main() -> int:
         improve_mode=args.improve_mode,
         move_type=args.move_type,
         objective_scope=args.objective_scope,
+        initial_method=args.initial_method,
         sequence=args.sequence,
         pick_rule=args.pick_rule,
         seed=args.seed,

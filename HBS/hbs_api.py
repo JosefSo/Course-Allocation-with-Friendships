@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import warnings
 from pathlib import Path
 
 from .hbs_config import _RunConfig
@@ -9,6 +10,18 @@ from .hbs_io import _read_table_1, _read_table_2, _read_table_lambda
 
 CANONICAL_MOVE_TYPES = ("swap", "drop-add", "hybrid")
 CANONICAL_OBJECTIVE_SCOPES = ("global", "personal")
+CANONICAL_INITIAL_METHODS = ("sequential", "simultaneous-priority")
+CANONICAL_SEQUENCES = (
+    "round-robin",
+    "snake",
+    "reverse-repeat",
+    "last-first-static",
+)
+SEQUENCE_ALIASES = {
+    "n-first": "reverse-repeat",
+    "last-first": "last-first-static",
+}
+CANONICAL_PICK_RULES = ("personal", "utilitarian")
 CANONICAL_IMPROVE_MODES = (
     "swap-global",
     "swap-personal",
@@ -33,6 +46,28 @@ def compose_improve_mode(move_type: str, objective_scope: str) -> str:
 
 def normalize_improve_mode(improve_mode: str) -> str:
     return _IMPROVE_MODE_ALIASES.get(improve_mode, improve_mode)
+
+
+def normalize_sequence(sequence: str) -> str:
+    normalized = SEQUENCE_ALIASES.get(sequence, sequence)
+    if normalized not in CANONICAL_SEQUENCES:
+        allowed = ", ".join((*CANONICAL_SEQUENCES, *SEQUENCE_ALIASES))
+        raise ValueError(f"sequence must be one of: {allowed}")
+    return normalized
+
+
+def normalize_pick_rule(pick_rule: str) -> str:
+    if pick_rule == "social":
+        warnings.warn(
+            "pick_rule='social' is deprecated; use 'utilitarian'",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        return "utilitarian"
+    if pick_rule not in CANONICAL_PICK_RULES:
+        allowed = ", ".join((*CANONICAL_PICK_RULES, "social"))
+        raise ValueError(f"pick_rule must be one of: {allowed}")
+    return pick_rule
 
 
 def _parse_effective_mode(improve_mode: str) -> tuple[str, str, str]:
@@ -134,6 +169,7 @@ def run_hbs_social(
     improve_mode: str | None = None,
     move_type: str | None = None,
     objective_scope: str | None = None,
+    initial_method: str = "sequential",
     sequence: str = "snake",
     pick_rule: str = "personal",
     progress: bool = False,
@@ -163,10 +199,11 @@ def run_hbs_social(
         move_type=move_type,
         objective_scope=objective_scope,
     )
-    if sequence not in {"snake", "round-robin", "n-first"}:
-        raise ValueError("sequence must be one of: snake, round-robin, n-first")
-    if pick_rule not in {"personal", "social"}:
-        raise ValueError("pick_rule must be one of: personal, social")
+    if initial_method not in CANONICAL_INITIAL_METHODS:
+        allowed = ", ".join(CANONICAL_INITIAL_METHODS)
+        raise ValueError(f"initial_method must be one of: {allowed}")
+    sequence = normalize_sequence(sequence)
+    pick_rule = normalize_pick_rule(pick_rule)
     if delta_check_every < 0:
         raise ValueError("delta_check_every must be >= 0")
     if draft_rounds is None:
@@ -204,6 +241,7 @@ def run_hbs_social(
         seed=seed,
         sanity_checks=sanity_checks,
         delta_check_every=delta_check_every,
+        initial_method=initial_method,
         sequence=sequence,
         pick_rule=pick_rule,
         progress_cb=progress_cb,

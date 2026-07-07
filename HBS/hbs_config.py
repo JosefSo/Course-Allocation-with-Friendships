@@ -22,15 +22,19 @@ class _RunConfig:
     seed: int
     sanity_checks: bool
     delta_check_every: int
+    # Initial allocation architecture:
+    #   "sequential"            - live reactive draft.
+    #   "simultaneous-priority" - frozen per-round rankings resolved by one priority.
+    initial_method: str = "sequential"
     # Picking sequence (fair-division terminology):
     #   "snake"       - balanced alternation: 1..n, n..1, 1..n, ...
     #   "round-robin" - 1..n every round
-    #   "n-first"     - 1..n, then n..1 in every later round (best MMS guarantee,
-    #                   Celine/Suksompong/Yuen, AAMAS 2026)
+    #   "reverse-repeat"   - 1..n, then n..1 in every later round.
+    #   "last-first-static"- 1..n, then n,1,..,n-1 in every later round.
     sequence: str = "snake"
     # Pick rule during the draft:
     #   "personal" - each student maximizes their own utility U(s,c).
-    #   "social"   - each student maximizes marginal global welfare
+    #   "utilitarian" - each student maximizes marginal global welfare
     #                U(s,c) + SocialGain(s,c) (internalizes friendship externalities).
     pick_rule: str = "personal"
     # Optional callback receiving small progress events during the run,

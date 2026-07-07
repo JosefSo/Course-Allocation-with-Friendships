@@ -891,6 +891,7 @@ def _run_mode_comparison_task(task: dict[str, Any]) -> dict[str, Any]:
         draft_rounds=task["draft_rounds"],
         post_iters=int(task["post_iters"]),
         improve_mode=str(task["improve_mode"]),
+        initial_method=str(task.get("initial_method", "sequential")),
         sequence=str(task.get("sequence", "snake")),
         pick_rule=str(task.get("pick_rule", "personal")),
         seed=int(task["seed"]),
@@ -1055,6 +1056,7 @@ def _run_payload(payload: dict[str, Any]) -> dict[str, Any]:
     seed = _to_int(payload, "seed", default=42)
     draft_rounds = _optional_int(payload, "draft_rounds")
     post_iters = _to_int(payload, "post_iters", default=0)
+    initial_method = str(payload.get("initial_method", "sequential"))
     sequence = str(payload.get("sequence", "snake"))
     pick_rule = str(payload.get("pick_rule", "personal"))
     raw_improve_mode = _optional_str(payload, "improve_mode")
@@ -1089,11 +1091,12 @@ def _run_payload(payload: dict[str, Any]) -> dict[str, Any]:
             b=b,
             draft_rounds=draft_rounds,
             post_iters=post_iters,
-        improve_mode=raw_improve_mode,
-        move_type=move_type,
-        objective_scope=objective_scope,
-        sequence=sequence,
-        pick_rule=pick_rule,
+            improve_mode=raw_improve_mode,
+            move_type=move_type,
+            objective_scope=objective_scope,
+            initial_method=initial_method,
+            sequence=sequence,
+            pick_rule=pick_rule,
             seed=seed,
             progress=False,
             sanity_checks=False,
@@ -1191,6 +1194,7 @@ def _run_mode_comparison_payload(payload: dict[str, Any]) -> dict[str, Any]:
     base_seed = _to_int(payload, "seed", default=42)
     draft_rounds = _optional_int(payload, "draft_rounds")
     post_iters = _to_int(payload, "post_iters", default=0)
+    initial_method = str(payload.get("initial_method", "sequential"))
     sequence = str(payload.get("sequence", "snake"))
     pick_rule = str(payload.get("pick_rule", "personal"))
     batch_size = _to_int(payload, "batch_size", default=30)
@@ -1242,6 +1246,7 @@ def _run_mode_comparison_payload(payload: dict[str, Any]) -> dict[str, Any]:
                         "draft_rounds": draft_rounds,
                         "post_iters": post_iters,
                         "improve_mode": improve_mode,
+                        "initial_method": initial_method,
                         "sequence": sequence,
                         "pick_rule": pick_rule,
                         "seed": base_seed + offset,
