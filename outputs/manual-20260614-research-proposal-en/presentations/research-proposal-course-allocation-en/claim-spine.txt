@@ -1,0 +1,22 @@
+Thesis:
+Course allocation misses an important social factor when it assumes independent student preferences. This research proposal extends an HBS-style snake draft with directed friendship preferences, measures the effect on welfare, fairness, and social satisfaction, and tests whether post-allocation local search improves the resulting allocation.
+
+Audience:
+Academic seminar audience in management, information systems, industrial engineering and management, fair allocation, and decision mechanisms.
+
+One-line arc:
+From phenomenon and research gap, through theory and hypotheses, into a computational empirical design that measures the trade-off between social utility, individual ranking satisfaction, and fairness.
+
+Slide list:
+01. Claim: This is an empirical research proposal for friendship-aware course allocation. Proof object: cover with contribution rail. Source: README + project materials.
+02. Claim: The central gap is the assumption that student preferences are independent. Proof object: phenomenon-gap-contribution triad. Source: project materials + literature anchors.
+03. Claim: Existing literature provides strong allocation mechanisms but not an operational model of course-specific friendship relations. Proof object: focused literature map.
+04. Claim: The research questions test welfare, social satisfaction, individual cost, and fairness. Proof object: RQ/H matrix.
+05. Claim: The model links individual utility, reactive social utility, and post-allocation improvement. Proof object: conceptual model.
+06. Claim: The study uses a controlled comparative computational experiment. Proof object: factorial design table.
+07. Claim: Measurement separates allocation quality, social satisfaction, rank satisfaction, and inequality. Proof object: measurement validity matrix.
+08. Claim: The analysis plan fits a multi-run, multi-metric experimental dataset. Proof object: analysis pipeline.
+09. Claim: Preliminary evidence shows rapid welfare improvement under hybrid-global. Proof object: mode comparison chart.
+10. Claim: The social gain is not free; it creates rank and fairness trade-offs. Proof object: trade-off dashboard.
+11. Claim: The contribution bridges mechanism design and measurable social preferences. Proof object: contribution grid.
+12. Claim: Robustness depends on broader scenarios, real data, and privacy-aware validation. Proof object: limitations and robustness plan.

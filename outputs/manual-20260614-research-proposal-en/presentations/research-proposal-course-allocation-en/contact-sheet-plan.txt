@@ -1,0 +1,19 @@
+Contact-sheet plan:
+
+01. Cover with dark proof rail.
+02. Phenomenon/gap/contribution triad.
+03. Focused literature map with four research streams.
+04. RQ/H matrix.
+05. Conceptual model diagram with mediation/moderation.
+06. Factorial experiment design table.
+07. Measurement and validity matrix.
+08. Analysis pipeline with statistical justification.
+09. Preliminary evidence bar chart for total utility gains.
+10. Trade-off dashboard with social, rank, and inequality movement.
+11. Contribution grid.
+12. Limitations and robustness plan.
+
+Macro-layout diversity:
+- At least 8 distinct layout families across 12 slides.
+- No more than 2 consecutive slides use a boxed matrix.
+- All slides include a proof object and concise footer source.

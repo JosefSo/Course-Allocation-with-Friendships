@@ -1,0 +1,53 @@
+Slide size:
+- 1280x720.
+
+Background:
+- Warm paper background #F7F3EA for research-proposal tone.
+- Deep ink #17212E for cover, section callouts, and proof panels.
+
+Typography:
+- Hebrew body and titles use Arial for broad Hebrew support.
+- English formulas and code-style labels use Aptos Mono when available.
+- Titles 32-46px, body 14-19px, labels 9-12px, footer 8.5px.
+
+Palette:
+- Ink: #17212E.
+- Paper: #F7F3EA.
+- Muted gray: #56616F.
+- Teal: #0F766E for social mechanism / primary contribution.
+- Berry: #9F1239 for trade-off / risk.
+- Gold: #B7791F for evidence and hypothesis markers.
+- Blue: #355070 for methodology and analysis.
+
+Chart grammar:
+- Direct labels, no heavy legends.
+- Baseline in muted gray, key intervention in teal, negative/trade-off in berry.
+- Numerical results must carry scenario/source captions.
+
+Diagram grammar:
+- Right-to-left reading order for Hebrew conceptual slides.
+- Arrows only where direction or causal logic matters.
+- Boxes encode actual constructs, variables, stages, or grouped metrics.
+
+Footer grammar:
+- Thin rule above footer.
+- Source note on left; slide number on right.
+
+Allowed layouts:
+- Cover with dark proof rail.
+- Research gap triad.
+- Literature map.
+- RQ/H matrix.
+- Conceptual model diagram.
+- Factorial design table.
+- Measurement/validity matrix.
+- Analysis pipeline.
+- Bar proof slide.
+- Trade-off dashboard.
+- Contribution grid.
+- Limitations/robustness plan.
+
+Banned motifs:
+- Generic card grid repeated more than twice.
+- Decorative blobs, pseudo-logos, mascot/icons, unrelated stock imagery.
+- Unlabeled diagrams or charts without source note.

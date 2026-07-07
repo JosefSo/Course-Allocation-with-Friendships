@@ -1,0 +1,1679 @@
+{
+  "schema": "openai.presentation.layout/v4",
+  "unit": "px",
+  "slide": {
+    "aid": "sl/kwfpje",
+    "id": "kwfpje",
+    "slide": 5,
+    "layoutId": "5aa531ce-7acf-4b68-8d8b-9e5f58ddda85",
+    "layoutName": "Title Slide",
+    "layoutType": "title",
+    "masterLayoutId": "827c9424-c9b7-45d4-a0cf-a04e14e9a0d3",
+    "masterLayoutName": "Master",
+    "frame": {
+      "left": 0,
+      "top": 0,
+      "width": 1280,
+      "height": 720
+    }
+  },
+  "theme": {
+    "colorSchemeName": "ChatGPT",
+    "colors": {
+      "accent1": "#156082",
+      "accent2": "#E97132",
+      "accent3": "#196B24",
+      "accent4": "#0F9ED5",
+      "accent5": "#A02B93",
+      "accent6": "#4EA72E",
+      "bg1": "#FFFFFF",
+      "bg2": "#000000",
+      "tx1": "#1F1F1F",
+      "tx2": "#FFFFFF",
+      "dk1": "#000000",
+      "lt1": "#FFFFFF",
+      "dk2": "#0E2841",
+      "lt2": "#E8E8E8",
+      "hlink": "#467886",
+      "folHlink": "#96607D"
+    },
+    "typefaces": [
+      "Arial"
+    ]
+  },
+  "inheritedLayers": [
+    {
+      "scope": "layout",
+      "id": "5aa531ce-7acf-4b68-8d8b-9e5f58ddda85",
+      "name": "Title Slide",
+      "type": "title",
+      "parentLayoutId": "827c9424-c9b7-45d4-a0cf-a04e14e9a0d3",
+      "elements": []
+    },
+    {
+      "scope": "master",
+      "id": "827c9424-c9b7-45d4-a0cf-a04e14e9a0d3",
+      "name": "Master",
+      "type": "master",
+      "elements": []
+    }
+  ],
+  "elements": [
+    {
+      "order": 1,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/5wjudg7a",
+      "id": "1",
+      "bbox": [
+        0,
+        0,
+        1280,
+        720
+      ],
+      "geometry": "rect",
+      "fillColor": "#F7F3EA",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 2,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/y90je9cv",
+      "id": "2",
+      "bbox": [
+        1205,
+        48,
+        7,
+        22
+      ],
+      "geometry": "rect",
+      "fillColor": "#0F766E",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 3,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/nuxc3ylc",
+      "id": "3",
+      "bbox": [
+        652,
+        45,
+        536,
+        28
+      ],
+      "geometry": "rect",
+      "text": "מודל מחקר",
+      "textPreview": "מודל מחקר",
+      "resolvedFontSize": 10,
+      "resolvedTextStyle": {
+        "anchor": 2,
+        "fontSize": 10,
+        "typeface": "Arial",
+        "color": "#56616F",
+        "bold": true,
+        "alignment": "right",
+        "verticalAlignment": "middle",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "מודל מחקר"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "מודל מחקר",
+          "resolvedTextStyle": {
+            "fontSize": 10,
+            "typeface": "Arial",
+            "color": "#56616F",
+            "bold": true,
+            "alignment": "right"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "מודל מחקר",
+              "fontSize": 10,
+              "typeface": "Arial",
+              "color": "#56616F",
+              "bold": true
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "fillColor": "rgba(0, 0, 0, 0)",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 4,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/gn29gr2p",
+      "id": "4",
+      "bbox": [
+        300,
+        84,
+        912,
+        86
+      ],
+      "geometry": "rect",
+      "text": "המודל מחבר בין העדפות אישיות, העדפות חברות ומדדי תוצאה מרובי-ממד.",
+      "textPreview": "המודל מחבר בין העדפות אישיות, העדפות חברות ומדדי תוצאה מרובי-ממד.",
+      "resolvedFontSize": 35,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 35,
+        "typeface": "Arial",
+        "color": "#17212E",
+        "bold": true,
+        "alignment": "right",
+        "verticalAlignment": "top",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 2,
+        "lines": [
+          {
+            "index": 1,
+            "text": "המודל מחבר בין העדפות אישיות, העדפות חברות ומדדי תוצאה"
+          },
+          {
+            "index": 2,
+            "text": "מרובי-ממד."
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "המודל מחבר בין העדפות אישיות, העדפות חברות ומדדי תוצאה מרובי-ממד.",
+          "resolvedTextStyle": {
+            "fontSize": 35,
+            "typeface": "Arial",
+            "color": "#17212E",
+            "bold": true,
+            "alignment": "right"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "המודל מחבר בין העדפות אישיות, העדפות חברות ומדדי תוצאה מרובי-ממד.",
+              "fontSize": 35,
+              "typeface": "Arial",
+              "color": "#17212E",
+              "bold": true
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "fillColor": "rgba(0, 0, 0, 0)",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 5,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/58z25kb6",
+      "id": "5",
+      "bbox": [
+        874,
+        228,
+        286,
+        132
+      ],
+      "geometry": "rect",
+      "fillColor": "#FFFCF4",
+      "lineColor": "#D7CDBE",
+      "lineWidth": 1
+    },
+    {
+      "order": 6,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/yhgn29gr",
+      "id": "6",
+      "bbox": [
+        892,
+        244,
+        250,
+        22
+      ],
+      "geometry": "rect",
+      "text": "משתני קלט",
+      "textPreview": "משתני קלט",
+      "resolvedFontSize": 12,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 12,
+        "typeface": "Arial",
+        "color": "#355070",
+        "bold": true,
+        "alignment": "right",
+        "verticalAlignment": "top",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "משתני קלט"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "משתני קלט",
+          "resolvedTextStyle": {
+            "fontSize": 12,
+            "typeface": "Arial",
+            "color": "#355070",
+            "bold": true,
+            "alignment": "right"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "משתני קלט",
+              "fontSize": 12,
+              "typeface": "Arial",
+              "color": "#355070",
+              "bold": true
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "fillColor": "rgba(0, 0, 0, 0)",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 7,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/n29gr2p8",
+      "id": "7",
+      "bbox": [
+        892,
+        273,
+        250,
+        74
+      ],
+      "geometry": "rect",
+      "text": "דירוגי קורסים אישיים\nקשרי חברות מכוונים לפי קורס\nLambdaFriend אישי",
+      "textPreview": "דירוגי קורסים אישיים | קשרי חברות מכוונים לפי קורס | LambdaFriend אישי",
+      "resolvedFontSize": 13,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 13,
+        "typeface": "Arial",
+        "color": "#17212E",
+        "alignment": "right",
+        "verticalAlignment": "top",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 3,
+        "lines": [
+          {
+            "index": 1,
+            "text": "דירוגי קורסים אישיים"
+          },
+          {
+            "index": 2,
+            "text": "קשרי חברות מכוונים לפי קורס"
+          },
+          {
+            "index": 3,
+            "text": "LambdaFriend אישי"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "דירוגי קורסים אישיים",
+          "resolvedTextStyle": {
+            "fontSize": 13,
+            "typeface": "Arial",
+            "color": "#17212E",
+            "alignment": "right"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "דירוגי קורסים אישיים",
+              "fontSize": 13,
+              "typeface": "Arial",
+              "color": "#17212E"
+            }
+          ],
+          "marginLeft": 0
+        },
+        {
+          "index": 2,
+          "text": "קשרי חברות מכוונים לפי קורס",
+          "resolvedTextStyle": {
+            "fontSize": 13,
+            "typeface": "Arial",
+            "color": "#17212E",
+            "alignment": "right"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "קשרי חברות מכוונים לפי קורס",
+              "fontSize": 13,
+              "typeface": "Arial",
+              "color": "#17212E"
+            }
+          ],
+          "marginLeft": 0
+        },
+        {
+          "index": 3,
+          "text": "LambdaFriend אישי",
+          "resolvedTextStyle": {
+            "fontSize": 13,
+            "typeface": "Arial",
+            "color": "#17212E",
+            "alignment": "right"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "LambdaFriend אישי",
+              "fontSize": 13,
+              "typeface": "Arial",
+              "color": "#17212E"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "fillColor": "rgba(0, 0, 0, 0)",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 8,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/czed8v6p",
+      "id": "8",
+      "bbox": [
+        512,
+        228,
+        286,
+        132
+      ],
+      "geometry": "rect",
+      "fillColor": "#FFFCF4",
+      "lineColor": "#D7CDBE",
+      "lineWidth": 1
+    },
+    {
+      "order": 9,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/5kb6xkf6",
+      "id": "9",
+      "bbox": [
+        530,
+        244,
+        250,
+        22
+      ],
+      "geometry": "rect",
+      "text": "מנגנון",
+      "textPreview": "מנגנון",
+      "resolvedFontSize": 12,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 12,
+        "typeface": "Arial",
+        "color": "#0F766E",
+        "bold": true,
+        "alignment": "right",
+        "verticalAlignment": "top",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "מנגנון"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "מנגנון",
+          "resolvedTextStyle": {
+            "fontSize": 12,
+            "typeface": "Arial",
+            "color": "#0F766E",
+            "bold": true,
+            "alignment": "right"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "מנגנון",
+              "fontSize": 12,
+              "typeface": "Arial",
+              "color": "#0F766E",
+              "bold": true
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "fillColor": "rgba(0, 0, 0, 0)",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 10,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/x4nap4r6",
+      "id": "10",
+      "bbox": [
+        530,
+        273,
+        250,
+        74
+      ],
+      "geometry": "rect",
+      "text": "HBS-style snake draft\n+ תועלת חברתית ריאקטיבית\n+ tie-breaking דטרמיניסטי",
+      "textPreview": "HBS-style snake draft | + תועלת חברתית ריאקטיבית | + tie-breaking דטרמיניסטי",
+      "resolvedFontSize": 13,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 13,
+        "typeface": "Arial",
+        "color": "#17212E",
+        "alignment": "right",
+        "verticalAlignment": "top",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 3,
+        "lines": [
+          {
+            "index": 1,
+            "text": "HBS-style snake draft"
+          },
+          {
+            "index": 2,
+            "text": "+ תועלת חברתית ריאקטיבית"
+          },
+          {
+            "index": 3,
+            "text": "+ tie-breaking דטרמיניסטי"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "HBS-style snake draft",
+          "resolvedTextStyle": {
+            "fontSize": 13,
+            "typeface": "Arial",
+            "color": "#17212E",
+            "alignment": "right"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "HBS-style snake draft",
+              "fontSize": 13,
+              "typeface": "Arial",
+              "color": "#17212E"
+            }
+          ],
+          "marginLeft": 0
+        },
+        {
+          "index": 2,
+          "text": "+ תועלת חברתית ריאקטיבית",
+          "resolvedTextStyle": {
+            "fontSize": 13,
+            "typeface": "Arial",
+            "color": "#17212E",
+            "alignment": "right"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "+ תועלת חברתית ריאקטיבית",
+              "fontSize": 13,
+              "typeface": "Arial",
+              "color": "#17212E"
+            }
+          ],
+          "marginLeft": 0
+        },
+        {
+          "index": 3,
+          "text": "+ tie-breaking דטרמיניסטי",
+          "resolvedTextStyle": {
+            "fontSize": 13,
+            "typeface": "Arial",
+            "color": "#17212E",
+            "alignment": "right"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "+ tie-breaking דטרמיניסטי",
+              "fontSize": 13,
+              "typeface": "Arial",
+              "color": "#17212E"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "fillColor": "rgba(0, 0, 0, 0)",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 11,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/8jqh0fep",
+      "id": "11",
+      "bbox": [
+        150,
+        228,
+        286,
+        132
+      ],
+      "geometry": "rect",
+      "fillColor": "#FFFCF4",
+      "lineColor": "#D7CDBE",
+      "lineWidth": 1
+    },
+    {
+      "order": 12,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/fyxobm58",
+      "id": "12",
+      "bbox": [
+        168,
+        244,
+        250,
+        22
+      ],
+      "geometry": "rect",
+      "text": "שיפור לאחר הקצאה",
+      "textPreview": "שיפור לאחר הקצאה",
+      "resolvedFontSize": 12,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 12,
+        "typeface": "Arial",
+        "color": "#B7791F",
+        "bold": true,
+        "alignment": "right",
+        "verticalAlignment": "top",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "שיפור לאחר הקצאה"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "שיפור לאחר הקצאה",
+          "resolvedTextStyle": {
+            "fontSize": 12,
+            "typeface": "Arial",
+            "color": "#B7791F",
+            "bold": true,
+            "alignment": "right"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "שיפור לאחר הקצאה",
+              "fontSize": 12,
+              "typeface": "Arial",
+              "color": "#B7791F",
+              "bold": true
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "fillColor": "rgba(0, 0, 0, 0)",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 13,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/qd4vmtwr",
+      "id": "13",
+      "bbox": [
+        168,
+        273,
+        250,
+        74
+      ],
+      "geometry": "rect",
+      "text": "swap / drop-add / hybrid\nobjective scope:\nglobal או personal",
+      "textPreview": "swap / drop-add / hybrid | objective scope: | global או personal",
+      "resolvedFontSize": 13,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 13,
+        "typeface": "Arial",
+        "color": "#17212E",
+        "alignment": "right",
+        "verticalAlignment": "top",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 3,
+        "lines": [
+          {
+            "index": 1,
+            "text": "swap / drop-add / hybrid"
+          },
+          {
+            "index": 2,
+            "text": "objective scope:"
+          },
+          {
+            "index": 3,
+            "text": "global או personal"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "swap / drop-add / hybrid",
+          "resolvedTextStyle": {
+            "fontSize": 13,
+            "typeface": "Arial",
+            "color": "#17212E",
+            "alignment": "right"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "swap / drop-add / hybrid",
+              "fontSize": 13,
+              "typeface": "Arial",
+              "color": "#17212E"
+            }
+          ],
+          "marginLeft": 0
+        },
+        {
+          "index": 2,
+          "text": "objective scope:",
+          "resolvedTextStyle": {
+            "fontSize": 13,
+            "typeface": "Arial",
+            "color": "#17212E",
+            "alignment": "right"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "objective scope:",
+              "fontSize": 13,
+              "typeface": "Arial",
+              "color": "#17212E"
+            }
+          ],
+          "marginLeft": 0
+        },
+        {
+          "index": 3,
+          "text": "global או personal",
+          "resolvedTextStyle": {
+            "fontSize": 13,
+            "typeface": "Arial",
+            "color": "#17212E",
+            "alignment": "right"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "global או personal",
+              "fontSize": 13,
+              "typeface": "Arial",
+              "color": "#17212E"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "fillColor": "rgba(0, 0, 0, 0)",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 14,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/xczed8v6",
+      "id": "14",
+      "bbox": [
+        810,
+        266,
+        44,
+        44
+      ],
+      "geometry": "rect",
+      "text": "←",
+      "textPreview": "←",
+      "resolvedFontSize": 28,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 28,
+        "typeface": "Arial",
+        "color": "#56616F",
+        "alignment": "center",
+        "verticalAlignment": "top",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "←"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "←",
+          "resolvedTextStyle": {
+            "fontSize": 28,
+            "typeface": "Arial",
+            "color": "#56616F",
+            "alignment": "center"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "←",
+              "fontSize": 28,
+              "typeface": "Arial",
+              "color": "#56616F"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "fillColor": "rgba(0, 0, 0, 0)",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 15,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/8v6psfil",
+      "id": "15",
+      "bbox": [
+        448,
+        266,
+        44,
+        44
+      ],
+      "geometry": "rect",
+      "text": "←",
+      "textPreview": "←",
+      "resolvedFontSize": 28,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 28,
+        "typeface": "Arial",
+        "color": "#56616F",
+        "alignment": "center",
+        "verticalAlignment": "top",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "←"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "←",
+          "resolvedTextStyle": {
+            "fontSize": 28,
+            "typeface": "Arial",
+            "color": "#56616F",
+            "alignment": "center"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "←",
+              "fontSize": 28,
+              "typeface": "Arial",
+              "color": "#56616F"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "fillColor": "rgba(0, 0, 0, 0)",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 16,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/fa9w3m94",
+      "id": "16",
+      "bbox": [
+        402,
+        420,
+        480,
+        84
+      ],
+      "geometry": "rect",
+      "fillColor": "#17212E",
+      "lineColor": "#17212E",
+      "lineWidth": 1
+    },
+    {
+      "order": 17,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/qpg3ex0n",
+      "id": "17",
+      "bbox": [
+        620,
+        442,
+        230,
+        22
+      ],
+      "geometry": "rect",
+      "text": "תיווך: חפיפות חברים בפועל",
+      "textPreview": "תיווך: חפיפות חברים בפועל",
+      "resolvedFontSize": 13,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 13,
+        "typeface": "Arial",
+        "color": "#F1D49D",
+        "bold": true,
+        "alignment": "right",
+        "verticalAlignment": "top",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "תיווך: חפיפות חברים בפועל"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "תיווך: חפיפות חברים בפועל",
+          "resolvedTextStyle": {
+            "fontSize": 13,
+            "typeface": "Arial",
+            "color": "#F1D49D",
+            "bold": true,
+            "alignment": "right"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "תיווך: חפיפות חברים בפועל",
+              "fontSize": 13,
+              "typeface": "Arial",
+              "color": "#F1D49D",
+              "bold": true
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "fillColor": "rgba(0, 0, 0, 0)",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 18,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/1gvy90je",
+      "id": "18",
+      "bbox": [
+        436,
+        466,
+        398,
+        22
+      ],
+      "geometry": "rect",
+      "text": "האם השיפור ברווחה עובר דרך יותר חברים באותו קורס?",
+      "textPreview": "האם השיפור ברווחה עובר דרך יותר חברים באותו קורס?",
+      "resolvedFontSize": 12.51,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 12.51,
+        "typeface": "Arial",
+        "color": "#D9E2EF",
+        "alignment": "right",
+        "verticalAlignment": "top",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "האם השיפור ברווחה עובר דרך יותר חברים באותו קורס?"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "האם השיפור ברווחה עובר דרך יותר חברים באותו קורס?",
+          "resolvedTextStyle": {
+            "fontSize": 12.51,
+            "typeface": "Arial",
+            "color": "#D9E2EF",
+            "alignment": "right"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "האם השיפור ברווחה עובר דרך יותר חברים באותו קורס?",
+              "fontSize": 12.51,
+              "typeface": "Arial",
+              "color": "#D9E2EF"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "fillColor": "rgba(0, 0, 0, 0)",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 19,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/8z25kb6x",
+      "id": "19",
+      "bbox": [
+        815,
+        528,
+        316,
+        112
+      ],
+      "geometry": "rect",
+      "fillColor": "#FFFCF4",
+      "lineColor": "#D7CDBE",
+      "lineWidth": 1
+    },
+    {
+      "order": 20,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/83itgfml",
+      "id": "20",
+      "bbox": [
+        833,
+        544,
+        280,
+        22
+      ],
+      "geometry": "rect",
+      "text": "תוצאות",
+      "textPreview": "תוצאות",
+      "resolvedFontSize": 12,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 12,
+        "typeface": "Arial",
+        "color": "#0F766E",
+        "bold": true,
+        "alignment": "right",
+        "verticalAlignment": "top",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "תוצאות"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "תוצאות",
+          "resolvedTextStyle": {
+            "fontSize": 12,
+            "typeface": "Arial",
+            "color": "#0F766E",
+            "bold": true,
+            "alignment": "right"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "תוצאות",
+              "fontSize": 12,
+              "typeface": "Arial",
+              "color": "#0F766E",
+              "bold": true
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "fillColor": "rgba(0, 0, 0, 0)",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 21,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/xobm58z2",
+      "id": "21",
+      "bbox": [
+        833,
+        573,
+        280,
+        54
+      ],
+      "geometry": "rect",
+      "text": "תועלת כוללת\nתועלת חברתית\nדירוג ממוצע / Top-3\nGini, Jain, Theil, Atkinson",
+      "textPreview": "תועלת כוללת | תועלת חברתית | דירוג ממוצע / Top-3 | Gini, Jain, Theil, Atkinson",
+      "resolvedFontSize": 11.51,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 11.51,
+        "typeface": "Arial",
+        "color": "#17212E",
+        "alignment": "right",
+        "verticalAlignment": "top",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 4,
+        "lines": [
+          {
+            "index": 1,
+            "text": "תועלת כוללת"
+          },
+          {
+            "index": 2,
+            "text": "תועלת חברתית"
+          },
+          {
+            "index": 3,
+            "text": "דירוג ממוצע / Top-3"
+          },
+          {
+            "index": 4,
+            "text": "Gini, Jain, Theil, Atkinson"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "תועלת כוללת",
+          "resolvedTextStyle": {
+            "fontSize": 11.51,
+            "typeface": "Arial",
+            "color": "#17212E",
+            "alignment": "right"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "תועלת כוללת",
+              "fontSize": 11.51,
+              "typeface": "Arial",
+              "color": "#17212E"
+            }
+          ],
+          "marginLeft": 0
+        },
+        {
+          "index": 2,
+          "text": "תועלת חברתית",
+          "resolvedTextStyle": {
+            "fontSize": 11.51,
+            "typeface": "Arial",
+            "color": "#17212E",
+            "alignment": "right"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "תועלת חברתית",
+              "fontSize": 11.51,
+              "typeface": "Arial",
+              "color": "#17212E"
+            }
+          ],
+          "marginLeft": 0
+        },
+        {
+          "index": 3,
+          "text": "דירוג ממוצע / Top-3",
+          "resolvedTextStyle": {
+            "fontSize": 11.51,
+            "typeface": "Arial",
+            "color": "#17212E",
+            "alignment": "right"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "דירוג ממוצע / Top-3",
+              "fontSize": 11.51,
+              "typeface": "Arial",
+              "color": "#17212E"
+            }
+          ],
+          "marginLeft": 0
+        },
+        {
+          "index": 4,
+          "text": "Gini, Jain, Theil, Atkinson",
+          "resolvedTextStyle": {
+            "fontSize": 11.51,
+            "typeface": "Arial",
+            "color": "#17212E",
+            "alignment": "right"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "Gini, Jain, Theil, Atkinson",
+              "fontSize": 11.51,
+              "typeface": "Arial",
+              "color": "#17212E"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "fillColor": "rgba(0, 0, 0, 0)",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 22,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/qxs72x4n",
+      "id": "22",
+      "bbox": [
+        140,
+        528,
+        316,
+        112
+      ],
+      "geometry": "rect",
+      "fillColor": "#FFFCF4",
+      "lineColor": "#D7CDBE",
+      "lineWidth": 1
+    },
+    {
+      "order": 23,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/fil0rqd4",
+      "id": "23",
+      "bbox": [
+        158,
+        544,
+        280,
+        22
+      ],
+      "geometry": "rect",
+      "text": "מיתון",
+      "textPreview": "מיתון",
+      "resolvedFontSize": 12,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 12,
+        "typeface": "Arial",
+        "color": "#9F1239",
+        "bold": true,
+        "alignment": "right",
+        "verticalAlignment": "top",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "מיתון"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "מיתון",
+          "resolvedTextStyle": {
+            "fontSize": 12,
+            "typeface": "Arial",
+            "color": "#9F1239",
+            "bold": true,
+            "alignment": "right"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "מיתון",
+              "fontSize": 12,
+              "typeface": "Arial",
+              "color": "#9F1239",
+              "bold": true
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "fillColor": "rgba(0, 0, 0, 0)",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 24,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/4fu18jqh",
+      "id": "24",
+      "bbox": [
+        158,
+        573,
+        280,
+        54
+      ],
+      "geometry": "rect",
+      "text": "צפיפות רשת חברות\nלחץ קיבולת\nערכי LambdaFriend",
+      "textPreview": "צפיפות רשת חברות | לחץ קיבולת | ערכי LambdaFriend",
+      "resolvedFontSize": 11.51,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 11.51,
+        "typeface": "Arial",
+        "color": "#17212E",
+        "alignment": "right",
+        "verticalAlignment": "top",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 3,
+        "lines": [
+          {
+            "index": 1,
+            "text": "צפיפות רשת חברות"
+          },
+          {
+            "index": 2,
+            "text": "לחץ קיבולת"
+          },
+          {
+            "index": 3,
+            "text": "ערכי LambdaFriend"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "צפיפות רשת חברות",
+          "resolvedTextStyle": {
+            "fontSize": 11.51,
+            "typeface": "Arial",
+            "color": "#17212E",
+            "alignment": "right"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "צפיפות רשת חברות",
+              "fontSize": 11.51,
+              "typeface": "Arial",
+              "color": "#17212E"
+            }
+          ],
+          "marginLeft": 0
+        },
+        {
+          "index": 2,
+          "text": "לחץ קיבולת",
+          "resolvedTextStyle": {
+            "fontSize": 11.51,
+            "typeface": "Arial",
+            "color": "#17212E",
+            "alignment": "right"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "לחץ קיבולת",
+              "fontSize": 11.51,
+              "typeface": "Arial",
+              "color": "#17212E"
+            }
+          ],
+          "marginLeft": 0
+        },
+        {
+          "index": 3,
+          "text": "ערכי LambdaFriend",
+          "resolvedTextStyle": {
+            "fontSize": 11.51,
+            "typeface": "Arial",
+            "color": "#17212E",
+            "alignment": "right"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "ערכי LambdaFriend",
+              "fontSize": 11.51,
+              "typeface": "Arial",
+              "color": "#17212E"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "fillColor": "rgba(0, 0, 0, 0)",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 25,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/x0nuxc3y",
+      "id": "25",
+      "bbox": [
+        58,
+        668,
+        1164,
+        1
+      ],
+      "geometry": "rect",
+      "fillColor": "#D7CDBE",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 26,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/m94fu18j",
+      "id": "26",
+      "bbox": [
+        58,
+        682,
+        900,
+        18
+      ],
+      "geometry": "rect",
+      "text": "Sources: README utility model; local experiment design",
+      "textPreview": "Sources: README utility model; local experiment design",
+      "resolvedFontSize": 8.51,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 8.51,
+        "typeface": "Arial",
+        "color": "#7A6E60",
+        "alignment": "left",
+        "verticalAlignment": "top",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "Sources: README utility model; local experiment design"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "Sources: README utility model; local experiment design",
+          "resolvedTextStyle": {
+            "fontSize": 8.51,
+            "typeface": "Arial",
+            "color": "#7A6E60",
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "Sources: README utility model; local experiment design",
+              "fontSize": 8.51,
+              "typeface": "Arial",
+              "color": "#7A6E60"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "fillColor": "rgba(0, 0, 0, 0)",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 27,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/fu18jqh0",
+      "id": "27",
+      "bbox": [
+        1162,
+        682,
+        60,
+        18
+      ],
+      "geometry": "rect",
+      "text": "5/12",
+      "textPreview": "5/12",
+      "resolvedFontSize": 9,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 9,
+        "typeface": "Arial",
+        "color": "#56616F",
+        "alignment": "right",
+        "verticalAlignment": "top",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "5/12"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "5/12",
+          "resolvedTextStyle": {
+            "fontSize": 9,
+            "typeface": "Arial",
+            "color": "#56616F",
+            "alignment": "right"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "5/12",
+              "fontSize": 9,
+              "typeface": "Arial",
+              "color": "#56616F"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "fillColor": "rgba(0, 0, 0, 0)",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    }
+  ],
+  "composeRuns": []
+}

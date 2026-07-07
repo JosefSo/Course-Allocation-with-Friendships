@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import csv
 import json
 import logging
 import math
@@ -32,6 +33,8 @@ from generate.generate_tables import (
 from .hbs_api import CANONICAL_IMPROVE_MODES, normalize_improvement_config, run_hbs_social
 from .hbs_domain import PickLogRow, PostAllocLogRow
 from .hbs_io import (
+    _read_table_1,
+    _read_table_2,
     _write_allocation_csv,
     _write_metrics_extended_csv,
     _write_post_alloc_csv,
@@ -42,6 +45,8 @@ LOG = logging.getLogger(__name__)
 UI_PATH = Path(__file__).resolve().parents[1] / "hbs_web_ui.html"
 TABLES_DIR = Path(__file__).resolve().parents[1] / "tables"
 HISTORY_DB_PATH = Path(__file__).resolve().parents[1] / "results" / "hbs_social_web_history.sqlite3"
+PRESENTATION_ARTIFACTS_DIR = Path(__file__).resolve().parents[1] / "results" / "presentation_artifacts"
+EXPERIMENTS_DIR = Path(__file__).resolve().parents[1] / "results" / "experiments"
 _COMPARE_PROGRESS: dict[str, dict[str, Any]] = {}
 _COMPARE_PROGRESS_LOCK = threading.Lock()
 
@@ -62,6 +67,7 @@ HISTORY_METRIC_KEYS = (
     "gini_base_norm",
     "gini_friend_norm",
     "gini_friend_opportunity_norm",
+    "jain_index",
     "avg_position",
     "share_top1",
     "share_top3",
@@ -82,6 +88,7 @@ HISTORY_MAX_METRIC_KEYS = (
     "total_friend_utility_norm",
     "avg_friend_overlaps_per_student",
     "share_students_with_any_friend_overlap",
+    "jain_index",
     "share_top1",
     "share_top3",
 )
@@ -236,6 +243,53 @@ def _list_table_files() -> dict[str, Any]:
         "table1": table1_files,
         "table2": table2_files,
         "lambda": lambda_files,
+    }
+
+
+def _coerce_artifact_value(raw: str | None) -> Any:
+    if raw is None:
+        return None
+    text = str(raw).strip()
+    if text == "":
+        return ""
+    try:
+        value = float(text)
+    except ValueError:
+        return text
+    if math.isfinite(value):
+        return value
+    return text
+
+
+def _read_artifact_csv(path: Path) -> list[dict[str, Any]]:
+    if not path.exists() or not path.is_file():
+        return []
+    with path.open(newline="", encoding="utf-8") as f:
+        reader = csv.DictReader(f)
+        rows: list[dict[str, Any]] = []
+        for row in reader:
+            rows.append({str(key): _coerce_artifact_value(value) for key, value in row.items()})
+    return rows
+
+
+def _load_presentation_artifacts() -> dict[str, Any]:
+    artifacts = {
+        "lambda_tradeoff": _read_artifact_csv(PRESENTATION_ARTIFACTS_DIR / "lambda_tradeoff.csv"),
+        "mode_family_comparison": _read_artifact_csv(
+            PRESENTATION_ARTIFACTS_DIR / "mode_family_comparison.csv"
+        ),
+        "global_vs_personal": _read_artifact_csv(
+            PRESENTATION_ARTIFACTS_DIR / "global_vs_personal.csv"
+        ),
+        "raw_runs": _read_artifact_csv(PRESENTATION_ARTIFACTS_DIR / "raw_runs.csv"),
+        "post_iters": _read_artifact_csv(EXPERIMENTS_DIR / "A_200x8_mode_post_agg_partial.csv"),
+        "stability": _read_artifact_csv(EXPERIMENTS_DIR / "A_200x8_stability_partial.csv"),
+    }
+    return {
+        "ok": True,
+        "artifacts_dir": str(PRESENTATION_ARTIFACTS_DIR),
+        "experiments_dir": str(EXPERIMENTS_DIR),
+        **artifacts,
     }
 
 
@@ -836,6 +890,7 @@ def _run_mode_comparison_task(task: dict[str, Any]) -> dict[str, Any]:
     return {
         "improve_mode": str(task["improve_mode"]),
         "seed": int(task["seed"]),
+        "post_iters": int(task["post_iters"]),
         "total_utility": float(result.summary.total_utility),
         "gini_total_norm": float(result.summary.gini_total_norm),
         "gini_base_norm": float(result.summary.gini_base_norm),
@@ -1346,6 +1401,626 @@ def _run_mode_comparison_payload(payload: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def _parse_post_grid_payload(raw: Any) -> list[int]:
+    if raw is None or raw == "":
+        values = [0, 1, 2, 3, 5, 8, 12, 16, 20]
+    elif isinstance(raw, list):
+        values = [int(item) for item in raw]
+    else:
+        values = [int(token.strip()) for token in str(raw).split(",") if token.strip()]
+    if not values:
+        raise ValueError("post_grid cannot be empty")
+    cleaned = sorted(set(values))
+    if len(cleaned) > 21:
+        raise ValueError("post_grid must contain at most 21 values")
+    for value in cleaned:
+        if value < 0:
+            raise ValueError("post_grid values must be >= 0")
+    return cleaned
+
+
+def _run_post_mode_sweep_payload(payload: dict[str, Any]) -> dict[str, Any]:
+    if not isinstance(payload, dict):
+        raise ValueError("JSON payload must be an object")
+
+    table1_csv = _read_csv_from_payload(
+        payload,
+        text_key="table1_csv",
+        file_key="table1_file",
+        required=True,
+    )
+    table2_csv = _read_csv_from_payload(
+        payload,
+        text_key="table2_csv",
+        file_key="table2_file",
+        required=True,
+    )
+    table_lambda_csv = _read_csv_from_payload(
+        payload,
+        text_key="lambda_csv",
+        file_key="lambda_file",
+        required=False,
+    )
+
+    cap_default = _to_int(payload, "cap_default", default=10)
+    b = _to_int(payload, "b", default=3)
+    base_seed = _to_int(payload, "seed", default=42)
+    draft_rounds = _optional_int(payload, "draft_rounds")
+    seed_count = _to_int(payload, "post_sweep_seed_count", default=1)
+    if seed_count <= 0:
+        raise ValueError("post_sweep_seed_count must be > 0")
+    if seed_count > 20:
+        raise ValueError("post_sweep_seed_count must be <= 20")
+    constant_lambda: float | None = None
+    if table_lambda_csv is None and payload.get("constant_lambda") is not None:
+        constant_lambda = _to_float(payload, "constant_lambda")
+        if not (0.0 <= constant_lambda <= 1.0):
+            raise ValueError("constant_lambda must be in range 0..1")
+    post_grid = _parse_post_grid_payload(payload.get("post_grid"))
+    table1_ref = _history_ref(payload, "table1_file") or "[inline-table1]"
+    table2_ref = _history_ref(payload, "table2_file") or "[inline-table2]"
+    lambda_ref = (
+        f"constant:{constant_lambda:.3f}"
+        if constant_lambda is not None
+        else _history_ref(payload, "lambda_file")
+    )
+    resolved_draft_rounds = b if draft_rounds is None else draft_rounds
+    raw_progress_job_id = payload.get("progress_job_id")
+    progress_job_id = (
+        _normalize_progress_job_id(raw_progress_job_id)
+        if raw_progress_job_id is not None
+        else None
+    )
+
+    with tempfile.TemporaryDirectory() as tmp:
+        tmp_dir = Path(tmp)
+        csv_a = tmp_dir / "table1.csv"
+        csv_b = tmp_dir / "table2.csv"
+        csv_lambda: Path | None = None
+        progress_dir = tmp_dir / "post_mode_sweep_progress"
+        progress_dir.mkdir()
+        csv_a.write_text(table1_csv, encoding="utf-8")
+        csv_b.write_text(table2_csv, encoding="utf-8")
+        if table_lambda_csv is not None:
+            csv_lambda = tmp_dir / "lambda.csv"
+            csv_lambda.write_text(table_lambda_csv, encoding="utf-8")
+        elif constant_lambda is not None:
+            table1_student_ids = {row.student_id for row in _read_table_1(csv_a)}
+            table2_student_ids = {
+                student_id
+                for row in _read_table_2(csv_b)
+                for student_id in (row.student_id_a, row.student_id_b)
+            }
+            student_ids = sorted(table1_student_ids | table2_student_ids)
+            if not student_ids:
+                raise ValueError("Table 1 must contain at least one student")
+            csv_lambda = tmp_dir / "lambda_constant.csv"
+            _write_constant_lambda_csv(csv_lambda, student_ids, constant_lambda)
+
+        tasks: list[dict[str, Any]] = []
+        mode_meta: dict[str, tuple[str, str]] = {}
+        history_ids: list[int] = []
+        for post_iters in post_grid:
+            for mode in CANONICAL_IMPROVE_MODES:
+                move_type, objective_scope, improve_mode = normalize_improvement_config(
+                    improve_mode=mode
+                )
+                mode_meta[improve_mode] = (move_type, objective_scope)
+                for offset in range(seed_count):
+                    tasks.append(
+                        {
+                            "csv_a": str(csv_a),
+                            "csv_b": str(csv_b),
+                            "csv_lambda": (str(csv_lambda) if csv_lambda is not None else None),
+                            "cap_default": cap_default,
+                            "b": b,
+                            "draft_rounds": draft_rounds,
+                            "post_iters": post_iters,
+                            "improve_mode": improve_mode,
+                            "seed": base_seed + offset,
+                        }
+                    )
+
+        parallel_workers = min(6, max(1, len(tasks)))
+        chunks: list[dict[str, Any]] = [
+            {
+                "worker_id": worker_id,
+                "progress_dir": str(progress_dir),
+                "tasks": [],
+            }
+            for worker_id in range(1, parallel_workers + 1)
+        ]
+        for idx, task in enumerate(tasks):
+            chunks[idx % parallel_workers]["tasks"].append(task)
+        worker_totals = {int(chunk["worker_id"]): len(chunk["tasks"]) for chunk in chunks}
+        if progress_job_id is not None:
+            with _COMPARE_PROGRESS_LOCK:
+                _COMPARE_PROGRESS[progress_job_id] = {
+                    "status": "running",
+                    "progress_dir": str(progress_dir),
+                    "worker_count": parallel_workers,
+                    "worker_totals": worker_totals,
+                }
+        try:
+            task_results, effective_parallel_workers, parallel_fallback_reason = (
+                _run_mode_comparison_tasks(chunks, parallel_workers=parallel_workers)
+            )
+        except Exception:
+            if progress_job_id is not None:
+                failed_workers = _read_compare_progress(progress_job_id).get("workers", [])
+                with _COMPARE_PROGRESS_LOCK:
+                    _COMPARE_PROGRESS[progress_job_id] = {
+                        "status": "failed",
+                        "workers": failed_workers,
+                        "worker_count": parallel_workers,
+                        "worker_totals": worker_totals,
+                    }
+            raise
+        if progress_job_id is not None:
+            final_workers = _read_compare_progress(progress_job_id).get("workers", [])
+            for worker in final_workers:
+                worker["status"] = "done"
+            with _COMPARE_PROGRESS_LOCK:
+                _COMPARE_PROGRESS[progress_job_id] = {
+                    "status": "done",
+                    "workers": final_workers,
+                    "worker_count": parallel_workers,
+                    "worker_totals": worker_totals,
+                }
+
+        grouped: dict[tuple[int, str], list[dict[str, Any]]] = {}
+        for row in task_results:
+            post_iters = int(row["post_iters"])
+            improve_mode = str(row["improve_mode"])
+            grouped.setdefault((post_iters, improve_mode), []).append(row)
+            move_type, objective_scope = mode_meta[improve_mode]
+            history_ids.append(
+                _append_run_history(
+                    table1_ref=table1_ref,
+                    table2_ref=table2_ref,
+                    lambda_ref=lambda_ref,
+                    cap_default=cap_default,
+                    b=b,
+                    seed=int(row["seed"]),
+                    draft_rounds=resolved_draft_rounds,
+                    post_iters=post_iters,
+                    move_type=move_type,
+                    objective_scope=objective_scope,
+                    improve_mode=improve_mode,
+                    total_utility=float(row["total_utility"]),
+                    gini_total_norm=float(row["gini_total_norm"]),
+                    gini_base_norm=float(row["gini_base_norm"]),
+                    metrics_extended=dict(row.get("metrics_extended") or {}),
+                )
+            )
+
+        by_mode_post: list[dict[str, Any]] = []
+        for post_iters in post_grid:
+            for mode in CANONICAL_IMPROVE_MODES:
+                move_type, objective_scope = mode_meta[mode]
+                rows = grouped.get((post_iters, mode), [])
+                metric_values: dict[str, list[float]] = {key: [] for key in HISTORY_METRIC_KEYS}
+                seeds: list[int] = []
+                total_values: list[float] = []
+                g_total_values: list[float] = []
+                g_base_values: list[float] = []
+                for row in rows:
+                    seeds.append(int(row["seed"]))
+                    total_values.append(float(row["total_utility"]))
+                    g_total_values.append(float(row["gini_total_norm"]))
+                    g_base_values.append(float(row["gini_base_norm"]))
+                    metrics = dict(row.get("metrics_extended") or {})
+                    metrics.setdefault("total_utility", float(row["total_utility"]))
+                    metrics.setdefault("gini_total_norm", float(row["gini_total_norm"]))
+                    metrics.setdefault("gini_base_norm", float(row["gini_base_norm"]))
+                    for key in HISTORY_METRIC_KEYS:
+                        try:
+                            value = float(metrics[key])
+                        except (KeyError, TypeError, ValueError):
+                            continue
+                        if math.isfinite(value):
+                            metric_values[key].append(value)
+
+                out_row: dict[str, Any] = {
+                    "post_iters": post_iters,
+                    "improve_mode": mode,
+                    "move_type": move_type,
+                    "objective_scope": objective_scope,
+                    "runs": len(rows),
+                    "seed_start": min(seeds) if seeds else base_seed,
+                    "seed_end": max(seeds) if seeds else base_seed,
+                }
+                for key, values in metric_values.items():
+                    out_row[f"avg_{key}"] = _mean(values)
+                    out_row[f"std_{key}"] = _stddev(values)
+                out_row.setdefault("avg_total_utility", _mean(total_values))
+                out_row.setdefault("avg_gini_total_norm", _mean(g_total_values))
+                out_row.setdefault("avg_gini_base_norm", _mean(g_base_values))
+                by_mode_post.append(out_row)
+
+    return {
+        "ok": True,
+        "run_history_ids": history_ids,
+        "config": {
+            "cap_default": cap_default,
+            "b": b,
+            "base_seed": base_seed,
+            "seed_start": base_seed,
+            "seed_end": base_seed + seed_count - 1,
+            "seed_count": seed_count,
+            "post_grid": post_grid,
+            "constant_lambda": constant_lambda,
+            "lambda_ref": lambda_ref,
+            "draft_rounds": resolved_draft_rounds,
+            "modes": list(CANONICAL_IMPROVE_MODES),
+            "parallel_workers": parallel_workers,
+            "effective_parallel_workers": effective_parallel_workers,
+            "parallel_fallback_reason": parallel_fallback_reason,
+        },
+        "by_mode_post": by_mode_post,
+        "overall": {
+            "post_count": len(post_grid),
+            "mode_count": len(CANONICAL_IMPROVE_MODES),
+            "runs_total": len(history_ids),
+        },
+    }
+
+
+def _parse_lambda_grid(raw: Any) -> list[float]:
+    if raw is None or raw == "":
+        values = [0.0, 0.25, 0.5, 0.75, 1.0]
+    elif isinstance(raw, list):
+        values = [float(item) for item in raw]
+    else:
+        values = [float(token.strip()) for token in str(raw).split(",") if token.strip()]
+    if not values:
+        raise ValueError("lambda_values cannot be empty")
+    cleaned = sorted(set(round(value, 6) for value in values))
+    if len(cleaned) > 21:
+        raise ValueError("lambda_values must contain at most 21 values")
+    for value in cleaned:
+        if not (0.0 <= value <= 1.0):
+            raise ValueError("lambda_values must be in range 0..1")
+    return cleaned
+
+
+def _write_constant_lambda_csv(path: Path, student_ids: list[str], lambda_value: float) -> None:
+    lines = ["StudentID,LambdaFriend"]
+    lines.extend(f"{student_id},{lambda_value:.6f}" for student_id in student_ids)
+    path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+
+def _run_lambda_sweep_payload(payload: dict[str, Any]) -> dict[str, Any]:
+    if not isinstance(payload, dict):
+        raise ValueError("JSON payload must be an object")
+
+    table1_csv = _read_csv_from_payload(
+        payload,
+        text_key="table1_csv",
+        file_key="table1_file",
+        required=True,
+    )
+    table2_csv = _read_csv_from_payload(
+        payload,
+        text_key="table2_csv",
+        file_key="table2_file",
+        required=True,
+    )
+
+    cap_default = _to_int(payload, "cap_default", default=10)
+    b = _to_int(payload, "b", default=3)
+    base_seed = _to_int(payload, "seed", default=42)
+    draft_rounds = _optional_int(payload, "draft_rounds")
+    post_iters = _to_int(payload, "post_iters", default=0)
+    batch_size = _to_int(payload, "lambda_batch_size", default=1)
+    if batch_size <= 0:
+        raise ValueError("lambda_batch_size must be > 0")
+    if batch_size > 20:
+        raise ValueError("lambda_batch_size must be <= 20")
+    lambda_values = _parse_lambda_grid(payload.get("lambda_values"))
+
+    move_type, objective_scope, improve_mode = normalize_improvement_config(
+        improve_mode=_optional_str(payload, "improve_mode"),
+        move_type=_optional_str(payload, "move_type"),
+        objective_scope=_optional_str(payload, "objective_scope"),
+    )
+    table1_ref = _history_ref(payload, "table1_file") or "[inline-table1]"
+    table2_ref = _history_ref(payload, "table2_file") or "[inline-table2]"
+    resolved_draft_rounds = b if draft_rounds is None else draft_rounds
+
+    with tempfile.TemporaryDirectory() as tmp:
+        tmp_dir = Path(tmp)
+        csv_a = tmp_dir / "table1.csv"
+        csv_b = tmp_dir / "table2.csv"
+        csv_a.write_text(table1_csv, encoding="utf-8")
+        csv_b.write_text(table2_csv, encoding="utf-8")
+
+        table1_student_ids = {row.student_id for row in _read_table_1(csv_a)}
+        table2_student_ids = {
+            student_id
+            for row in _read_table_2(csv_b)
+            for student_id in (row.student_id_a, row.student_id_b)
+        }
+        student_ids = sorted(table1_student_ids | table2_student_ids)
+        if not student_ids:
+            raise ValueError("Table 1 must contain at least one student")
+
+        rows_by_lambda: list[dict[str, Any]] = []
+        history_ids: list[int] = []
+        for lambda_value in lambda_values:
+            csv_lambda = tmp_dir / f"lambda_{lambda_value:.6f}.csv"
+            _write_constant_lambda_csv(csv_lambda, student_ids, lambda_value)
+            metric_values: dict[str, list[float]] = {key: [] for key in HISTORY_METRIC_KEYS}
+            seeds: list[int] = []
+            total_values: list[float] = []
+            g_total_values: list[float] = []
+            g_base_values: list[float] = []
+
+            for offset in range(batch_size):
+                seed = base_seed + offset
+                result = run_hbs_social(
+                    csv_a,
+                    csv_b,
+                    csv_lambda=csv_lambda,
+                    cap_default=cap_default,
+                    b=b,
+                    seed=seed,
+                    draft_rounds=draft_rounds,
+                    post_iters=post_iters,
+                    improve_mode=improve_mode,
+                    move_type=move_type,
+                    objective_scope=objective_scope,
+                    progress=False,
+                    sanity_checks=False,
+                    delta_check_every=0,
+                )
+                metrics = dict(result.metrics_extended.values)
+                metrics.setdefault("total_utility", float(result.summary.total_utility))
+                metrics.setdefault("gini_total_norm", float(result.summary.gini_total_norm))
+                metrics.setdefault("gini_base_norm", float(result.summary.gini_base_norm))
+                seeds.append(seed)
+                total_values.append(float(result.summary.total_utility))
+                g_total_values.append(float(result.summary.gini_total_norm))
+                g_base_values.append(float(result.summary.gini_base_norm))
+                for key in HISTORY_METRIC_KEYS:
+                    try:
+                        value = float(metrics[key])
+                    except (KeyError, TypeError, ValueError):
+                        continue
+                    if math.isfinite(value):
+                        metric_values[key].append(value)
+
+                history_ids.append(
+                    _append_run_history(
+                        table1_ref=table1_ref,
+                        table2_ref=table2_ref,
+                        lambda_ref=f"constant:{lambda_value:.3f}",
+                        cap_default=cap_default,
+                        b=b,
+                        seed=seed,
+                        draft_rounds=resolved_draft_rounds,
+                        post_iters=post_iters,
+                        move_type=move_type,
+                        objective_scope=objective_scope,
+                        improve_mode=improve_mode,
+                        total_utility=float(result.summary.total_utility),
+                        gini_total_norm=float(result.summary.gini_total_norm),
+                        gini_base_norm=float(result.summary.gini_base_norm),
+                        metrics_extended=metrics,
+                    )
+                )
+
+            row: dict[str, Any] = {
+                "lambda": lambda_value,
+                "runs": batch_size,
+                "seed_start": min(seeds),
+                "seed_end": max(seeds),
+            }
+            for key, values in metric_values.items():
+                row[f"avg_{key}"] = _mean(values)
+                row[f"std_{key}"] = _stddev(values)
+                if key in HISTORY_MAX_METRIC_KEYS:
+                    row[f"best_{key}"] = max(values) if values else 0.0
+                if key in HISTORY_MIN_METRIC_KEYS:
+                    row[f"min_{key}"] = min(values) if values else 0.0
+
+            row.setdefault("avg_total_utility", _mean(total_values))
+            row.setdefault("avg_gini_total_norm", _mean(g_total_values))
+            row.setdefault("avg_gini_base_norm", _mean(g_base_values))
+            rows_by_lambda.append(row)
+
+    return {
+        "ok": True,
+        "run_history_ids": history_ids,
+        "config": {
+            "cap_default": cap_default,
+            "b": b,
+            "base_seed": base_seed,
+            "seed_start": base_seed,
+            "seed_end": base_seed + batch_size - 1,
+            "lambda_batch_size": batch_size,
+            "lambda_values": lambda_values,
+            "draft_rounds": resolved_draft_rounds,
+            "post_iters": post_iters,
+            "move_type": move_type,
+            "objective_scope": objective_scope,
+            "improve_mode": improve_mode,
+        },
+        "by_lambda": rows_by_lambda,
+        "overall": {
+            "lambda_count": len(rows_by_lambda),
+            "runs_total": len(history_ids),
+        },
+    }
+
+
+def _run_mode_lambda_sweep_payload(payload: dict[str, Any]) -> dict[str, Any]:
+    if not isinstance(payload, dict):
+        raise ValueError("JSON payload must be an object")
+
+    table1_csv = _read_csv_from_payload(
+        payload,
+        text_key="table1_csv",
+        file_key="table1_file",
+        required=True,
+    )
+    table2_csv = _read_csv_from_payload(
+        payload,
+        text_key="table2_csv",
+        file_key="table2_file",
+        required=True,
+    )
+
+    cap_default = _to_int(payload, "cap_default", default=10)
+    b = _to_int(payload, "b", default=3)
+    base_seed = _to_int(payload, "seed", default=42)
+    draft_rounds = _optional_int(payload, "draft_rounds")
+    post_iters = _to_int(payload, "post_iters", default=0)
+    batch_size = _to_int(payload, "lambda_batch_size", default=1)
+    if batch_size <= 0:
+        raise ValueError("lambda_batch_size must be > 0")
+    if batch_size > 20:
+        raise ValueError("lambda_batch_size must be <= 20")
+    lambda_values = _parse_lambda_grid(payload.get("lambda_values"))
+
+    table1_ref = _history_ref(payload, "table1_file") or "[inline-table1]"
+    table2_ref = _history_ref(payload, "table2_file") or "[inline-table2]"
+    resolved_draft_rounds = b if draft_rounds is None else draft_rounds
+
+    with tempfile.TemporaryDirectory() as tmp:
+        tmp_dir = Path(tmp)
+        csv_a = tmp_dir / "table1.csv"
+        csv_b = tmp_dir / "table2.csv"
+        csv_a.write_text(table1_csv, encoding="utf-8")
+        csv_b.write_text(table2_csv, encoding="utf-8")
+
+        table1_student_ids = {row.student_id for row in _read_table_1(csv_a)}
+        table2_student_ids = {
+            student_id
+            for row in _read_table_2(csv_b)
+            for student_id in (row.student_id_a, row.student_id_b)
+        }
+        student_ids = sorted(table1_student_ids | table2_student_ids)
+        if not student_ids:
+            raise ValueError("Table 1 must contain at least one student")
+
+        rows_by_mode_lambda: list[dict[str, Any]] = []
+        history_ids: list[int] = []
+        for lambda_value in lambda_values:
+            csv_lambda = tmp_dir / f"lambda_{lambda_value:.6f}.csv"
+            _write_constant_lambda_csv(csv_lambda, student_ids, lambda_value)
+            for mode in CANONICAL_IMPROVE_MODES:
+                move_type, objective_scope, improve_mode = normalize_improvement_config(
+                    improve_mode=mode
+                )
+                metric_values: dict[str, list[float]] = {
+                    key: [] for key in HISTORY_METRIC_KEYS
+                }
+                seeds: list[int] = []
+                total_values: list[float] = []
+                g_total_values: list[float] = []
+                g_base_values: list[float] = []
+
+                for offset in range(batch_size):
+                    seed = base_seed + offset
+                    result = run_hbs_social(
+                        csv_a,
+                        csv_b,
+                        csv_lambda=csv_lambda,
+                        cap_default=cap_default,
+                        b=b,
+                        seed=seed,
+                        draft_rounds=draft_rounds,
+                        post_iters=post_iters,
+                        improve_mode=improve_mode,
+                        move_type=move_type,
+                        objective_scope=objective_scope,
+                        progress=False,
+                        sanity_checks=False,
+                        delta_check_every=0,
+                    )
+                    metrics = dict(result.metrics_extended.values)
+                    metrics.setdefault("total_utility", float(result.summary.total_utility))
+                    metrics.setdefault("gini_total_norm", float(result.summary.gini_total_norm))
+                    metrics.setdefault("gini_base_norm", float(result.summary.gini_base_norm))
+                    seeds.append(seed)
+                    total_values.append(float(result.summary.total_utility))
+                    g_total_values.append(float(result.summary.gini_total_norm))
+                    g_base_values.append(float(result.summary.gini_base_norm))
+                    for key in HISTORY_METRIC_KEYS:
+                        try:
+                            value = float(metrics[key])
+                        except (KeyError, TypeError, ValueError):
+                            continue
+                        if math.isfinite(value):
+                            metric_values[key].append(value)
+
+                    history_ids.append(
+                        _append_run_history(
+                            table1_ref=table1_ref,
+                            table2_ref=table2_ref,
+                            lambda_ref=f"constant:{lambda_value:.3f}",
+                            cap_default=cap_default,
+                            b=b,
+                            seed=seed,
+                            draft_rounds=resolved_draft_rounds,
+                            post_iters=post_iters,
+                            move_type=move_type,
+                            objective_scope=objective_scope,
+                            improve_mode=improve_mode,
+                            total_utility=float(result.summary.total_utility),
+                            gini_total_norm=float(result.summary.gini_total_norm),
+                            gini_base_norm=float(result.summary.gini_base_norm),
+                            metrics_extended=metrics,
+                        )
+                    )
+
+                row: dict[str, Any] = {
+                    "lambda": lambda_value,
+                    "improve_mode": improve_mode,
+                    "move_type": move_type,
+                    "objective_scope": objective_scope,
+                    "runs": batch_size,
+                    "seed_start": min(seeds),
+                    "seed_end": max(seeds),
+                }
+                for key, values in metric_values.items():
+                    row[f"avg_{key}"] = _mean(values)
+                    row[f"std_{key}"] = _stddev(values)
+                    if key in HISTORY_MAX_METRIC_KEYS:
+                        row[f"best_{key}"] = max(values) if values else 0.0
+                    if key in HISTORY_MIN_METRIC_KEYS:
+                        row[f"min_{key}"] = min(values) if values else 0.0
+
+                row.setdefault("avg_total_utility", _mean(total_values))
+                row.setdefault("avg_gini_total_norm", _mean(g_total_values))
+                row.setdefault("avg_gini_base_norm", _mean(g_base_values))
+                rows_by_mode_lambda.append(row)
+
+    return {
+        "ok": True,
+        "run_history_ids": history_ids,
+        "config": {
+            "cap_default": cap_default,
+            "b": b,
+            "base_seed": base_seed,
+            "seed_start": base_seed,
+            "seed_end": base_seed + batch_size - 1,
+            "lambda_batch_size": batch_size,
+            "lambda_values": lambda_values,
+            "draft_rounds": resolved_draft_rounds,
+            "post_iters": post_iters,
+            "modes": list(CANONICAL_IMPROVE_MODES),
+        },
+        "by_mode_lambda": rows_by_mode_lambda,
+        "overall": {
+            "lambda_count": len(lambda_values),
+            "mode_count": len(CANONICAL_IMPROVE_MODES),
+            "runs_total": len(history_ids),
+        },
+    }
+
+
 class _HbsWebHandler(BaseHTTPRequestHandler):
     server_version = "HbsSocialWeb/1.0"
 
@@ -1357,6 +2032,9 @@ class _HbsWebHandler(BaseHTTPRequestHandler):
             return
         if path == "/api/tables":
             self._send_json(HTTPStatus.OK, _list_table_files())
+            return
+        if path == "/api/presentation-artifacts":
+            self._send_json(HTTPStatus.OK, _load_presentation_artifacts())
             return
         if path == "/api/compare-progress":
             query = parse_qs(parsed.query)
@@ -1433,7 +2111,14 @@ class _HbsWebHandler(BaseHTTPRequestHandler):
                 )
             return
 
-        if path not in {"/api/run", "/api/compare-modes", "/api/generate-tables"}:
+        if path not in {
+            "/api/run",
+            "/api/compare-modes",
+            "/api/lambda-sweep",
+            "/api/mode-lambda-sweep",
+            "/api/post-mode-sweep",
+            "/api/generate-tables",
+        }:
             self._send_json(
                 HTTPStatus.NOT_FOUND,
                 {"ok": False, "error": f"Unknown route: {path}"},
@@ -1478,6 +2163,12 @@ class _HbsWebHandler(BaseHTTPRequestHandler):
         try:
             if path == "/api/compare-modes":
                 response = _run_mode_comparison_payload(payload)
+            elif path == "/api/lambda-sweep":
+                response = _run_lambda_sweep_payload(payload)
+            elif path == "/api/mode-lambda-sweep":
+                response = _run_mode_lambda_sweep_payload(payload)
+            elif path == "/api/post-mode-sweep":
+                response = _run_post_mode_sweep_payload(payload)
             elif path == "/api/generate-tables":
                 response = _generate_tables_payload(payload)
             else:

@@ -1,0 +1,15 @@
+QA summary:
+- Final PPTX exported successfully.
+- Slide count: 12.
+- Contact sheet generated.
+- Visual review: deck rhythm is coherent; English text is readable; charts and model slides are clear.
+- Automated layout check: 0 errors, 18 warnings.
+
+Remaining warnings:
+- Minor tight-text and bottom-padding warnings on slides 01, 05, 06, 08, and 10. Visual review shows no clipping or overflow.
+- Split-inline warnings on slide 10 are expected because before/after values and arrows are separate editable text objects.
+
+Content QA:
+- The deck mirrors the Hebrew research-proposal structure in English.
+- It covers introduction/background, focused literature, research questions/hypotheses, research model, method, measurement reliability/validity, data analysis plan, contribution, robustness and limitations.
+- Preliminary evidence is clearly framed as computational evidence from saved synthetic experiments, not final empirical proof.

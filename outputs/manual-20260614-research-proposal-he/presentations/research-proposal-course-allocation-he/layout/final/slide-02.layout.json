@@ -1,0 +1,1081 @@
+{
+  "schema": "openai.presentation.layout/v4",
+  "unit": "px",
+  "slide": {
+    "aid": "sl/ejhd5z",
+    "id": "ejhd5z",
+    "slide": 2,
+    "layoutId": "5aa531ce-7acf-4b68-8d8b-9e5f58ddda85",
+    "layoutName": "Title Slide",
+    "layoutType": "title",
+    "masterLayoutId": "827c9424-c9b7-45d4-a0cf-a04e14e9a0d3",
+    "masterLayoutName": "Master",
+    "frame": {
+      "left": 0,
+      "top": 0,
+      "width": 1280,
+      "height": 720
+    }
+  },
+  "theme": {
+    "colorSchemeName": "ChatGPT",
+    "colors": {
+      "accent1": "#156082",
+      "accent2": "#E97132",
+      "accent3": "#196B24",
+      "accent4": "#0F9ED5",
+      "accent5": "#A02B93",
+      "accent6": "#4EA72E",
+      "bg1": "#FFFFFF",
+      "bg2": "#000000",
+      "tx1": "#1F1F1F",
+      "tx2": "#FFFFFF",
+      "dk1": "#000000",
+      "lt1": "#FFFFFF",
+      "dk2": "#0E2841",
+      "lt2": "#E8E8E8",
+      "hlink": "#467886",
+      "folHlink": "#96607D"
+    },
+    "typefaces": [
+      "Arial"
+    ]
+  },
+  "inheritedLayers": [
+    {
+      "scope": "layout",
+      "id": "5aa531ce-7acf-4b68-8d8b-9e5f58ddda85",
+      "name": "Title Slide",
+      "type": "title",
+      "parentLayoutId": "827c9424-c9b7-45d4-a0cf-a04e14e9a0d3",
+      "elements": []
+    },
+    {
+      "scope": "master",
+      "id": "827c9424-c9b7-45d4-a0cf-a04e14e9a0d3",
+      "name": "Master",
+      "type": "master",
+      "elements": []
+    }
+  ],
+  "elements": [
+    {
+      "order": 1,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/6xkf6dcb",
+      "id": "1",
+      "bbox": [
+        0,
+        0,
+        1280,
+        720
+      ],
+      "geometry": "rect",
+      "fillColor": "#F7F3EA",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 2,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/hk3q5o7q",
+      "id": "2",
+      "bbox": [
+        1205,
+        48,
+        7,
+        22
+      ],
+      "geometry": "rect",
+      "fillColor": "#0F766E",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 3,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/oza1gvy9",
+      "id": "3",
+      "bbox": [
+        652,
+        45,
+        536,
+        28
+      ],
+      "geometry": "rect",
+      "text": "מבוא ורקע תאורטי",
+      "textPreview": "מבוא ורקע תאורטי",
+      "resolvedFontSize": 10,
+      "resolvedTextStyle": {
+        "anchor": 2,
+        "fontSize": 10,
+        "typeface": "Arial",
+        "color": "#56616F",
+        "bold": true,
+        "alignment": "right",
+        "verticalAlignment": "middle",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "מבוא ורקע תאורטי"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "מבוא ורקע תאורטי",
+          "resolvedTextStyle": {
+            "fontSize": 10,
+            "typeface": "Arial",
+            "color": "#56616F",
+            "bold": true,
+            "alignment": "right"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "מבוא ורקע תאורטי",
+              "fontSize": 10,
+              "typeface": "Arial",
+              "color": "#56616F",
+              "bold": true
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "fillColor": "rgba(0, 0, 0, 0)",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 4,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/zqtcj6to",
+      "id": "4",
+      "bbox": [
+        300,
+        84,
+        912,
+        86
+      ],
+      "geometry": "rect",
+      "text": "הפער: מנגנוני הקצאת קורסים מניחים לרוב העדפות בלתי תלויות.",
+      "textPreview": "הפער: מנגנוני הקצאת קורסים מניחים לרוב העדפות בלתי תלויות.",
+      "resolvedFontSize": 35,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 35,
+        "typeface": "Arial",
+        "color": "#17212E",
+        "bold": true,
+        "alignment": "right",
+        "verticalAlignment": "top",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 2,
+        "lines": [
+          {
+            "index": 1,
+            "text": "הפער: מנגנוני הקצאת קורסים מניחים לרוב העדפות בלתי"
+          },
+          {
+            "index": 2,
+            "text": "תלויות."
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "הפער: מנגנוני הקצאת קורסים מניחים לרוב העדפות בלתי תלויות.",
+          "resolvedTextStyle": {
+            "fontSize": 35,
+            "typeface": "Arial",
+            "color": "#17212E",
+            "bold": true,
+            "alignment": "right"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "הפער: מנגנוני הקצאת קורסים מניחים לרוב העדפות בלתי תלויות.",
+              "fontSize": 35,
+              "typeface": "Arial",
+              "color": "#17212E",
+              "bold": true
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "fillColor": "rgba(0, 0, 0, 0)",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 5,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/65wjudg7",
+      "id": "5",
+      "bbox": [
+        470,
+        172,
+        742,
+        40
+      ],
+      "geometry": "rect",
+      "text": "בפועל, סטודנט עשוי להעדיף קורס לא רק בגלל תוכן, מרצה או שעה, אלא גם בגלל חברים שילמדו איתו.",
+      "textPreview": "בפועל, סטודנט עשוי להעדיף קורס לא רק בגלל תוכן, מרצה או שעה, אלא גם בגלל חברים שילמדו איתו.",
+      "resolvedFontSize": 14,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 14,
+        "typeface": "Arial",
+        "color": "#56616F",
+        "alignment": "right",
+        "verticalAlignment": "top",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "בפועל, סטודנט עשוי להעדיף קורס לא רק בגלל תוכן, מרצה או שעה, אלא גם בגלל חברים שילמדו איתו."
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "בפועל, סטודנט עשוי להעדיף קורס לא רק בגלל תוכן, מרצה או שעה, אלא גם בגלל חברים שילמדו איתו.",
+          "resolvedTextStyle": {
+            "fontSize": 14,
+            "typeface": "Arial",
+            "color": "#56616F",
+            "alignment": "right"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "בפועל, סטודנט עשוי להעדיף קורס לא רק בגלל תוכן, מרצה או שעה, אלא גם בגלל חברים שילמדו איתו.",
+              "fontSize": 14,
+              "typeface": "Arial",
+              "color": "#56616F"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "fillColor": "rgba(0, 0, 0, 0)",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 6,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/hwfyxobm",
+      "id": "6",
+      "bbox": [
+        852,
+        262,
+        310,
+        192
+      ],
+      "geometry": "rect",
+      "fillColor": "#FFFCF4",
+      "lineColor": "#D7CDBE",
+      "lineWidth": 1
+    },
+    {
+      "order": 7,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/obm58z25",
+      "id": "7",
+      "bbox": [
+        870,
+        278,
+        274,
+        22
+      ],
+      "geometry": "rect",
+      "text": "התופעה המחקרית",
+      "textPreview": "התופעה המחקרית",
+      "resolvedFontSize": 12,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 12,
+        "typeface": "Arial",
+        "color": "#355070",
+        "bold": true,
+        "alignment": "right",
+        "verticalAlignment": "top",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "התופעה המחקרית"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "התופעה המחקרית",
+          "resolvedTextStyle": {
+            "fontSize": 12,
+            "typeface": "Arial",
+            "color": "#355070",
+            "bold": true,
+            "alignment": "right"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "התופעה המחקרית",
+              "fontSize": 12,
+              "typeface": "Arial",
+              "color": "#355070",
+              "bold": true
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "fillColor": "rgba(0, 0, 0, 0)",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 8,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/zupwb2hw",
+      "id": "8",
+      "bbox": [
+        870,
+        307,
+        274,
+        134
+      ],
+      "geometry": "rect",
+      "text": "הקצאת מקומות מוגבלים בקורסים היא בעיית assignment חד-צדדית: סטודנטים מקבלים חבילות קורסים תחת מגבלות קיבולת.",
+      "textPreview": "הקצאת מקומות מוגבלים בקורסים היא בעיית assignment חד-צדדית: סטודנטים מקבלים חבילות קורסים תחת מגבלות קיבולת.",
+      "resolvedFontSize": 14,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 14,
+        "typeface": "Arial",
+        "color": "#17212E",
+        "alignment": "right",
+        "verticalAlignment": "top",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 3,
+        "lines": [
+          {
+            "index": 1,
+            "text": "הקצאת מקומות מוגבלים בקורסים היא בעיית"
+          },
+          {
+            "index": 2,
+            "text": "assignment חד-צדדית: סטודנטים מקבלים"
+          },
+          {
+            "index": 3,
+            "text": "חבילות קורסים תחת מגבלות קיבולת."
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "הקצאת מקומות מוגבלים בקורסים היא בעיית assignment חד-צדדית: סטודנטים מקבלים חבילות קורסים תחת מגבלות קיבולת.",
+          "resolvedTextStyle": {
+            "fontSize": 14,
+            "typeface": "Arial",
+            "color": "#17212E",
+            "alignment": "right"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "הקצאת מקומות מוגבלים בקורסים היא בעיית assignment חד-צדדית: סטודנטים מקבלים חבילות קורסים תחת מגבלות קיבולת.",
+              "fontSize": 14,
+              "typeface": "Arial",
+              "color": "#17212E"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "fillColor": "rgba(0, 0, 0, 0)",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 9,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/a9w3m94f",
+      "id": "9",
+      "bbox": [
+        486,
+        262,
+        310,
+        192
+      ],
+      "geometry": "rect",
+      "fillColor": "#FFFCF4",
+      "lineColor": "#D7CDBE",
+      "lineWidth": 1
+    },
+    {
+      "order": 10,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/8bat47y1",
+      "id": "10",
+      "bbox": [
+        504,
+        278,
+        274,
+        22
+      ],
+      "geometry": "rect",
+      "text": "פער ידע",
+      "textPreview": "פער ידע",
+      "resolvedFontSize": 12,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 12,
+        "typeface": "Arial",
+        "color": "#9F1239",
+        "bold": true,
+        "alignment": "right",
+        "verticalAlignment": "top",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "פער ידע"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "פער ידע",
+          "resolvedTextStyle": {
+            "fontSize": 12,
+            "typeface": "Arial",
+            "color": "#9F1239",
+            "bold": true,
+            "alignment": "right"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "פער ידע",
+              "fontSize": 12,
+              "typeface": "Arial",
+              "color": "#9F1239",
+              "bold": true
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "fillColor": "rgba(0, 0, 0, 0)",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 11,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/1w7mp0bi",
+      "id": "11",
+      "bbox": [
+        504,
+        307,
+        274,
+        134
+      ],
+      "geometry": "rect",
+      "text": "הספרות מתמקדת בהוגנות, יעילות, אסטרטגיה וקיבולת. רכיב הקשרים החברתיים בין סטודנטים כמעט אינו מופיע במודל ההקצאה עצמו.",
+      "textPreview": "הספרות מתמקדת בהוגנות, יעילות, אסטרטגיה וקיבולת. רכיב הקשרים החברתיים בין סטודנטים כמעט אינו מופיע במודל ההקצאה עצמו.",
+      "resolvedFontSize": 14,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 14,
+        "typeface": "Arial",
+        "color": "#17212E",
+        "alignment": "right",
+        "verticalAlignment": "top",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 3,
+        "lines": [
+          {
+            "index": 1,
+            "text": "הספרות מתמקדת בהוגנות, יעילות, אסטרטגיה"
+          },
+          {
+            "index": 2,
+            "text": "וקיבולת. רכיב הקשרים החברתיים בין סטודנטים"
+          },
+          {
+            "index": 3,
+            "text": "כמעט אינו מופיע במודל ההקצאה עצמו."
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "הספרות מתמקדת בהוגנות, יעילות, אסטרטגיה וקיבולת. רכיב הקשרים החברתיים בין סטודנטים כמעט אינו מופיע במודל ההקצאה עצמו.",
+          "resolvedTextStyle": {
+            "fontSize": 14,
+            "typeface": "Arial",
+            "color": "#17212E",
+            "alignment": "right"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "הספרות מתמקדת בהוגנות, יעילות, אסטרטגיה וקיבולת. רכיב הקשרים החברתיים בין סטודנטים כמעט אינו מופיע במודל ההקצאה עצמו.",
+              "fontSize": 14,
+              "typeface": "Arial",
+              "color": "#17212E"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "fillColor": "rgba(0, 0, 0, 0)",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 12,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/q5o7qpg3",
+      "id": "12",
+      "bbox": [
+        120,
+        262,
+        310,
+        192
+      ],
+      "geometry": "rect",
+      "fillColor": "#FFFCF4",
+      "lineColor": "#D7CDBE",
+      "lineWidth": 1
+    },
+    {
+      "order": 13,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/jqh0fepk",
+      "id": "13",
+      "bbox": [
+        138,
+        278,
+        274,
+        22
+      ],
+      "geometry": "rect",
+      "text": "הצעת המחקר",
+      "textPreview": "הצעת המחקר",
+      "resolvedFontSize": 12,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 12,
+        "typeface": "Arial",
+        "color": "#0F766E",
+        "bold": true,
+        "alignment": "right",
+        "verticalAlignment": "top",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "הצעת המחקר"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "הצעת המחקר",
+          "resolvedTextStyle": {
+            "fontSize": 12,
+            "typeface": "Arial",
+            "color": "#0F766E",
+            "bold": true,
+            "alignment": "right"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "הצעת המחקר",
+              "fontSize": 12,
+              "typeface": "Arial",
+              "color": "#0F766E",
+              "bold": true
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "fillColor": "rgba(0, 0, 0, 0)",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 14,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/8nqxs72x",
+      "id": "14",
+      "bbox": [
+        138,
+        307,
+        274,
+        134
+      ],
+      "geometry": "rect",
+      "text": "להוסיף שכבת social utility מכוונת ותלוית-קורס, ולבדוק את ההשפעה על רווחה, חפיפות חברים, דירוגים ואי-שוויון.",
+      "textPreview": "להוסיף שכבת social utility מכוונת ותלוית-קורס, ולבדוק את ההשפעה על רווחה, חפיפות חברים, דירוגים ואי-שוויון.",
+      "resolvedFontSize": 14,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 14,
+        "typeface": "Arial",
+        "color": "#17212E",
+        "alignment": "right",
+        "verticalAlignment": "top",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 3,
+        "lines": [
+          {
+            "index": 1,
+            "text": "להוסיף שכבת social utility מכוונת ותלוית-קורס,"
+          },
+          {
+            "index": 2,
+            "text": "ולבדוק את ההשפעה על רווחה, חפיפות חברים,"
+          },
+          {
+            "index": 3,
+            "text": "דירוגים ואי-שוויון."
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "להוסיף שכבת social utility מכוונת ותלוית-קורס, ולבדוק את ההשפעה על רווחה, חפיפות חברים, דירוגים ואי-שוויון.",
+          "resolvedTextStyle": {
+            "fontSize": 14,
+            "typeface": "Arial",
+            "color": "#17212E",
+            "alignment": "right"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "להוסיף שכבת social utility מכוונת ותלוית-קורס, ולבדוק את ההשפעה על רווחה, חפיפות חברים, דירוגים ואי-שוויון.",
+              "fontSize": 14,
+              "typeface": "Arial",
+              "color": "#17212E"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "fillColor": "rgba(0, 0, 0, 0)",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 15,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/18jqh0fe",
+      "id": "15",
+      "bbox": [
+        154,
+        515,
+        982,
+        1
+      ],
+      "geometry": "rect",
+      "fillColor": "#D7CDBE",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 16,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/qh0fepkz",
+      "id": "16",
+      "bbox": [
+        1016,
+        542,
+        120,
+        20
+      ],
+      "geometry": "rect",
+      "text": "ניסוח הפער",
+      "textPreview": "ניסוח הפער",
+      "resolvedFontSize": 11,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 11,
+        "typeface": "Arial",
+        "color": "#0F766E",
+        "bold": true,
+        "alignment": "right",
+        "verticalAlignment": "top",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "ניסוח הפער"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "ניסוח הפער",
+          "resolvedTextStyle": {
+            "fontSize": 11,
+            "typeface": "Arial",
+            "color": "#0F766E",
+            "bold": true,
+            "alignment": "right"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "ניסוח הפער",
+              "fontSize": 11,
+              "typeface": "Arial",
+              "color": "#0F766E",
+              "bold": true
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "fillColor": "rgba(0, 0, 0, 0)",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 17,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/j2t83itg",
+      "id": "17",
+      "bbox": [
+        240,
+        538,
+        754,
+        44
+      ],
+      "geometry": "rect",
+      "text": "המחקר אינו שואל רק איזה מנגנון מקצה טוב יותר, אלא מה קורה כאשר ההעדפה עצמה היא חברתית ותלויה בתוצאת ההקצאה של אחרים.",
+      "textPreview": "המחקר אינו שואל רק איזה מנגנון מקצה טוב יותר, אלא מה קורה כאשר ההעדפה עצמה היא חברתית ותלויה בתוצאת ההקצאה של אחרים.",
+      "resolvedFontSize": 17,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 17,
+        "typeface": "Arial",
+        "color": "#17212E",
+        "bold": true,
+        "alignment": "right",
+        "verticalAlignment": "top",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 2,
+        "lines": [
+          {
+            "index": 1,
+            "text": "המחקר אינו שואל רק איזה מנגנון מקצה טוב יותר, אלא מה קורה כאשר ההעדפה עצמה היא חברתית ותלויה"
+          },
+          {
+            "index": 2,
+            "text": "בתוצאת ההקצאה של אחרים."
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "המחקר אינו שואל רק איזה מנגנון מקצה טוב יותר, אלא מה קורה כאשר ההעדפה עצמה היא חברתית ותלויה בתוצאת ההקצאה של אחרים.",
+          "resolvedTextStyle": {
+            "fontSize": 17,
+            "typeface": "Arial",
+            "color": "#17212E",
+            "bold": true,
+            "alignment": "right"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "המחקר אינו שואל רק איזה מנגנון מקצה טוב יותר, אלא מה קורה כאשר ההעדפה עצמה היא חברתית ותלויה בתוצאת ההקצאה של אחרים.",
+              "fontSize": 17,
+              "typeface": "Arial",
+              "color": "#17212E",
+              "bold": true
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "fillColor": "rgba(0, 0, 0, 0)",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 18,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/crmhk3q5",
+      "id": "18",
+      "bbox": [
+        58,
+        668,
+        1164,
+        1
+      ],
+      "geometry": "rect",
+      "fillColor": "#D7CDBE",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 19,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/1cfa9w3m",
+      "id": "19",
+      "bbox": [
+        58,
+        682,
+        900,
+        18
+      ],
+      "geometry": "rect",
+      "text": "Sources: local project materials; Budish & Cantillon 2012; Budish 2011",
+      "textPreview": "Sources: local project materials; Budish & Cantillon 2012; Budish 2011",
+      "resolvedFontSize": 8.51,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 8.51,
+        "typeface": "Arial",
+        "color": "#7A6E60",
+        "alignment": "left",
+        "verticalAlignment": "top",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "Sources: local project materials; Budish & Cantillon 2012; Budish 2011"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "Sources: local project materials; Budish & Cantillon 2012; Budish 2011",
+          "resolvedTextStyle": {
+            "fontSize": 8.51,
+            "typeface": "Arial",
+            "color": "#7A6E60",
+            "alignment": "left"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "Sources: local project materials; Budish & Cantillon 2012; Budish 2011",
+              "fontSize": 8.51,
+              "typeface": "Arial",
+              "color": "#7A6E60"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "fillColor": "rgba(0, 0, 0, 0)",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    },
+    {
+      "order": 20,
+      "kind": "shape",
+      "scope": "slide",
+      "aid": "sh/5wjudg7a",
+      "id": "20",
+      "bbox": [
+        1162,
+        682,
+        60,
+        18
+      ],
+      "geometry": "rect",
+      "text": "2/12",
+      "textPreview": "2/12",
+      "resolvedFontSize": 9,
+      "resolvedTextStyle": {
+        "anchor": 1,
+        "fontSize": 9,
+        "typeface": "Arial",
+        "color": "#56616F",
+        "alignment": "right",
+        "verticalAlignment": "top",
+        "insets": {
+          "top": 0,
+          "right": 0,
+          "bottom": 0,
+          "left": 0
+        }
+      },
+      "textLayout": {
+        "lineCount": 1,
+        "lines": [
+          {
+            "index": 1,
+            "text": "2/12"
+          }
+        ]
+      },
+      "paragraphs": [
+        {
+          "index": 1,
+          "text": "2/12",
+          "resolvedTextStyle": {
+            "fontSize": 9,
+            "typeface": "Arial",
+            "color": "#56616F",
+            "alignment": "right"
+          },
+          "runs": [
+            {
+              "index": 1,
+              "text": "2/12",
+              "fontSize": 9,
+              "typeface": "Arial",
+              "color": "#56616F"
+            }
+          ],
+          "marginLeft": 0
+        }
+      ],
+      "fillColor": "rgba(0, 0, 0, 0)",
+      "lineColor": "rgba(0, 0, 0, 0)",
+      "lineWidth": 0
+    }
+  ],
+  "composeRuns": []
+}

@@ -12,9 +12,13 @@ from HBS.hbs_web import (
     _generate_tables_payload,
     _list_run_history,
     _list_table_files,
+    _load_presentation_artifacts,
     _read_compare_progress,
     _reset_run_history,
+    _run_lambda_sweep_payload,
+    _run_mode_lambda_sweep_payload,
     _run_mode_comparison_payload,
+    _run_post_mode_sweep_payload,
     _run_payload,
 )
 
@@ -134,6 +138,50 @@ class TestWebApi(unittest.TestCase):
         self.assertIn("table1_demo.csv", listing["table1"])
         self.assertIn("table2_demo.csv", listing["table2"])
         self.assertIn("table3_lambda_demo.csv", listing["lambda"])
+
+    def test_load_presentation_artifacts(self) -> None:
+        with TemporaryDirectory() as tmp:
+            base_dir = Path(tmp)
+            artifacts_dir = base_dir / "presentation_artifacts"
+            experiments_dir = base_dir / "experiments"
+            artifacts_dir.mkdir()
+            experiments_dir.mkdir()
+            (artifacts_dir / "lambda_tradeoff.csv").write_text(
+                "lambda,total_utility_norm,message\n"
+                "0.5,0.781,works\n",
+                encoding="utf-8",
+            )
+            (artifacts_dir / "mode_family_comparison.csv").write_text(
+                "mode,runs,total_utility_norm\nhybrid-global,2,0.781\n",
+                encoding="utf-8",
+            )
+            (artifacts_dir / "global_vs_personal.csv").write_text(
+                "move,global_total_norm,personal_total_norm\nhybrid,0.781,0.724\n",
+                encoding="utf-8",
+            )
+            (artifacts_dir / "raw_runs.csv").write_text(
+                "mode,seed,total_utility_norm\nhybrid-global,11,0.78\n",
+                encoding="utf-8",
+            )
+            (experiments_dir / "A_200x8_mode_post_agg_partial.csv").write_text(
+                "scenario_id,improve_mode,post_iters,n,u_mean\nA,hybrid-global,5,10,384.8\n",
+                encoding="utf-8",
+            )
+
+            old_artifacts_dir = hbs_web.PRESENTATION_ARTIFACTS_DIR
+            old_experiments_dir = hbs_web.EXPERIMENTS_DIR
+            try:
+                hbs_web.PRESENTATION_ARTIFACTS_DIR = artifacts_dir
+                hbs_web.EXPERIMENTS_DIR = experiments_dir
+                payload = _load_presentation_artifacts()
+            finally:
+                hbs_web.PRESENTATION_ARTIFACTS_DIR = old_artifacts_dir
+                hbs_web.EXPERIMENTS_DIR = old_experiments_dir
+
+        self.assertTrue(payload["ok"])
+        self.assertEqual(payload["lambda_tradeoff"][0]["lambda"], 0.5)
+        self.assertEqual(payload["mode_family_comparison"][0]["runs"], 2.0)
+        self.assertEqual(payload["global_vs_personal"][0]["move"], "hybrid")
 
     def test_generate_tables_payload_writes_selected_files(self) -> None:
         with TemporaryDirectory() as tmp:
@@ -421,6 +469,185 @@ class TestWebApi(unittest.TestCase):
         self.assertEqual(progress["completed"], 12)
         self.assertEqual(progress["total"], 12)
         self.assertEqual(len(progress["workers"]), 6)
+
+    def test_run_lambda_sweep_payload_groups_by_lambda(self) -> None:
+        payload = {
+            "table1_csv": (
+                "StudentID,CourseID,Score,Position\n"
+                "S1,C1,100,1\n"
+                "S1,C2,80,2\n"
+                "S2,C1,90,1\n"
+                "S2,C2,70,2\n"
+            ),
+            "table2_csv": (
+                "StudentID_A,StudentID_B,CourseID,Position,Score\n"
+                "S1,S2,C1,1,5\n"
+                "S2,S1,C1,1,5\n"
+            ),
+            "cap_default": 2,
+            "b": 1,
+            "seed": 41,
+            "draft_rounds": 1,
+            "post_iters": 0,
+            "improve_mode": "hybrid-global",
+            "lambda_values": [0, 0.5, 1],
+            "lambda_batch_size": 2,
+        }
+
+        result = _run_lambda_sweep_payload(payload)
+
+        self.assertTrue(result["ok"])
+        self.assertEqual(result["config"]["lambda_values"], [0.0, 0.5, 1.0])
+        self.assertEqual(result["config"]["lambda_batch_size"], 2)
+        self.assertEqual(result["overall"]["runs_total"], 6)
+        self.assertEqual(len(result["run_history_ids"]), 6)
+        self.assertEqual(len(result["by_lambda"]), 3)
+        for row in result["by_lambda"]:
+            self.assertEqual(row["runs"], 2)
+            self.assertIn("avg_total_utility_norm", row)
+            self.assertIn("avg_mean_base_assigned", row)
+            self.assertIn("avg_mean_friend_norm_assigned", row)
+            self.assertIn("avg_gini_total_norm", row)
+
+        history = _list_run_history(limit=10)
+        self.assertEqual(len(history["items"]), 6)
+        lambda_refs = {item["lambda_ref"] for item in history["items"]}
+        self.assertEqual(lambda_refs, {"constant:0.000", "constant:0.500", "constant:1.000"})
+
+    def test_run_mode_lambda_sweep_payload_groups_by_mode_and_lambda(self) -> None:
+        payload = {
+            "table1_csv": (
+                "StudentID,CourseID,Score,Position\n"
+                "S1,C1,100,1\n"
+                "S1,C2,80,2\n"
+                "S2,C1,90,1\n"
+                "S2,C2,70,2\n"
+            ),
+            "table2_csv": (
+                "StudentID_A,StudentID_B,CourseID,Position,Score\n"
+                "S1,S2,C1,1,5\n"
+                "S2,S1,C1,1,5\n"
+            ),
+            "cap_default": 2,
+            "b": 1,
+            "seed": 41,
+            "draft_rounds": 1,
+            "post_iters": 0,
+            "lambda_values": [0, 1],
+            "lambda_batch_size": 1,
+        }
+
+        result = _run_mode_lambda_sweep_payload(payload)
+
+        self.assertTrue(result["ok"])
+        self.assertEqual(result["config"]["lambda_values"], [0.0, 1.0])
+        self.assertEqual(result["overall"]["lambda_count"], 2)
+        self.assertEqual(result["overall"]["mode_count"], 6)
+        self.assertEqual(result["overall"]["runs_total"], 12)
+        self.assertEqual(len(result["by_mode_lambda"]), 12)
+
+        modes = {row["improve_mode"] for row in result["by_mode_lambda"]}
+        self.assertEqual(
+            modes,
+            {
+                "swap-global",
+                "swap-personal",
+                "drop-add-global",
+                "drop-add-personal",
+                "hybrid-global",
+                "hybrid-personal",
+            },
+        )
+        lambdas = {row["lambda"] for row in result["by_mode_lambda"]}
+        self.assertEqual(lambdas, {0.0, 1.0})
+        for row in result["by_mode_lambda"]:
+            self.assertIn("avg_total_utility_norm", row)
+            self.assertIn("avg_mean_friend_norm_assigned", row)
+
+    def test_run_post_mode_sweep_payload_groups_by_mode_and_post_iters(self) -> None:
+        payload = {
+            "table1_csv": (
+                "StudentID,CourseID,Score,Position\n"
+                "S1,C1,100,1\n"
+                "S1,C2,80,2\n"
+                "S2,C1,90,1\n"
+                "S2,C2,70,2\n"
+            ),
+            "table2_csv": (
+                "StudentID_A,StudentID_B,CourseID,Position,Score\n"
+                "S1,S2,C1,1,5\n"
+                "S2,S1,C1,1,5\n"
+            ),
+            "cap_default": 2,
+            "b": 1,
+            "seed": 51,
+            "draft_rounds": 1,
+            "post_grid": [0, 1],
+            "post_sweep_seed_count": 1,
+        }
+
+        result = _run_post_mode_sweep_payload(payload)
+
+        self.assertTrue(result["ok"])
+        self.assertEqual(result["config"]["post_grid"], [0, 1])
+        self.assertEqual(result["overall"]["post_count"], 2)
+        self.assertEqual(result["overall"]["mode_count"], 6)
+        self.assertEqual(result["overall"]["runs_total"], 12)
+        self.assertEqual(len(result["by_mode_post"]), 12)
+
+        modes = {row["improve_mode"] for row in result["by_mode_post"]}
+        self.assertEqual(
+            modes,
+            {
+                "swap-global",
+                "swap-personal",
+                "drop-add-global",
+                "drop-add-personal",
+                "hybrid-global",
+                "hybrid-personal",
+            },
+        )
+        post_values = {row["post_iters"] for row in result["by_mode_post"]}
+        self.assertEqual(post_values, {0, 1})
+        for row in result["by_mode_post"]:
+            self.assertIn("avg_total_utility_norm", row)
+            self.assertIn("avg_mean_friend_norm_assigned", row)
+
+        history = _list_run_history(limit=20)
+        self.assertEqual(len(history["items"]), 12)
+
+    def test_run_post_mode_sweep_payload_accepts_constant_lambda(self) -> None:
+        payload = {
+            "table1_csv": (
+                "StudentID,CourseID,Score,Position\n"
+                "S1,C1,100,1\n"
+                "S1,C2,80,2\n"
+                "S2,C1,90,1\n"
+                "S2,C2,70,2\n"
+            ),
+            "table2_csv": (
+                "StudentID_A,StudentID_B,CourseID,Position,Score\n"
+                "S1,S2,C1,1,5\n"
+                "S2,S1,C1,1,5\n"
+            ),
+            "cap_default": 2,
+            "b": 1,
+            "seed": 61,
+            "draft_rounds": 1,
+            "post_grid": [0],
+            "post_sweep_seed_count": 1,
+            "constant_lambda": 0.5,
+        }
+
+        result = _run_post_mode_sweep_payload(payload)
+
+        self.assertTrue(result["ok"])
+        self.assertEqual(result["config"]["constant_lambda"], 0.5)
+        self.assertEqual(result["config"]["lambda_ref"], "constant:0.500")
+        self.assertEqual(result["overall"]["runs_total"], 6)
+
+        history = _list_run_history(limit=10)
+        self.assertEqual({item["lambda_ref"] for item in history["items"]}, {"constant:0.500"})
 
 
 if __name__ == "__main__":

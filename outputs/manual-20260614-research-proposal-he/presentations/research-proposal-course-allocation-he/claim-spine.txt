@@ -1,0 +1,26 @@
+Thesis:
+הקצאת קורסים לסטודנטים מפספסת רכיב חברתי מרכזי כאשר היא מניחה שהעדפות הסטודנטים בלתי תלויות. המחקר מציע להרחיב מנגנון HBS-style snake draft באמצעות העדפות חברות מכוונות, למדוד את השפעתן על רווחה, צדק ושביעות רצון חברתית, ולבחון האם חיפוש מקומי לאחר ההקצאה משפר את התוצאה.
+
+Audience:
+מנחים, סטודנטים וחוקרים בתחומי מערכות מידע, ניהול, הנדסת תעשייה וניהול, הקצאה הוגנת ומנגנוני החלטה.
+
+One-line arc:
+מהבעיה והפער התאורטי, דרך מודל מחקר והשערות, אל שיטה אמפירית-חישובית ותוכנית ניתוח שבודקת את הטרייד-אוף בין תועלת חברתית, דירוג אישי והוגנות.
+
+Slide list:
+01. Claim: התוצר הוא הצעת מחקר אמפירית על הקצאת קורסים מודעת חברות. Proof object: cover with contribution rail. Source: README + project materials.
+02. Claim: הפער המחקרי הוא ההנחה שהעדפות סטודנטים בלתי תלויות. Proof object: phenomenon-gap-contribution triad. Source: project materials + literature anchors.
+03. Claim: הספרות נותנת מנגנוני הקצאה חזקים, אך לא מודל פעולה מפורש לקשרי חברות בקורס מסוים. Proof object: focused literature map. Source: literature anchors.
+04. Claim: שאלות המחקר בודקות רווחה, שביעות רצון חברתית, מחיר אישי והוגנות. Proof object: RQ/H matrix. Source: synthesized.
+05. Claim: המודל משלב תועלת אישית, תועלת חברתית ריאקטיבית ומנגנון שיפור לאחר ההקצאה. Proof object: conceptual model diagram. Source: README.
+06. Claim: השיטה היא ניסוי חישובי קורלטיבי/השוואתי עם מניפולציות מבוקרות. Proof object: factorial design table. Source: project generator + experiments.
+07. Claim: המדידה מתבססת על פירוק תועלת ומדדי איכות הקצאה מרובים. Proof object: measurement validity matrix. Source: README metrics.
+08. Claim: תוכנית הניתוח מתאימה למבנה נתונים רב-ריצתי ורב-מדדי. Proof object: analysis pipeline. Source: synthesized methodology.
+09. Claim: ראיות ראשוניות מצביעות על שיפור רווחה מהיר במצב hybrid-global. Proof object: mode comparison chart. Source: A_200x8 saved results.
+10. Claim: השיפור החברתי אינו חינם; הוא יוצר מחיר בדירוג אישי ובהוגנות. Proof object: trade-off dashboard. Source: A_200x8 saved results.
+11. Claim: התרומה המחקרית היא גישור בין מנגנוני הקצאה להעדפות חברתיות ניתנות למדידה. Proof object: contribution grid. Source: synthesized.
+12. Claim: איתנות המחקר תלויה בהרחבת נתונים, בדיקות רגישות ותוקף חיצוני. Proof object: limitations and robustness plan. Source: synthesized.
+
+Omission notes:
+- אין טענה לתוצאה סופית על אוכלוסיית סטודנטים אמיתית כי הנתונים הנוכחיים סינתטיים.
+- אין שימוש בלוגואים או בנכסים מוסדיים.

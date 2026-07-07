@@ -1,0 +1,36 @@
+Local sources used:
+
+1. README.md
+- Project title: HBS Social: Course Allocation with Friendships.
+- Mechanism: deterministic HBS-style snake draft with reactive social preferences.
+- Inputs: Table 1 individual course preferences, Table 2 directed friend preferences by course, optional Table 3 LambdaFriend.
+- Utility formula: U(s,c) = (1 - lambda_s) * Base(s,c) + lambda_s * FriendBonusNorm(s,c).
+- Post-draft modes: swap, drop-add, hybrid crossed with global/personal objective scope.
+- Metrics: total utility, Gini, Jain, Theil, Atkinson, percentiles, rank satisfaction, friendship overlaps, fill rate.
+
+2. project_presentation_materials.txt
+- Academic framing: one-sided combinatorial assignment with indivisible course seats, capacities, and no monetary transfers.
+- Research gap: standard course allocation treats preferences as independent and usually ignores friendship relations.
+- Saved A_200x8 facts: 200 students, 8 courses, capacity 80, b=3, draft_rounds=3, seeds 11-20.
+- Preliminary evidence: hybrid-global at post_iters=5 increases mean total utility from 371.310 to 384.805 and friend overlap from 3.7145 to 4.6965.
+- Trade-off evidence: avg assigned position worsens from 2.186 to 2.434, share_top3 falls from 0.872 to 0.796, and gini_total_norm rises from 0.05238 to 0.05576.
+
+3. results/experiments/A_200x8_mode_post_agg_partial.csv
+- Mean total utility by mode and post_iters.
+- Legacy labels used in the saved file: adaptive-global = hybrid-global; adaptive-greedy = hybrid-personal; add-drop = drop-add-global; swap = swap-global.
+
+4. tests/run_all_tests.py and tests/
+- Verification status from the project materials: 44 tests passed.
+- Covered behaviors include base utility, friend bonus, tie-breaking, reproducibility, input validation, adaptive improvement, web API, and experiment persistence.
+
+Literature anchors used for framing:
+- Budish and Cantillon, 2012: multi-unit course allocation at Harvard.
+- Budish, 2011: combinatorial assignment and A-CEEI.
+- Budish, Che, Kojima and Milgrom, 2013: random allocation mechanisms.
+- Abdulkadiroglu and Sonmez, 2003: school choice as mechanism design.
+- Fehr and Schmidt, 1999; Charness and Rabin, 2002: social preferences and distributional concerns.
+
+Source treatment:
+- Literature anchors are used to position the research gap, not as direct empirical evidence for this prototype.
+- All quantitative values shown in the deck come from local artifacts and are labeled preliminary.
+- No identity assets are used.

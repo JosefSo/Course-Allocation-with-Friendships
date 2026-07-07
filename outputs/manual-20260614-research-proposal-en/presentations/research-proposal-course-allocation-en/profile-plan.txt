@@ -1,0 +1,20 @@
+Task mode: create
+Primary deck-profile: engineering-platform
+Secondary gates: academic research proposal, empirical methodology precision
+
+Required proof objects:
+- Research gap map: course allocation literature vs. missing friendship/social-preference layer.
+- Conceptual research model with variables, mediation, moderation, and outcomes.
+- Measurement plan: operational definitions for welfare, social satisfaction, rank satisfaction, and inequality.
+- Analysis plan: repeated computational experiments, mode comparisons, robustness checks, and mixed-effects/repeated-seed logic.
+- Preliminary evidence: saved A_200x8 experiment facts as feasibility evidence, not final causal claims.
+
+Source/asset requirements:
+- Local project sources only for implementation facts and empirical artifacts: README.md, project_presentation_materials.txt, results/experiments/A_200x8_mode_post_agg_partial.csv, results/metrics_extended.csv, tests, and prior presentation source notes.
+- Literature framing uses concise references to established streams: course allocation and mechanism design; fair division; social preferences and network externalities.
+- No logos, mascots, institution marks, or identity assets are used.
+
+QA gates:
+- Each slide must have a claim title and one proof object.
+- Quantitative evidence must be labeled preliminary and synthetic/computational.
+- Technical labels must remain precise: directed friendship preferences, course-specific social term, LambdaFriend, reactive friend bonus, post-allocation local search.

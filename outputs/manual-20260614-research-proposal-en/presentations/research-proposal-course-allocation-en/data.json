@@ -1,0 +1,20 @@
+{
+  "scenario": "A_200x8",
+  "description": "Preliminary saved computational experiment: 200 students, 8 courses, cap_default=80, b=3, draft_rounds=3, seeds 11-20.",
+  "baseline": {
+    "totalUtility": 371.310059,
+    "avgFriendOverlaps": 3.7145,
+    "avgPosition": 2.185667,
+    "shareTop3": 0.872167,
+    "giniTotalNorm": 0.052381
+  },
+  "hybridGlobalPost5": {
+    "totalUtility": 384.804574,
+    "totalUtilityGainPct": 3.63,
+    "avgFriendOverlaps": 4.6965,
+    "friendOverlapGainPct": 26.44,
+    "avgPosition": 2.434333,
+    "shareTop3": 0.795833,
+    "giniTotalNorm": 0.05576
+  }
+}
