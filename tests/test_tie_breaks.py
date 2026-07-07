@@ -75,7 +75,7 @@ class TestTieBreaks(unittest.TestCase):
         self.assertAlmostEqual(pref_rank_3, 1.0 / 3.0, places=9)
         self.assertGreater(pref_rank_1, pref_rank_3)
 
-    def test_course_choice_ties_by_position_first(self) -> None:
+    def test_course_choice_ties_by_score_first(self) -> None:
         individual_prefs = [
             IndividualPref(student_id="S1", course_id="C1", score=5, position=1),
             IndividualPref(student_id="S1", course_id="C2", score=8, position=2),
@@ -88,7 +88,7 @@ class TestTieBreaks(unittest.TestCase):
 
         pick_log = engine._run_initial_draft(1)
         self.assertEqual(len(pick_log), 1)
-        self.assertEqual(pick_log[0].course_id, "C1")
+        self.assertEqual(pick_log[0].course_id, "C2")
 
     def test_course_choice_ties_by_position_when_score_equal(self) -> None:
         individual_prefs = [
@@ -105,7 +105,7 @@ class TestTieBreaks(unittest.TestCase):
         self.assertEqual(len(pick_log), 1)
         self.assertEqual(pick_log[0].course_id, "C1")
 
-    def test_add_drop_ties_by_position_first(self) -> None:
+    def test_add_drop_ties_by_score_first(self) -> None:
         individual_prefs = [
             IndividualPref(student_id="S1", course_id="C1", score=5, position=1),
             IndividualPref(student_id="S1", course_id="C2", score=8, position=2),
@@ -116,7 +116,7 @@ class TestTieBreaks(unittest.TestCase):
             student_lambdas={"S1": 1.0},
         )
 
-        self.assertEqual(engine._build_desired_rebuild_list("S1"), ["C1"])
+        self.assertEqual(engine._build_desired_rebuild_list("S1"), ["C2"])
 
 
 if __name__ == "__main__":

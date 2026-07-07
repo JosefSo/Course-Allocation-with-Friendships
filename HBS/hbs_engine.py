@@ -82,7 +82,7 @@ class _HbsSocialDraftEngine:
 
     _MISSING_POSITION = 10**9
     _MISSING_SCORE = -(10**9)
-    _DEFAULT_LAMBDA = 0.3
+    _DEFAULT_LAMBDA = 0.5
 
     def __init__(
         self,
@@ -468,7 +468,7 @@ class _HbsSocialDraftEngine:
                     course_id,
                 )
             )
-        scored.sort(key=lambda t: (t[0], -t[1], t[2], t[3], t[4]), reverse=True)
+        scored.sort(key=lambda t: (t[0], t[2], -t[1], t[3], t[4]), reverse=True)
 
         k = min(self._config.max_courses, len(scored))
         return [item[4] for item in scored[:k]]
@@ -950,7 +950,7 @@ class _HbsSocialDraftEngine:
 
                 _u_bucket, _pos, _score, _rnd, course_id_star, u, base, friend_bonus = max(
                     scored,
-                    key=lambda t: (t[0], -t[1], t[2], t[3], t[4]),
+                    key=lambda t: (t[0], t[2], -t[1], t[3], t[4]),
                 )
 
                 self._alloc_list[student_id].append(course_id_star)

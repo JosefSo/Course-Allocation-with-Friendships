@@ -70,8 +70,8 @@ Required columns:
 StudentID,CourseID,Score,Position
 ```
 
-`Position` is a positive 1-based course rank. Lower is better. `Score` is used as a
-secondary deterministic preference signal after `Position`.
+`Position` is a positive 1-based course rank. Lower is better. When candidate utility
+is tied, `Score` is checked before `Position`.
 
 ### Table 2: directed friend preferences
 
@@ -97,7 +97,7 @@ rejected.
 StudentID,LambdaFriend
 ```
 
-`LambdaFriend` must be in `[0, 1]`. Students without an explicit value use `0.3`.
+`LambdaFriend` must be in `[0, 1]`. Students without an explicit value use `0.5`.
 
 ## Utility model
 
@@ -152,8 +152,8 @@ in the course who list the picking student as a friend.
 Candidate values are rounded to nine decimal places for near-tie bucketing. Ties are
 resolved by:
 
-1. lower Table 1 `Position`;
-2. higher Table 1 `Score`;
+1. higher Table 1 `Score`;
+2. lower Table 1 `Position`;
 3. seeded random value;
 4. stable `CourseID`.
 
