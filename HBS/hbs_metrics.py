@@ -8,6 +8,23 @@ def compute_total_utility(per_student_utilities: Sequence[float]) -> float:
     return float(sum(per_student_utilities))
 
 
+def compute_nash_welfare(values: Sequence[float]) -> tuple[float, float, float]:
+    """Return (canonical positive geomean, zero share, zero-safe log sum)."""
+
+    vals = [max(0.0, float(value)) for value in values]
+    if not vals:
+        return 0.0, 0.0, 0.0
+    positive = [value for value in vals if value > 0.0]
+    geomean = (
+        math.exp(sum(math.log(value) for value in positive) / len(positive))
+        if positive
+        else 0.0
+    )
+    zero_share = (len(vals) - len(positive)) / len(vals)
+    zero_safe = sum(math.log1p(value) for value in vals)
+    return geomean, zero_share, zero_safe
+
+
 def compute_gini_index(per_student_utilities: Sequence[float]) -> float:
     """
     Deterministic Gini index over non-negative values.

@@ -17,6 +17,7 @@ from .hbs_metrics import (
     compute_atkinson_index,
     compute_gini_index,
     compute_jain_index,
+    compute_nash_welfare,
     compute_theil_index,
     compute_total_utility,
 )
@@ -1473,68 +1474,153 @@ class _HbsSocialDraftEngine:
 
     # ---- Metrics -------------------------------------------------------
 
+    def _bundle_values(
+        self,
+        student_id: str,
+        bundle: set[str],
+        allocation: dict[str, set[str]],
+    ) -> dict[str, float]:
+        """Evaluate a bundle for one student in a specified allocation context."""
+
+        course = sum(self._base_utility(student_id, course_id) for course_id in bundle)
+        friend_raw = 0.0
+        for course_id in bundle:
+            for friend_id in self._friends_by_sc.get((student_id, course_id), ()):
+                if course_id in allocation.get(friend_id, set()):
+                    friend_raw += self._friend_preference_utility(
+                        student_id, friend_id, course_id
+                    )
+        friend = friend_raw / self._max_friend_bonus(student_id)
+        lambda_ = self._lambda_by_student.get(student_id, self._DEFAULT_LAMBDA)
+        combined = (1.0 - lambda_) * course + lambda_ * friend
+        return {"course": course, "friend": friend, "combined": combined}
+
     def _envy_ef1_metrics(self) -> dict[str, float]:
-        """Compute envy-pair and EF1-violation shares for base/friend/total values."""
+        """Compute the preregistered substitution, swap and base-only EF1 metrics."""
 
         eps = 1e-9
         students = self._students
         n_students = len(students)
         total_pairs = n_students * (n_students - 1) if n_students > 1 else 0
-        envy_pairs = {key: 0 for key in ("base", "friend", "total")}
-        ef1_students = {key: 0 for key in ("base", "friend", "total")}
-
-        def course_value(student_id: str, course_id: str, notion: str) -> float:
-            base = self._base_utility(student_id, course_id)
-            friend = 0.0
-            for friend_id in self._friends_by_sc.get((student_id, course_id), ()):
-                if course_id in self._alloc_set[friend_id]:
-                    friend += self._friend_preference_utility(
-                        student_id, friend_id, course_id
-                    )
-            if notion == "base":
-                return base
-            if notion == "friend":
-                return friend
-            lambda_ = self._lambda_by_student.get(student_id, self._DEFAULT_LAMBDA)
-            return (
-                (1.0 - lambda_) * base
-                + lambda_ * friend / self._max_friend_bonus(student_id)
-            )
+        specs = {
+            "substitution": ("course", "friend", "combined"),
+            "swap": ("course", "friend", "combined"),
+            "base-only": ("course",),
+        }
+        state: dict[tuple[str, str], dict[str, object]] = {
+            (definition, representation): {
+                "envy_pairs": 0,
+                "violation_pairs": 0,
+                "violation_students": set(),
+                "envy_gaps": [],
+                "residual_gaps": [],
+            }
+            for definition, representations in specs.items()
+            for representation in representations
+        }
 
         for student_id in students:
-            has_violation = {key: False for key in envy_pairs}
-            own = {
-                notion: sum(
-                    course_value(student_id, course_id, notion)
-                    for course_id in self._alloc_set[student_id]
-                )
-                for notion in envy_pairs
-            }
+            own_bundle = set(self._alloc_set[student_id])
+            own_values = self._bundle_values(student_id, own_bundle, self._alloc_set)
             for other_id in students:
-                if other_id == student_id or not self._alloc_set[other_id]:
+                if other_id == student_id:
                     continue
-                for notion in envy_pairs:
-                    values = [
-                        course_value(student_id, course_id, notion)
-                        for course_id in self._alloc_set[other_id]
-                    ]
-                    other = sum(values)
-                    if other > own[notion] + eps:
-                        envy_pairs[notion] += 1
-                        if other - max(values) > own[notion] + eps:
-                            has_violation[notion] = True
-            for notion, violated in has_violation.items():
-                if violated:
-                    ef1_students[notion] += 1
+                other_bundle = set(self._alloc_set[other_id])
+
+                for definition, representations in specs.items():
+                    if definition == "swap":
+                        comparison_allocation = dict(self._alloc_set)
+                        comparison_allocation[student_id] = set(other_bundle)
+                        comparison_allocation[other_id] = set(own_bundle)
+                    else:
+                        comparison_allocation = self._alloc_set
+
+                    comparison_values = self._bundle_values(
+                        student_id,
+                        other_bundle,
+                        comparison_allocation,
+                    )
+                    for representation in representations:
+                        key = (definition, representation)
+                        stats = state[key]
+                        own_value = own_values["course" if definition == "base-only" else representation]
+                        compared_value = comparison_values[
+                            "course" if definition == "base-only" else representation
+                        ]
+                        envy_gap = max(0.0, compared_value - own_value)
+                        if envy_gap <= eps:
+                            continue
+                        stats["envy_pairs"] = int(stats["envy_pairs"]) + 1
+                        cast_envy_gaps = stats["envy_gaps"]
+                        assert isinstance(cast_envy_gaps, list)
+                        cast_envy_gaps.append(envy_gap)
+
+                        residual_gap = 0.0
+                        if other_bundle:
+                            residual_candidates: list[float] = []
+                            for removed_course in sorted(other_bundle):
+                                reduced_bundle = other_bundle - {removed_course}
+                                if definition == "swap":
+                                    reduced_allocation = dict(self._alloc_set)
+                                    reduced_allocation[student_id] = set(reduced_bundle)
+                                    reduced_allocation[other_id] = set(own_bundle)
+                                else:
+                                    reduced_allocation = self._alloc_set
+                                reduced_values = self._bundle_values(
+                                    student_id,
+                                    reduced_bundle,
+                                    reduced_allocation,
+                                )
+                                reduced_value = reduced_values[
+                                    "course" if definition == "base-only" else representation
+                                ]
+                                residual_candidates.append(max(0.0, reduced_value - own_value))
+                            residual_gap = min(residual_candidates, default=0.0)
+
+                        if residual_gap > eps:
+                            stats["violation_pairs"] = int(stats["violation_pairs"]) + 1
+                            violation_students = stats["violation_students"]
+                            assert isinstance(violation_students, set)
+                            violation_students.add(student_id)
+                            residual_gaps = stats["residual_gaps"]
+                            assert isinstance(residual_gaps, list)
+                            residual_gaps.append(residual_gap)
 
         result: dict[str, float] = {}
-        for notion in envy_pairs:
-            result[f"envy_pairs_share_{notion}"] = (
-                envy_pairs[notion] / total_pairs if total_pairs else 0.0
+        for (definition, representation), stats in state.items():
+            prefix = f"{definition.replace('-', '_')}_{representation}"
+            envy_gaps = stats["envy_gaps"]
+            residual_gaps = stats["residual_gaps"]
+            violation_students = stats["violation_students"]
+            assert isinstance(envy_gaps, list)
+            assert isinstance(residual_gaps, list)
+            assert isinstance(violation_students, set)
+            result[f"envy_pair_share_{prefix}"] = (
+                int(stats["envy_pairs"]) / total_pairs if total_pairs else 0.0
             )
-            result[f"ef1_violation_share_{notion}"] = (
-                ef1_students[notion] / n_students if n_students else 0.0
+            result[f"ef1_violation_pair_share_{prefix}"] = (
+                int(stats["violation_pairs"]) / total_pairs if total_pairs else 0.0
             )
+            result[f"ef1_violation_student_share_{prefix}"] = (
+                len(violation_students) / n_students if n_students else 0.0
+            )
+            result[f"envy_gap_mean_{prefix}"] = (
+                sum(envy_gaps) / len(envy_gaps) if envy_gaps else 0.0
+            )
+            result[f"envy_gap_max_{prefix}"] = max(envy_gaps, default=0.0)
+            result[f"ef1_residual_gap_mean_{prefix}"] = (
+                sum(residual_gaps) / len(residual_gaps) if residual_gaps else 0.0
+            )
+            result[f"ef1_residual_gap_max_{prefix}"] = max(residual_gaps, default=0.0)
+
+        # Backward-compatible names used by the current UI and saved reports.
+        for old_name, representation in (("base", "course"), ("friend", "friend"), ("total", "combined")):
+            result[f"envy_pairs_share_{old_name}"] = result[
+                f"envy_pair_share_substitution_{representation}"
+            ]
+            result[f"ef1_violation_share_{old_name}"] = result[
+                f"ef1_violation_student_share_substitution_{representation}"
+            ]
         return result
 
     def _compute_metrics(self) -> tuple[RunSummary, ExtendedMetrics]:
@@ -1705,23 +1791,31 @@ class _HbsSocialDraftEngine:
             return (values[mid - 1] + values[mid]) / 2.0
 
         overlaps_total = 0
+        possible_overlaps_total = 0
         students_with_overlap = 0
+        students_without_final_overlap_opportunity = 0
         for student_id in self._students:
             friends = self._friends_list.get(student_id, ())
-            if not friends:
-                continue
             student_overlaps = 0
+            student_possible_overlaps = 0
             for course_id in self._alloc_set[student_id]:
                 for friend_id in friends:
                     if (student_id, friend_id, course_id) not in self._pair_by_key:
                         continue
+                    student_possible_overlaps += 1
+                    possible_overlaps_total += 1
                     if course_id in self._alloc_set[friend_id]:
                         student_overlaps += 1
                         overlaps_total += 1
             if student_overlaps > 0:
                 students_with_overlap += 1
+            if student_possible_overlaps == 0:
+                students_without_final_overlap_opportunity += 1
         avg_friend_overlaps = overlaps_total / n_students if n_students else 0.0
         share_students_with_overlap = students_with_overlap / n_students if n_students else 0.0
+        overlap_rate = (
+            overlaps_total / possible_overlaps_total if possible_overlaps_total else 0.0
+        )
 
         total_utility = compute_total_utility(per_student_total)
         avg_utility = total_utility / n_students if n_students else 0.0
@@ -1745,12 +1839,12 @@ class _HbsSocialDraftEngine:
             idx = int(round((len(sorted_total) - 1) * p))
             return sorted_total[min(max(idx, 0), len(sorted_total) - 1)]
 
-        def _geomean(values: list[float]) -> float:
-            if not values or any(value <= 0.0 for value in values):
-                return 0.0
-            return math.exp(sum(math.log(value) for value in values) / len(values))
-
         envy_metrics = self._envy_ef1_metrics()
+        nash_total, zero_total, nash_safe_total = compute_nash_welfare(per_student_total)
+        nash_course, zero_course, nash_safe_course = compute_nash_welfare(per_student_base)
+        nash_friend, zero_friend, nash_safe_friend = compute_nash_welfare(
+            per_student_friend_norm
+        )
 
         metrics = {
             "total_utility": total_utility,
@@ -1761,10 +1855,30 @@ class _HbsSocialDraftEngine:
             "total_friend_utility_norm": total_friend_norm,
             "avg_utility_per_student": avg_utility,
             "egalitarian_welfare": min(per_student_total) if per_student_total else 0.0,
+            "egalitarian_welfare_combined": (
+                min(per_student_total) if per_student_total else 0.0
+            ),
+            "egalitarian_welfare_course": (
+                min(per_student_base) if per_student_base else 0.0
+            ),
+            "egalitarian_welfare_friend": (
+                min(per_student_friend_norm) if per_student_friend_norm else 0.0
+            ),
             "egalitarian_welfare_norm": (
                 min(per_student_total_norm) if per_student_total_norm else 0.0
             ),
-            "nash_welfare_geomean": _geomean(per_student_total),
+            "nash_welfare_geomean": nash_total,
+            "nash_welfare_geomean_combined": nash_total,
+            "nash_welfare_geomean_course": nash_course,
+            "nash_welfare_geomean_friend": nash_friend,
+            "zero_utility_share": zero_total,
+            "zero_utility_share_combined": zero_total,
+            "zero_utility_share_course": zero_course,
+            "zero_utility_share_friend": zero_friend,
+            "nash_zero_safe": nash_safe_total,
+            "nash_zero_safe_combined": nash_safe_total,
+            "nash_zero_safe_course": nash_safe_course,
+            "nash_zero_safe_friend": nash_safe_friend,
             **envy_metrics,
             "avg_courses_per_student": avg_courses,
             "students_full_alloc_rate": students_full_alloc_rate,
@@ -1809,6 +1923,12 @@ class _HbsSocialDraftEngine:
                 students_no_observed_friend_bonus / n_students if n_students else 0.0
             ),
             "avg_friend_overlaps_per_student": avg_friend_overlaps,
+            "friend_overlap_total": float(overlaps_total),
+            "friend_possible_overlap_total": float(possible_overlaps_total),
+            "overlap_rate": overlap_rate,
+            "share_students_no_overlap_opportunity_final": (
+                students_without_final_overlap_opportunity / n_students if n_students else 0.0
+            ),
             "share_students_with_any_friend_overlap": share_students_with_overlap,
             "gini_total_raw": compute_gini_index(per_student_total),
             "gini_total_norm": compute_gini_index(per_student_total_norm),
@@ -1838,6 +1958,16 @@ class _HbsSocialDraftEngine:
         max_friend_norm_base_ratio = max(0.0, max_course_rank - 1.0)
         total_seats = float(len(self._courses) * self._config.default_capacity)
 
+        max_nash_total, _max_zero_total, max_nash_safe_total = compute_nash_welfare(
+            per_student_max_total
+        )
+        max_nash_course, _max_zero_course, max_nash_safe_course = compute_nash_welfare(
+            per_student_max_base
+        )
+        max_nash_friend, _max_zero_friend, max_nash_safe_friend = compute_nash_welfare(
+            per_student_max_friend_norm
+        )
+
         maxima = {
             "total_utility": total_max_total,
             "total_utility_norm": 1.0,
@@ -1849,8 +1979,28 @@ class _HbsSocialDraftEngine:
             "egalitarian_welfare": (
                 min(per_student_max_total) if per_student_max_total else 0.0
             ),
+            "egalitarian_welfare_combined": (
+                min(per_student_max_total) if per_student_max_total else 0.0
+            ),
+            "egalitarian_welfare_course": (
+                min(per_student_max_base) if per_student_max_base else 0.0
+            ),
+            "egalitarian_welfare_friend": (
+                min(per_student_max_friend_norm) if per_student_max_friend_norm else 0.0
+            ),
             "egalitarian_welfare_norm": 1.0,
-            "nash_welfare_geomean": _geomean(per_student_max_total),
+            "nash_welfare_geomean": max_nash_total,
+            "nash_welfare_geomean_combined": max_nash_total,
+            "nash_welfare_geomean_course": max_nash_course,
+            "nash_welfare_geomean_friend": max_nash_friend,
+            "zero_utility_share": 1.0,
+            "zero_utility_share_combined": 1.0,
+            "zero_utility_share_course": 1.0,
+            "zero_utility_share_friend": 1.0,
+            "nash_zero_safe": max_nash_safe_total,
+            "nash_zero_safe_combined": max_nash_safe_total,
+            "nash_zero_safe_course": max_nash_safe_course,
+            "nash_zero_safe_friend": max_nash_safe_friend,
             "envy_pairs_share_base": 1.0,
             "ef1_violation_share_base": 1.0,
             "envy_pairs_share_friend": 1.0,
@@ -1880,6 +2030,10 @@ class _HbsSocialDraftEngine:
             "share_students_no_friend_bonus_opportunity": 1.0,
             "share_students_no_observed_friend_bonus": 1.0,
             "avg_friend_overlaps_per_student": avg_overlaps_max,
+            "friend_overlap_total": float(max_overlaps_total),
+            "friend_possible_overlap_total": float(max_overlaps_total),
+            "overlap_rate": 1.0,
+            "share_students_no_overlap_opportunity_final": 1.0,
             "share_students_with_any_friend_overlap": share_possible_overlap,
             "gini_total_raw": 1.0,
             "gini_total_norm": 1.0,
@@ -1898,4 +2052,9 @@ class _HbsSocialDraftEngine:
             "utility_p75": max_total_per_student,
             "utility_p90": max_total_per_student,
         }
+        for key in envy_metrics:
+            if "gap_" in key:
+                maxima[key] = max_total_per_student
+            else:
+                maxima[key] = 1.0
         return ExtendedMetrics(values=metrics, maxima=maxima)

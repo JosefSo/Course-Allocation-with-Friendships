@@ -231,7 +231,13 @@ Run `python3 hbs_social.py --help` for the complete option list.
 - `post_allocation.csv` — accepted post-processing moves and no-op/early-stop rows.
 - `summary.csv` — total utility and normalized Gini metrics.
 - `metrics_extended.csv` — base/friend/combined welfare, fill and rank statistics,
-  Gini/Jain/Theil/Atkinson, egalitarian welfare, Nash welfare, envy, and EF1 metrics.
+  Gini/Jain/Theil/Atkinson, egalitarian welfare, canonical Nash welfare with an explicit
+  zero-utility share, zero-safe Nash, friend overlap rate, and ex-post envy/EF1 metrics.
+
+EF1 is reported under three preregistered interpretations: `substitution` (primary),
+`swap`, and classical `base-only`. New metric names include both the definition and the
+utility representation. Legacy `ef1_violation_share_*` keys remain available for the UI
+and map to substitution-based student violation shares.
 
 The engine also reports unconstrained per-student upper bounds. These are diagnostic
 normalization bounds, not a capacity-feasible optimum.
