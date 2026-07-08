@@ -202,6 +202,16 @@ def _run_job(job_id: str, params: dict) -> None:
 
         swaps = sum(1 for r in result.post_log if r.event_type == "SWAP")
         add_drops = sum(1 for r in result.post_log if r.event_type == "ADD_DROP")
+        # Ex-post per-student utilities feed the distribution/Lorenz charts in the UI.
+        per_student: dict[str, dict[str, float]] = {}
+        for row in result.pick_log:
+            per_student[row.student_id] = {
+                "base": row.ex_post_course_utility,
+                "friend": row.ex_post_friend_utility,
+                "total": row.ex_post_combined_utility,
+            }
+        for student_id in result.alloc:
+            per_student.setdefault(student_id, {"base": 0.0, "friend": 0.0, "total": 0.0})
         payload = {
             "elapsed_s": round(elapsed, 2),
             "summary": {
@@ -213,6 +223,7 @@ def _run_job(job_id: str, params: dict) -> None:
             "metrics": result.metrics_extended.values,
             "maxima": result.metrics_extended.maxima,
             "alloc": result.alloc,
+            "per_student": per_student,
             "picks": len(result.pick_log),
             "post_events": {"swaps": swaps, "add_drops": add_drops},
             "history_id": history_id,

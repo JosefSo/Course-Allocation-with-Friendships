@@ -20,6 +20,12 @@
     --crit: #d03b3b;
     --crit-wash: #fbeaea;
     --bar-track: #eeede8;
+    --s1: #2a78d6; /* swap-global */
+    --s2: #1baf7a; /* swap-personal */
+    --s3: #eda100; /* drop-add-global */
+    --s4: #008300; /* drop-add-personal */
+    --s5: #4a3aa7; /* hybrid-global */
+    --s6: #e34948; /* hybrid-personal */
   }
   @media (prefers-color-scheme: dark) {
     :root {
@@ -37,6 +43,12 @@
       --crit: #e66767;
       --crit-wash: #2e1414;
       --bar-track: #242423;
+      --s1: #3987e5;
+      --s2: #199e70;
+      --s3: #c98500;
+      --s4: #008300;
+      --s5: #9085e9;
+      --s6: #e66767;
     }
   }
   * { box-sizing: border-box; }
@@ -65,6 +77,10 @@
   .card h2 {
     margin: 0 0 14px; font-size: 12px; font-weight: 700; letter-spacing: 0.09em;
     text-transform: uppercase; color: var(--ink-2);
+  }
+  .mini-h {
+    margin: 0 0 8px; font-size: 11px; font-weight: 700; letter-spacing: 0.08em;
+    text-transform: uppercase; color: var(--muted);
   }
   .field { margin-bottom: 12px; }
   .field label { display: block; font-size: 12.5px; color: var(--ink-2); margin-bottom: 4px; }
@@ -104,7 +120,7 @@
 
   .empty {
     border: 1px dashed var(--hair); border-radius: 8px; padding: 48px 24px;
-    text-align: center; color: var(--muted);
+    text-align: center; color: var(--muted); margin-bottom: 16px;
   }
   .empty .big { font-size: 34px; margin-bottom: 8px; }
 
@@ -156,6 +172,10 @@
   th:first-child, td:first-child { text-align: left; }
   td.best { color: var(--accent-deep); font-weight: 700; }
   tr.sel { background: var(--accent-wash); }
+  th.sortable { cursor: pointer; user-select: none; }
+  th.sortable:hover { color: var(--ink); }
+  th.sorted-asc::after { content: " ↑"; color: var(--accent-deep); }
+  th.sorted-desc::after { content: " ↓"; color: var(--accent-deep); }
 
   .bar-row { display: grid; grid-template-columns: 210px 1fr 110px; gap: 10px; align-items: center; margin-bottom: 8px; font-size: 12.5px; }
   .bar-row .name { color: var(--ink-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -172,9 +192,32 @@
   .search { display: flex; gap: 10px; margin-bottom: 10px; }
   .search input { flex: 1; padding: 7px 10px; font: inherit; background: var(--paper); color: var(--ink); border: 1px solid var(--hair); border-radius: 6px; }
   .chip { display: inline-block; background: var(--bar-track); border-radius: 4px; padding: 1px 7px; margin: 1px 2px 1px 0; font-size: 12px; font-family: ui-monospace, Consolas, monospace; }
-  .section-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+  .section-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 12px; flex-wrap: wrap; }
   .section-head h2 { margin: 0; }
-  .section-head .tools { display: flex; align-items: baseline; gap: 10px; }
+  .section-head .tools { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+  .section-head select {
+    padding: 5px 8px; font: inherit; font-size: 12.5px; color: var(--ink);
+    background: var(--paper); border: 1px solid var(--hair); border-radius: 6px;
+  }
+
+  /* ---------- charts ---------- */
+  .chart-svg { width: 100%; height: auto; display: block; }
+  .chart-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  @media (max-width: 860px) { .chart-cols { grid-template-columns: 1fr; } }
+  .legend { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 12.5px; color: var(--ink-2); margin: 0 0 10px; }
+  .legend .sw { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
+  .ax { font: 11px system-ui, -apple-system, "Segoe UI", sans-serif; fill: var(--muted); }
+  .ax-name { font: 11px system-ui, -apple-system, "Segoe UI", sans-serif; fill: var(--muted); }
+  .note-corner { font: 11px system-ui, sans-serif; fill: var(--muted); }
+  .chart-empty { color: var(--muted); font-size: 13px; padding: 26px 0; text-align: center; }
+  #tip {
+    position: fixed; display: none; z-index: 60; pointer-events: none;
+    background: var(--surface); border: 1px solid var(--ring); border-radius: 6px;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.14); padding: 7px 10px;
+    font-size: 12.5px; line-height: 1.5; color: var(--ink-2); max-width: 300px;
+  }
+  #tip .tv { color: var(--ink); font-weight: 700; font-variant-numeric: tabular-nums; }
+  #tip .tk { display: inline-block; width: 12px; height: 3px; border-radius: 2px; margin: 0 6px 3px 0; }
 </style>
 </head>
 <body>
@@ -230,6 +273,13 @@
         <div class="field"><label for="p_seed">Seed</label><input id="p_seed" type="number" value="11"></div>
       </div>
       <div class="field"><label for="p_rounds">Раундов draft (пусто = b)</label><input id="p_rounds" type="number" min="0" placeholder="по умолчанию = b"></div>
+      <div class="field">
+        <label for="p_initial">Начальный механизм</label>
+        <select id="p_initial">
+          <option value="sequential">sequential — драфт по очереди</option>
+          <option value="simultaneous-priority">simultaneous-priority — заявки одновременно, конфликт решает приоритет</option>
+        </select>
+      </div>
       <div class="field">
         <label for="p_sequence">Picking sequence — порядок выбора</label>
         <select id="p_sequence">
@@ -312,24 +362,78 @@
     <div id="results" style="display:none">
       <div class="tiles" id="tiles"></div>
 
+      <div class="card" id="dist_card" style="display:none">
+        <h2>Распределение полезности по студентам (последний запуск)</h2>
+        <div class="chart-cols">
+          <div>
+            <h3 class="mini-h">Гистограмма итоговой полезности</h3>
+            <svg id="hist_svg" class="chart-svg" viewBox="0 0 460 230" role="img"
+                 aria-label="Гистограмма распределения итоговой полезности по студентам"></svg>
+          </div>
+          <div>
+            <h3 class="mini-h">Кривая Лоренца — концентрация полезности</h3>
+            <svg id="lorenz_svg" class="chart-svg" viewBox="0 0 460 230" role="img"
+                 aria-label="Кривая Лоренца: накопленная доля полезности против доли студентов"></svg>
+          </div>
+        </div>
+        <p class="hint">Чем ближе кривая Лоренца к диагонали, тем равномернее распределена полезность (Джини → 0). Значения по студентам — в таблице «Аллокация» ниже.</p>
+      </div>
+
+      <div class="card" id="cmp_card" style="display:none">
+        <div class="section-head">
+          <h2>Сравнение 6 режимов постобработки</h2>
+          <div class="tools">
+            <label for="cmp_metric" class="hint" style="margin:0">метрика:</label>
+            <select id="cmp_metric"></select>
+            <span class="hint" id="cmp_meta"></span>
+          </div>
+        </div>
+        <svg id="cmp_svg" class="chart-svg" viewBox="0 0 960 240" role="img"
+             aria-label="Средние значения выбранной метрики по режимам постобработки с разбросом ±σ"></svg>
+        <div class="tbl-wrap" style="margin-top:12px">
+          <table id="cmp_tbl">
+            <thead><tr>
+              <th class="sortable" data-k="improve_mode">режим</th>
+              <th class="sortable" data-k="avg_total_utility">полезность avg</th>
+              <th class="sortable" data-k="std_total_utility">±σ</th>
+              <th class="sortable" data-k="avg_gini_total_norm">Джини avg</th>
+              <th class="sortable" data-k="avg_jain_index">Джейн avg</th>
+              <th class="sortable" data-k="avg_egalitarian_welfare">худший avg</th>
+              <th class="sortable" data-k="avg_avg_friend_overlaps_per_student">пересеч. avg</th>
+              <th class="sortable" data-k="avg_share_top3">топ-3 avg</th>
+            </tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <p class="hint" style="margin-top:8px">Каждый режим прогнан на одинаковом наборе seeds; ус — ±1 стандартное отклонение. Лучшие значения выделены.</p>
+      </div>
+
       <div class="card">
         <div class="section-head">
           <h2>Сравнение запусков</h2>
           <button class="ghost" id="btn_clear">очистить историю</button>
         </div>
-        <div id="bars"></div>
         <div class="tbl-wrap">
           <table id="history">
             <thead><tr>
-              <th>#</th><th>метод</th><th>полезность</th><th>% от лучшего</th>
-              <th>худший студент</th><th>Джини</th><th>EF1-наруш.</th><th>пересеч. с друзьями</th><th>время</th>
+              <th class="sortable" data-k="n">#</th>
+              <th class="sortable" data-k="label">метод</th>
+              <th class="sortable" data-k="total">полезность</th>
+              <th class="sortable" data-k="share">% от лучшего</th>
+              <th class="sortable" data-k="egal">худший студент</th>
+              <th class="sortable" data-k="gini">Джини</th>
+              <th class="sortable" data-k="jain">Джейн</th>
+              <th class="sortable" data-k="ef1">EF1-наруш.</th>
+              <th class="sortable" data-k="overlaps">пересеч. с друзьями</th>
+              <th class="sortable" data-k="time">время</th>
             </tr></thead>
             <tbody></tbody>
           </table>
         </div>
-        <p class="hint" style="margin-top:8px">«% от лучшего» — доля от максимальной суммарной полезности среди запусков в этой таблице. Точный оптимум считается отдельно: <code>experiments/ilp_benchmark.py</code>.</p>
+        <p class="hint" style="margin-top:8px">Клик по заголовку сортирует. «% от лучшего» — доля от максимальной суммарной полезности среди запусков в этой таблице. Точный оптимум считается отдельно: <code>experiments/ilp_benchmark.py</code>.</p>
       </div>
 
+      <div id="run_cards" style="display:none">
       <div class="card">
         <h2>Заполняемость курсов (последний запуск)</h2>
         <div id="fill_bars"></div>
@@ -351,17 +455,55 @@
       <div class="card">
         <details>
           <summary>Все метрики последнего запуска</summary>
+          <div class="search" style="margin-top:10px">
+            <input id="q_metric" type="search" placeholder="Фильтр по имени метрики, например gini">
+          </div>
           <div class="tbl-wrap">
             <table id="metrics_tbl">
-              <thead><tr><th>метрика</th><th>значение</th><th>максимум шкалы</th></tr></thead>
+              <thead><tr>
+                <th class="sortable" data-k="name">метрика</th>
+                <th class="sortable" data-k="value">значение</th>
+                <th class="sortable" data-k="max">максимум шкалы</th>
+              </tr></thead>
               <tbody></tbody>
             </table>
           </div>
         </details>
       </div>
+      </div>
+    </div>
+
+    <div class="card" id="stats_card" style="display:none">
+      <div class="section-head">
+        <h2>Аналитика по истории запусков</h2>
+        <div class="tools">
+          <label for="stat_metric" class="hint" style="margin:0">метрика:</label>
+          <select id="stat_metric"></select>
+          <span class="hint" id="stats_meta"></span>
+        </div>
+      </div>
+      <div class="legend" id="stats_legend"></div>
+      <h3 class="mini-h" id="trend_title">Динамика по запускам</h3>
+      <svg id="trend_svg" class="chart-svg" viewBox="0 0 960 250" role="img"
+           aria-label="Значение выбранной метрики по всем сохранённым запускам, цвет точки — режим постобработки"></svg>
+      <div class="chart-cols" style="margin-top:18px">
+        <div>
+          <h3 class="mini-h" id="mode_bars_title">Среднее по режимам</h3>
+          <svg id="mode_svg" class="chart-svg" viewBox="0 0 460 240" role="img"
+               aria-label="Среднее значение выбранной метрики по режимам постобработки"></svg>
+        </div>
+        <div>
+          <h3 class="mini-h">Компромисс: благо ↔ справедливость</h3>
+          <svg id="scatter_svg" class="chart-svg" viewBox="0 0 460 240" role="img"
+               aria-label="Диаграмма рассеяния: суммарная полезность против индекса Джини, каждая точка — один запуск"></svg>
+        </div>
+      </div>
+      <p class="hint" style="margin-top:8px">Все сохранённые запуски (включая batch-прогоны «Сравнить 6 режимов»). На диаграмме компромисса идеал — правый нижний угол: максимум блага при минимуме неравенства.</p>
     </div>
   </main>
 </div>
+
+<div id="tip" role="status" aria-live="polite"></div>
 
 <script>
 (function () {
@@ -369,19 +511,25 @@
   var $ = function (id) { return document.getElementById(id); };
   var history = [];
   var lastRun = null;
+  var lastCompare = null;
+  var lastStats = null;
   var clockTimer = null;
 
   // ---------- helpers ----------
   function fmt(x, digits) {
-    if (x === null || x === undefined) return "—";
+    if (x === null || x === undefined || (typeof x === "number" && !isFinite(x))) return "—";
     return Number(x).toLocaleString("ru-RU", { minimumFractionDigits: digits, maximumFractionDigits: digits });
   }
-  function pct(x) { return fmt(100 * x, 1) + "%"; }
+  function pct(x) {
+    if (x === null || x === undefined || (typeof x === "number" && !isFinite(x))) return "—";
+    return fmt(100 * x, 1) + "%";
+  }
   function clamp(v, lo, hi) { return v < lo ? lo : (v > hi ? hi : v); }
   function esc(s) {
     return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
       .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
   }
+  function isNum(x) { return typeof x === "number" && isFinite(x); }
 
   function api(path, body) {
     return fetch(path, {
@@ -407,6 +555,139 @@
       (m[3] ? '&nbsp;&nbsp;<span class="d">Δ ' + m[3] + "</span>" : "");
     feed.insertBefore(line, feed.firstChild);
     while (feed.children.length > 8) feed.removeChild(feed.lastChild);
+  }
+
+  // ---------- shared tooltip ----------
+  var tipEl = $("tip");
+  function tipShow(html, evt) {
+    tipEl.innerHTML = html;
+    tipEl.style.display = "block";
+    tipMove(evt);
+  }
+  function tipMove(evt) {
+    var pad = 14;
+    var w = tipEl.offsetWidth, h = tipEl.offsetHeight;
+    var x = evt.clientX + pad, y = evt.clientY + pad;
+    if (x + w > window.innerWidth - 8) x = evt.clientX - w - pad;
+    if (y + h > window.innerHeight - 8) y = evt.clientY - h - pad;
+    tipEl.style.left = x + "px";
+    tipEl.style.top = y + "px";
+  }
+  function tipHide() { tipEl.style.display = "none"; }
+
+  // ---------- modes: fixed categorical mapping (color follows the entity) ----------
+  var MODE_ORDER = ["swap-global", "swap-personal", "drop-add-global", "drop-add-personal", "hybrid-global", "hybrid-personal"];
+  var MODE_COLORS = {
+    "swap-global": "var(--s1)", "swap-personal": "var(--s2)",
+    "drop-add-global": "var(--s3)", "drop-add-personal": "var(--s4)",
+    "hybrid-global": "var(--s5)", "hybrid-personal": "var(--s6)"
+  };
+  function modeColor(mode) { return MODE_COLORS[mode] || "var(--muted)"; }
+
+  // ---------- metric catalogue for history/compare charts ----------
+  var METRICS = [
+    { k: "total_utility", label: "суммарная полезность", digits: 1 },
+    { k: "total_utility_norm", label: "доля от максимума", digits: 3 },
+    { k: "egalitarian_welfare", label: "худший студент", digits: 3 },
+    { k: "gini_total_norm", label: "Джини (общий) — меньше лучше", digits: 3, lowIsBetter: true },
+    { k: "gini_base_norm", label: "Джини (базовый) — меньше лучше", digits: 3, lowIsBetter: true },
+    { k: "jain_index", label: "индекс Джейна", digits: 3 },
+    { k: "nash_welfare_geomean", label: "Нэш-благосостояние (геом. среднее)", digits: 2 },
+    { k: "avg_friend_overlaps_per_student", label: "пересечения с друзьями / студ.", digits: 2 },
+    { k: "share_students_with_any_friend_overlap", label: "доля студентов с пересечением", digits: 1, isPct: true },
+    { k: "avg_position", label: "средняя позиция курса — меньше лучше", digits: 2, lowIsBetter: true },
+    { k: "share_top1", label: "доля топ-1 выборов", digits: 1, isPct: true },
+    { k: "share_top3", label: "доля топ-3 выборов", digits: 1, isPct: true },
+    { k: "ef1_violation_pair_share_substitution_combined", label: "EF1-нарушения (пары) — меньше лучше", digits: 1, isPct: true, lowIsBetter: true }
+  ];
+  function metricByKey(k) {
+    for (var i = 0; i < METRICS.length; i++) if (METRICS[i].k === k) return METRICS[i];
+    return METRICS[0];
+  }
+  function fmtMetric(m, v) { return m.isPct ? pct(v) : fmt(v, m.digits); }
+  function fillMetricSelect(sel, defKey) {
+    sel.innerHTML = METRICS.map(function (m) {
+      return '<option value="' + m.k + '"' + (m.k === defKey ? " selected" : "") + ">" + esc(m.label) + "</option>";
+    }).join("");
+  }
+
+  // ---------- SVG chart helpers ----------
+  function niceTicks(lo, hi, n) {
+    if (!isFinite(lo) || !isFinite(hi)) return [];
+    if (hi <= lo) hi = lo + (Math.abs(lo) || 1) * 0.1;
+    var span = hi - lo;
+    var step = Math.pow(10, Math.floor(Math.log(span / n) / Math.LN10));
+    var err = span / n / step;
+    step *= err >= 7.5 ? 10 : err >= 3.5 ? 5 : err >= 1.5 ? 2 : 1;
+    var ticks = [];
+    for (var v = Math.ceil(lo / step) * step; v <= hi + step * 1e-6; v += step) {
+      ticks.push(Math.abs(v) < step * 1e-9 ? 0 : v);
+    }
+    return ticks;
+  }
+  function fmtTick(v) {
+    if (Math.abs(v) >= 1000) return Number(v.toFixed(0)).toLocaleString("ru-RU");
+    if (Math.abs(v) >= 10 || v === Math.round(v)) return String(Math.round(v * 10) / 10);
+    return String(Math.round(v * 1000) / 1000);
+  }
+  function topRoundRect(x, y, w, h, r) {
+    r = Math.min(r, w / 2, h);
+    if (h <= 0 || w <= 0) return "";
+    return "M" + x.toFixed(1) + "," + (y + h).toFixed(1) +
+      " L" + x.toFixed(1) + "," + (y + r).toFixed(1) +
+      " Q" + x.toFixed(1) + "," + y.toFixed(1) + " " + (x + r).toFixed(1) + "," + y.toFixed(1) +
+      " L" + (x + w - r).toFixed(1) + "," + y.toFixed(1) +
+      " Q" + (x + w).toFixed(1) + "," + y.toFixed(1) + " " + (x + w).toFixed(1) + "," + (y + r).toFixed(1) +
+      " L" + (x + w).toFixed(1) + "," + (y + h).toFixed(1) + " Z";
+  }
+  function rightRoundRect(x, y, w, h, r) {
+    r = Math.min(r, h / 2, w);
+    if (h <= 0 || w <= 0) return "";
+    return "M" + x.toFixed(1) + "," + y.toFixed(1) +
+      " L" + (x + w - r).toFixed(1) + "," + y.toFixed(1) +
+      " Q" + (x + w).toFixed(1) + "," + y.toFixed(1) + " " + (x + w).toFixed(1) + "," + (y + r).toFixed(1) +
+      " L" + (x + w).toFixed(1) + "," + (y + h - r).toFixed(1) +
+      " Q" + (x + w).toFixed(1) + "," + (y + h).toFixed(1) + " " + (x + w - r).toFixed(1) + "," + (y + h).toFixed(1) +
+      " L" + x.toFixed(1) + "," + (y + h).toFixed(1) + " Z";
+  }
+  function chartEmpty(svg, msg) {
+    var vb = svg.getAttribute("viewBox").split(" ");
+    svg.innerHTML = '<text x="' + (+vb[2] / 2) + '" y="' + (+vb[3] / 2) +
+      '" class="ax" text-anchor="middle">' + esc(msg) + "</text>";
+  }
+
+  // ---------- sortable tables ----------
+  function makeSortable(tableId, state, rerender) {
+    var thead = $(tableId).querySelector("thead");
+    thead.addEventListener("click", function (e) {
+      var th = e.target.closest("th.sortable");
+      if (!th) return;
+      var k = th.getAttribute("data-k");
+      if (state.k === k) state.dir = -state.dir;
+      else { state.k = k; state.dir = -1; }
+      thead.querySelectorAll("th").forEach(function (el) {
+        el.classList.remove("sorted-asc", "sorted-desc");
+      });
+      th.classList.add(state.dir > 0 ? "sorted-asc" : "sorted-desc");
+      rerender();
+    });
+  }
+  function sortRows(rows, state) {
+    if (!state.k) return rows;
+    var out = rows.slice();
+    out.sort(function (a, b) {
+      var x = a[state.k], y = b[state.k];
+      var xm = x === null || x === undefined || (typeof x === "number" && !isFinite(x));
+      var ym = y === null || y === undefined || (typeof y === "number" && !isFinite(y));
+      if (xm && ym) return 0;
+      if (xm) return 1;
+      if (ym) return -1;
+      if (typeof x === "string" || typeof y === "string") {
+        return String(x).localeCompare(String(y), "ru", { numeric: true }) * state.dir;
+      }
+      return (x - y) * state.dir;
+    });
+    return out;
   }
 
   // ---------- tables list ----------
@@ -448,9 +729,11 @@
       return {
         n: index + 1,
         label: item.improve_mode + " · seed " + item.seed,
+        mode: item.improve_mode,
         total: item.total_utility,
         egal: m.egalitarian_welfare,
         gini: item.gini_total_norm,
+        jain: m.jain_index,
         ef1: m.ef1_violation_share_total,
         overlaps: m.avg_friend_overlaps_per_student,
         time: null
@@ -1057,6 +1340,7 @@
       cap_default: +$("p_cap").value, b: +$("p_b").value, seed: +$("p_seed").value,
       draft_rounds: $("p_rounds").value,
       post_iters: +$("p_iters").value, improve_mode: $("p_improve").value,
+      initial_method: $("p_initial").value,
       sequence: $("p_sequence").value, pick_rule: $("p_pick").value
     };
     VIZ.start(cfg);
@@ -1077,17 +1361,21 @@
     api("/api/run", cfg).then(function (start) {
       pollJob(start.job, function (d) {
         lastRun = { cfg: cfg, data: d };
+        var initTag = cfg.initial_method === "simultaneous-priority" ? "sim-priority / " : "";
         history.push({
           n: history.length + 1,
-          label: cfg.sequence + " / " + cfg.pick_rule + " / " + cfg.improve_mode + "×" + cfg.post_iters,
+          label: initTag + cfg.sequence + " / " + cfg.pick_rule + " / " + cfg.improve_mode + "×" + cfg.post_iters,
+          mode: cfg.improve_mode,
           total: d.metrics.total_utility,
           egal: d.metrics.egalitarian_welfare,
           gini: d.metrics.gini_total_norm,
+          jain: d.metrics.jain_index,
           ef1: d.metrics.ef1_violation_share_total,
           overlaps: d.metrics.avg_friend_overlaps_per_student,
           time: d.elapsed_s
         });
         renderAll();
+        loadStats();
         finish();
       }, function (e) { showError(e.message); finish(); });
     }).catch(function (e) { showError(e.message); finish(); });
@@ -1102,16 +1390,20 @@
       cap_default: +$("p_cap").value, b: +$("p_b").value,
       seed: +$("p_seed").value, post_iters: +$("p_iters").value,
       draft_rounds: $("p_rounds").value,
+      initial_method: $("p_initial").value,
       sequence: $("p_sequence").value, pick_rule: $("p_pick").value,
       batch_size: +$("p_batch").value
     }).then(function (data) {
+      lastCompare = data;
       (data.by_mode || []).forEach(function (row) {
         history.push({
           n: history.length + 1,
           label: row.improve_mode + " · avg " + row.runs + " seeds",
+          mode: row.improve_mode,
           total: row.avg_total_utility,
           egal: row.avg_egalitarian_welfare,
           gini: row.avg_gini_total_norm,
+          jain: row.avg_jain_index,
           ef1: row.avg_ef1_violation_share_total,
           overlaps: row.avg_avg_friend_overlaps_per_student,
           time: null
@@ -1119,7 +1411,10 @@
       });
       $("empty").style.display = "none";
       $("results").style.display = "block";
+      $("cmp_card").style.display = "block";
+      renderCompare();
       renderHistory();
+      loadStats();
     }).catch(function (e) { showError(e.message); })
       .finally(function () { btn.disabled = false; btn.textContent = "Сравнить 6 режимов"; });
   });
@@ -1129,16 +1424,17 @@
   $("btn_clear").addEventListener("click", function () {
     api("/api/history/reset", {}).then(function () {
       history = [];
-      $("bars").innerHTML = "";
       $("history").querySelector("tbody").innerHTML = "";
+      loadStats();
     }).catch(function (e) { showError(e.message); });
   });
 
-  // ---------- render ----------
+  // ---------- render: last run ----------
   function renderAll() {
     $("empty").style.display = "none";
     $("results").style.display = "block";
-    renderTiles(); renderHistory(); renderFill(); renderAlloc(""); renderMetrics();
+    $("run_cards").style.display = "block";
+    renderTiles(); renderDist(); renderHistory(); renderFill(); renderAlloc(""); renderMetrics();
   }
 
   function tile(value, unit, label, acc) {
@@ -1154,32 +1450,470 @@
       tile(pct(upper > 0 ? m.total_utility / upper : 0), "", "от верхней оценки", true) +
       tile(fmt(m.egalitarian_welfare, 3), "", "худший студент") +
       tile(fmt(m.gini_total_norm, 3), "", "индекс Джини") +
+      tile(fmt(m.jain_index, 3), "", "индекс Джейна") +
       tile(pct(m.ef1_violation_share_total), "", "студентов с EF1-нарушением") +
       tile(fmt(m.avg_friend_overlaps_per_student, 2), "", "пересечений с друзьями / студ.") +
       tile(fmt(lastRun.data.elapsed_s, 1), "с", "время запуска");
   }
 
-  function renderHistory() {
-    var best = Math.max.apply(null, history.map(function (r) { return r.total; }));
-    var bars = history.map(function (r) {
-      var share = best > 0 ? r.total / best : 0;
-      return '<div class="bar-row"><span class="name">#' + r.n + " · " + r.label + "</span>" +
-        '<div class="bar-track"><div class="bar-fill' + (r.total === best ? " best" : "") +
-        '" style="width:' + (share * 100).toFixed(1) + '%"></div></div>' +
-        '<span class="bar-val">' + fmt(r.total, 1) + " <small>· " + pct(share) + "</small></span></div>";
-    }).join("");
-    $("bars").innerHTML = bars;
-
-    var rows = history.map(function (r) {
-      var share = best > 0 ? r.total / best : 0;
-      return "<tr" + (r === history[history.length - 1] ? ' class="sel"' : "") + "><td>#" + r.n + "</td><td>" + r.label + "</td>" +
-        "<td" + (r.total === best ? ' class="best"' : "") + ">" + fmt(r.total, 1) + "</td>" +
-        "<td>" + pct(share) + "</td><td>" + fmt(r.egal, 3) + "</td><td>" + fmt(r.gini, 3) + "</td>" +
-        "<td>" + pct(r.ef1) + "</td><td>" + fmt(r.overlaps, 2) + "</td><td>" + fmt(r.time, 1) + " с</td></tr>";
-    }).join("");
-    $("history").querySelector("tbody").innerHTML = rows;
+  // ---------- distribution: histogram + Lorenz ----------
+  function renderDist() {
+    var per = lastRun.data.per_student;
+    if (!per) { $("dist_card").style.display = "none"; return; }
+    var values = Object.keys(per).map(function (s) { return +per[s].total; })
+      .filter(function (v) { return isFinite(v); });
+    if (!values.length) { $("dist_card").style.display = "none"; return; }
+    $("dist_card").style.display = "block";
+    renderHistogram(values);
+    renderLorenz(values, lastRun.data.metrics.gini_total_raw);
   }
 
+  function renderHistogram(values) {
+    var svg = $("hist_svg");
+    var W = 460, H = 230, padL = 40, padR = 10, padT = 14, padB = 30;
+    var lo = Math.min.apply(null, values), hi = Math.max.apply(null, values);
+    if (hi <= lo) { lo -= 0.5; hi += 0.5; }
+    var nBins = clamp(Math.ceil(Math.sqrt(values.length)), 8, 24);
+    var binW = (hi - lo) / nBins;
+    var bins = new Array(nBins).fill(0);
+    values.forEach(function (v) {
+      bins[Math.min(nBins - 1, Math.floor((v - lo) / binW))]++;
+    });
+    var maxCnt = Math.max.apply(null, bins);
+    var plotW = W - padL - padR, plotH = H - padT - padB;
+    function X(v) { return padL + (v - lo) / (hi - lo) * plotW; }
+    function Y(c) { return padT + plotH - c / maxCnt * plotH; }
+
+    var out = "";
+    // hairline gridlines + y-axis (counts)
+    niceTicks(0, maxCnt, 4).forEach(function (t) {
+      if (t < 0 || t !== Math.round(t)) return;
+      out += '<line x1="' + padL + '" y1="' + Y(t).toFixed(1) + '" x2="' + (W - padR) + '" y2="' + Y(t).toFixed(1) + '" stroke="var(--hair)" stroke-width="1"></line>';
+      out += '<text x="' + (padL - 6) + '" y="' + (Y(t) + 3.5).toFixed(1) + '" class="ax" text-anchor="end">' + fmtTick(t) + "</text>";
+    });
+    // bars: one series, one hue; 2px surface gap between neighbours
+    var slotW = plotW / nBins;
+    bins.forEach(function (cnt, i) {
+      if (!cnt) return;
+      var x = padL + i * slotW + 1, w = slotW - 2;
+      out += '<path d="' + topRoundRect(x, Y(cnt), w, plotH - (Y(cnt) - padT), 4) + '" fill="var(--s1)"></path>';
+    });
+    // median marker — the one selectively-labeled reference
+    var sorted = values.slice().sort(function (a, b) { return a - b; });
+    var median = sorted.length % 2 ? sorted[(sorted.length - 1) / 2]
+      : (sorted[sorted.length / 2 - 1] + sorted[sorted.length / 2]) / 2;
+    out += '<line x1="' + X(median).toFixed(1) + '" y1="' + padT + '" x2="' + X(median).toFixed(1) + '" y2="' + (padT + plotH) + '" stroke="var(--ink-2)" stroke-width="1"></line>';
+    var medAnchor = X(median) > W - 90 ? "end" : "start";
+    var medDx = medAnchor === "end" ? -4 : 4;
+    out += '<text x="' + (X(median) + medDx).toFixed(1) + '" y="' + (padT + 9) + '" class="ax" text-anchor="' + medAnchor + '">медиана ' + fmt(median, 2) + "</text>";
+    // x-axis
+    out += '<line x1="' + padL + '" y1="' + (padT + plotH) + '" x2="' + (W - padR) + '" y2="' + (padT + plotH) + '" stroke="var(--hair)" stroke-width="1"></line>';
+    niceTicks(lo, hi, 5).forEach(function (t) {
+      if (t < lo || t > hi) return;
+      out += '<text x="' + X(t).toFixed(1) + '" y="' + (H - padB + 16) + '" class="ax" text-anchor="middle">' + fmtTick(t) + "</text>";
+    });
+    out += '<text x="' + (W - padR) + '" y="' + (H - 2) + '" class="ax-name" text-anchor="end">полезность студента</text>';
+    // hover targets (full column height per bin)
+    bins.forEach(function (cnt, i) {
+      var a = lo + i * binW, b = a + binW;
+      out += '<rect data-i="' + i + '" x="' + (padL + i * slotW).toFixed(1) + '" y="' + padT +
+        '" width="' + slotW.toFixed(1) + '" height="' + plotH + '" fill="transparent" data-tip="' +
+        esc('<span class="tv">' + cnt + '</span> студ. · полезность ' + fmt(a, 2) + "–" + fmt(b, 2)) + '"></rect>';
+    });
+    svg.innerHTML = out;
+    hookTips(svg);
+  }
+
+  function renderLorenz(values, giniRaw) {
+    var svg = $("lorenz_svg");
+    var W = 460, H = 230, padL = 40, padR = 12, padT = 14, padB = 30;
+    var plotW = W - padL - padR, plotH = H - padT - padB;
+    var sorted = values.slice().sort(function (a, b) { return a - b; });
+    var total = sorted.reduce(function (s, v) { return s + Math.max(0, v); }, 0);
+    var pts = [{ x: 0, y: 0 }];
+    var acc = 0;
+    sorted.forEach(function (v, i) {
+      acc += Math.max(0, v);
+      pts.push({ x: (i + 1) / sorted.length, y: total > 0 ? acc / total : (i + 1) / sorted.length });
+    });
+    function X(p) { return padL + p * plotW; }
+    function Y(p) { return padT + plotH - p * plotH; }
+    var line = "";
+    pts.forEach(function (p, i) {
+      line += (i ? " L" : "M") + X(p.x).toFixed(1) + "," + Y(p.y).toFixed(1);
+    });
+    var area = line + " L" + X(1).toFixed(1) + "," + Y(1).toFixed(1) + " L" + X(0).toFixed(1) + "," + Y(0).toFixed(1) + " Z";
+    var out = "";
+    [0, 0.25, 0.5, 0.75, 1].forEach(function (t) {
+      out += '<line x1="' + padL + '" y1="' + Y(t).toFixed(1) + '" x2="' + (W - padR) + '" y2="' + Y(t).toFixed(1) + '" stroke="var(--hair)" stroke-width="1"></line>';
+      out += '<text x="' + (padL - 6) + '" y="' + (Y(t) + 3.5).toFixed(1) + '" class="ax" text-anchor="end">' + Math.round(t * 100) + "%</text>";
+      out += '<text x="' + X(t).toFixed(1) + '" y="' + (H - padB + 16) + '" class="ax" text-anchor="middle">' + Math.round(t * 100) + "%</text>";
+    });
+    out += '<path d="' + area + '" fill="var(--s1)" opacity="0.12"></path>';
+    out += '<line x1="' + X(0) + '" y1="' + Y(0) + '" x2="' + X(1) + '" y2="' + Y(1) + '" stroke="var(--muted)" stroke-width="1"></line>';
+    out += '<path d="' + line + '" fill="none" stroke="var(--s1)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"></path>';
+    if (isNum(giniRaw)) {
+      out += '<text x="' + (padL + 8) + '" y="' + (padT + 12) + '" class="ax">Джини (raw) = ' + fmt(giniRaw, 3) + "</text>";
+    }
+    out += '<text x="' + (W - padR) + '" y="' + (H - 2) + '" class="ax-name" text-anchor="end">доля студентов (от бедных к богатым)</text>';
+    // crosshair overlay
+    out += '<line id="lz_cross" x1="0" y1="' + padT + '" x2="0" y2="' + (padT + plotH) + '" stroke="var(--muted)" stroke-width="1" style="display:none"></line>';
+    out += '<rect id="lz_hit" x="' + padL + '" y="' + padT + '" width="' + plotW + '" height="' + plotH + '" fill="transparent"></rect>';
+    svg.innerHTML = out;
+
+    var hit = svg.querySelector("#lz_hit");
+    var cross = svg.querySelector("#lz_cross");
+    function onMove(evt) {
+      var rect = svg.getBoundingClientRect();
+      var px = (evt.clientX - rect.left) * (W / rect.width);
+      var share = clamp((px - padL) / plotW, 0, 1);
+      var idx = Math.round(share * sorted.length);
+      var yv = pts[Math.min(idx, pts.length - 1)].y;
+      cross.style.display = "block";
+      cross.setAttribute("x1", X(share).toFixed(1));
+      cross.setAttribute("x2", X(share).toFixed(1));
+      tipShow('нижние <span class="tv">' + Math.round(share * 100) + "%</span> студентов → " +
+        '<span class="tv">' + fmt(yv * 100, 1) + "%</span> полезности", evt);
+    }
+    hit.addEventListener("pointermove", onMove);
+    hit.addEventListener("pointerleave", function () { cross.style.display = "none"; tipHide(); });
+  }
+
+  // ---------- generic tooltip hookup (elements with data-tip) ----------
+  function hookTips(root) {
+    root.addEventListener("pointermove", function (evt) {
+      var t = evt.target.closest("[data-tip]");
+      if (t) tipShow(t.getAttribute("data-tip"), evt);
+      else tipHide();
+    });
+    root.addEventListener("pointerleave", tipHide);
+  }
+
+  // ---------- history table (sortable) ----------
+  var histSort = { k: null, dir: -1 };
+  makeSortable("history", histSort, renderHistory);
+
+  function renderHistory() {
+    var best = history.length ? Math.max.apply(null, history.map(function (r) { return r.total; })) : 0;
+    var rows = history.map(function (r) {
+      return Object.assign({}, r, { share: best > 0 ? r.total / best : 0 });
+    });
+    var last = history[history.length - 1];
+    var html = sortRows(rows, histSort).map(function (r) {
+      return "<tr" + (last && r.n === last.n ? ' class="sel"' : "") + "><td>#" + r.n + "</td><td>" + esc(r.label) + "</td>" +
+        "<td" + (r.total === best ? ' class="best"' : "") + ">" + fmt(r.total, 1) + "</td>" +
+        "<td>" + pct(r.share) + "</td><td>" + fmt(r.egal, 3) + "</td><td>" + fmt(r.gini, 3) + "</td>" +
+        "<td>" + fmt(r.jain, 3) + "</td>" +
+        "<td>" + pct(r.ef1) + "</td><td>" + fmt(r.overlaps, 2) + "</td><td>" + (r.time === null || r.time === undefined ? "—" : fmt(r.time, 1) + " с") + "</td></tr>";
+    }).join("");
+    $("history").querySelector("tbody").innerHTML = html;
+  }
+
+  // ---------- compare card ----------
+  var cmpSort = { k: null, dir: -1 };
+  makeSortable("cmp_tbl", cmpSort, renderCompareTable);
+  fillMetricSelect($("cmp_metric"), "total_utility");
+  $("cmp_metric").addEventListener("change", renderCompareChart);
+
+  function renderCompare() {
+    if (!lastCompare) return;
+    var rows = lastCompare.by_mode || [];
+    var runs = rows.length ? rows[0].runs : 0;
+    $("cmp_meta").textContent = runs ? runs + " seeds × " + rows.length + " режимов" : "";
+    renderCompareChart();
+    renderCompareTable();
+  }
+
+  function renderCompareChart() {
+    var svg = $("cmp_svg");
+    var rows = (lastCompare && lastCompare.by_mode) || [];
+    var m = metricByKey($("cmp_metric").value);
+    var data = rows.map(function (r) {
+      return {
+        mode: r.improve_mode,
+        avg: r["avg_" + m.k],
+        std: r["std_" + m.k]
+      };
+    }).filter(function (d) { return isNum(d.avg); });
+    if (!data.length) { chartEmpty(svg, "нет данных по выбранной метрике"); return; }
+
+    var W = 960, rowH = 34, padL = 150, padR = 120, padT = 8, padB = 26;
+    var H = padT + padB + rowH * data.length;
+    svg.setAttribute("viewBox", "0 0 " + W + " " + H);
+    var plotW = W - padL - padR;
+    var maxV = Math.max.apply(null, data.map(function (d) { return d.avg + (isNum(d.std) ? d.std : 0); }));
+    if (maxV <= 0) maxV = 1;
+    function X(v) { return padL + clamp(v, 0, maxV) / maxV * plotW; }
+
+    var out = "";
+    niceTicks(0, maxV, 5).forEach(function (t) {
+      out += '<line x1="' + X(t).toFixed(1) + '" y1="' + padT + '" x2="' + X(t).toFixed(1) + '" y2="' + (H - padB) + '" stroke="var(--hair)" stroke-width="1"></line>';
+      out += '<text x="' + X(t).toFixed(1) + '" y="' + (H - padB + 15) + '" class="ax" text-anchor="middle">' + fmtTick(m.isPct ? t * 100 : t) + "</text>";
+    });
+    var bestIdx = 0;
+    data.forEach(function (d, i) {
+      var better = m.lowIsBetter ? d.avg < data[bestIdx].avg : d.avg > data[bestIdx].avg;
+      if (better) bestIdx = i;
+    });
+    data.forEach(function (d, i) {
+      var y = padT + i * rowH + (rowH - 20) / 2;
+      var cy = y + 10;
+      out += '<text x="' + (padL - 8) + '" y="' + (cy + 4) + '" class="ax" text-anchor="end" fill="var(--ink-2)">' + esc(d.mode) + "</text>";
+      out += '<path d="' + rightRoundRect(padL, y, Math.max(2, X(d.avg) - padL), 20, 4) + '" fill="' + modeColor(d.mode) + '"></path>';
+      if (isNum(d.std) && d.std > 0) {
+        var x1 = X(Math.max(0, d.avg - d.std)), x2 = X(d.avg + d.std);
+        out += '<line x1="' + x1.toFixed(1) + '" y1="' + cy + '" x2="' + x2.toFixed(1) + '" y2="' + cy + '" stroke="var(--ink-2)" stroke-width="1.5"></line>';
+        out += '<line x1="' + x1.toFixed(1) + '" y1="' + (cy - 4) + '" x2="' + x1.toFixed(1) + '" y2="' + (cy + 4) + '" stroke="var(--ink-2)" stroke-width="1.5"></line>';
+        out += '<line x1="' + x2.toFixed(1) + '" y1="' + (cy - 4) + '" x2="' + x2.toFixed(1) + '" y2="' + (cy + 4) + '" stroke="var(--ink-2)" stroke-width="1.5"></line>';
+      }
+      var lblX = X(d.avg + (isNum(d.std) ? d.std : 0)) + 8;
+      out += '<text x="' + lblX.toFixed(1) + '" y="' + (cy + 4) + '" class="ax" fill="var(--ink)"' +
+        (i === bestIdx ? ' font-weight="700"' : "") + ">" + fmtMetric(m, d.avg) +
+        (isNum(d.std) ? ' ± ' + (m.isPct ? fmt(d.std * 100, 1) : fmt(d.std, m.digits)) : "") + "</text>";
+      out += '<rect x="' + padL + '" y="' + (padT + i * rowH) + '" width="' + (W - padL - 4) + '" height="' + rowH + '" fill="transparent" data-tip="' +
+        esc(d.mode + '<br>среднее: <span class="tv">' + fmtMetric(m, d.avg) + "</span>" +
+          (isNum(d.std) ? "<br>σ: " + fmtMetric(m, d.std) : "")) + '"></rect>';
+    });
+    svg.innerHTML = out;
+    hookTips(svg);
+  }
+
+  function renderCompareTable() {
+    var rows = (lastCompare && lastCompare.by_mode) || [];
+    if (!rows.length) { $("cmp_tbl").querySelector("tbody").innerHTML = ""; return; }
+    function bestOf(key, low) {
+      var vals = rows.map(function (r) { return r[key]; }).filter(isNum);
+      if (!vals.length) return null;
+      return low ? Math.min.apply(null, vals) : Math.max.apply(null, vals);
+    }
+    var bU = bestOf("avg_total_utility"), bG = bestOf("avg_gini_total_norm", true);
+    var bJ = bestOf("avg_jain_index"), bE = bestOf("avg_egalitarian_welfare");
+    var bO = bestOf("avg_avg_friend_overlaps_per_student"), bT = bestOf("avg_share_top3");
+    function cell(v, best, f) {
+      return "<td" + (isNum(v) && v === best ? ' class="best"' : "") + ">" + f(v) + "</td>";
+    }
+    $("cmp_tbl").querySelector("tbody").innerHTML = sortRows(rows, cmpSort).map(function (r) {
+      return "<tr><td>" + esc(r.improve_mode) + "</td>" +
+        cell(r.avg_total_utility, bU, function (v) { return fmt(v, 1); }) +
+        "<td>" + fmt(r.std_total_utility, 1) + "</td>" +
+        cell(r.avg_gini_total_norm, bG, function (v) { return fmt(v, 3); }) +
+        cell(r.avg_jain_index, bJ, function (v) { return fmt(v, 3); }) +
+        cell(r.avg_egalitarian_welfare, bE, function (v) { return fmt(v, 3); }) +
+        cell(r.avg_avg_friend_overlaps_per_student, bO, function (v) { return fmt(v, 2); }) +
+        cell(r.avg_share_top3, bT, pct) + "</tr>";
+    }).join("");
+  }
+
+  // ---------- history analytics (server-side stats) ----------
+  fillMetricSelect($("stat_metric"), "total_utility");
+  $("stat_metric").addEventListener("change", renderStats);
+
+  function loadStats() {
+    api("/api/history/stats?limit=300").then(function (d) {
+      lastStats = d;
+      renderStats();
+    }).catch(function (e) { showError(e.message); });
+  }
+
+  function renderStats() {
+    var trend = (lastStats && lastStats.trend) || [];
+    if (!trend.length) {
+      $("stats_card").style.display = "none";
+      return;
+    }
+    $("stats_card").style.display = "block";
+    $("stats_meta").textContent = "запусков: " + trend.length;
+    var m = metricByKey($("stat_metric").value);
+    $("trend_title").textContent = "Динамика: " + m.label;
+    $("mode_bars_title").textContent = "Среднее по режимам: " + m.label;
+    renderStatsLegend(trend);
+    renderTrend(trend, m);
+    renderModeBars((lastStats && lastStats.by_mode) || [], m);
+    renderScatter(trend);
+  }
+
+  function renderStatsLegend(trend) {
+    var seen = {};
+    trend.forEach(function (p) { if (p.improve_mode) seen[p.improve_mode] = true; });
+    var modes = MODE_ORDER.filter(function (mode) { return seen[mode]; });
+    Object.keys(seen).forEach(function (mode) {
+      if (MODE_ORDER.indexOf(mode) < 0) modes.push(mode);
+    });
+    $("stats_legend").innerHTML = modes.map(function (mode) {
+      return '<span><span class="sw" style="background:' + modeColor(mode) + '"></span>' + esc(mode) + "</span>";
+    }).join("");
+  }
+
+  function renderTrend(trend, m) {
+    var svg = $("trend_svg");
+    var W = 960, H = 250, padL = 56, padR = 16, padT = 12, padB = 30;
+    var pts = trend.map(function (p) {
+      return { i: p.run_index, id: p.id, mode: p.improve_mode, v: p[m.k] };
+    }).filter(function (p) { return isNum(p.v); });
+    if (!pts.length) { chartEmpty(svg, "для этой метрики нет данных в истории"); return; }
+
+    var plotW = W - padL - padR, plotH = H - padT - padB;
+    var iMin = pts[0].i, iMax = pts[pts.length - 1].i;
+    if (iMax <= iMin) { iMin -= 1; iMax += 1; }
+    var vMin = Infinity, vMax = -Infinity;
+    pts.forEach(function (p) { if (p.v < vMin) vMin = p.v; if (p.v > vMax) vMax = p.v; });
+    if (vMax <= vMin) { vMin -= (Math.abs(vMin) || 1) * 0.05; vMax += (Math.abs(vMax) || 1) * 0.05; }
+    var span = vMax - vMin;
+    vMin -= span * 0.07; vMax += span * 0.07;
+    function X(i) { return padL + (i - iMin) / (iMax - iMin) * plotW; }
+    function Y(v) { return padT + plotH - (v - vMin) / (vMax - vMin) * plotH; }
+
+    var out = "";
+    niceTicks(vMin, vMax, 5).forEach(function (t) {
+      if (t < vMin || t > vMax) return;
+      out += '<line x1="' + padL + '" y1="' + Y(t).toFixed(1) + '" x2="' + (W - padR) + '" y2="' + Y(t).toFixed(1) + '" stroke="var(--hair)" stroke-width="1"></line>';
+      out += '<text x="' + (padL - 7) + '" y="' + (Y(t) + 3.5).toFixed(1) + '" class="ax" text-anchor="end">' + fmtTick(m.isPct ? t * 100 : t) + "</text>";
+    });
+    niceTicks(iMin, iMax, 8).forEach(function (t) {
+      if (t < iMin || t > iMax || t !== Math.round(t)) return;
+      out += '<text x="' + X(t).toFixed(1) + '" y="' + (H - padB + 16) + '" class="ax" text-anchor="middle">' + t + "</text>";
+    });
+    out += '<text x="' + (W - padR) + '" y="' + (H - 2) + '" class="ax-name" text-anchor="end">№ запуска (хронологически)</text>';
+    // thin connecting line carries the sequence; identity lives in the dots + legend
+    var line = "";
+    pts.forEach(function (p, i) { line += (i ? " L" : "M") + X(p.i).toFixed(1) + "," + Y(p.v).toFixed(1); });
+    out += '<path d="' + line + '" fill="none" stroke="var(--muted)" stroke-width="1" opacity="0.35" stroke-linejoin="round"></path>';
+    var r = pts.length > 120 ? 3 : 4.5;
+    pts.forEach(function (p) {
+      out += '<circle cx="' + X(p.i).toFixed(1) + '" cy="' + Y(p.v).toFixed(1) + '" r="' + r +
+        '" fill="' + modeColor(p.mode) + '" stroke="var(--surface)" stroke-width="2"></circle>';
+    });
+    out += '<line id="tr_cross" x1="0" y1="' + padT + '" x2="0" y2="' + (padT + plotH) + '" stroke="var(--muted)" stroke-width="1" style="display:none"></line>';
+    out += '<circle id="tr_dot" r="' + (r + 2) + '" fill="none" stroke="var(--ink)" stroke-width="1.5" style="display:none"></circle>';
+    out += '<rect id="tr_hit" x="' + padL + '" y="' + padT + '" width="' + plotW + '" height="' + plotH + '" fill="transparent"></rect>';
+    svg.innerHTML = out;
+
+    var hit = svg.querySelector("#tr_hit");
+    var cross = svg.querySelector("#tr_cross");
+    var hdot = svg.querySelector("#tr_dot");
+    hit.addEventListener("pointermove", function (evt) {
+      var rect = svg.getBoundingClientRect();
+      var px = (evt.clientX - rect.left) * (W / rect.width);
+      var bestP = null, bestD = Infinity;
+      pts.forEach(function (p) {
+        var d = Math.abs(X(p.i) - px);
+        if (d < bestD) { bestD = d; bestP = p; }
+      });
+      if (!bestP) return;
+      cross.style.display = "block";
+      cross.setAttribute("x1", X(bestP.i).toFixed(1));
+      cross.setAttribute("x2", X(bestP.i).toFixed(1));
+      hdot.style.display = "block";
+      hdot.setAttribute("cx", X(bestP.i).toFixed(1));
+      hdot.setAttribute("cy", Y(bestP.v).toFixed(1));
+      tipShow('запуск №' + bestP.i + " (id " + bestP.id + ")<br>" +
+        '<span class="tk" style="background:' + modeColor(bestP.mode) + '"></span>' + esc(bestP.mode) +
+        '<br><span class="tv">' + fmtMetric(m, bestP.v) + "</span>", evt);
+    });
+    hit.addEventListener("pointerleave", function () {
+      cross.style.display = "none"; hdot.style.display = "none"; tipHide();
+    });
+  }
+
+  function renderModeBars(byMode, m) {
+    var svg = $("mode_svg");
+    var data = byMode.map(function (r) {
+      return { mode: r.improve_mode, v: r["avg_" + m.k], runs: r.runs };
+    }).filter(function (d) { return isNum(d.v); });
+    if (!data.length) { chartEmpty(svg, "нет агрегатов по режимам"); return; }
+    data.sort(function (a, b) {
+      return MODE_ORDER.indexOf(a.mode) - MODE_ORDER.indexOf(b.mode);
+    });
+    var W = 460, rowH = 32, padL = 128, padR = 74, padT = 6, padB = 24;
+    var H = padT + padB + rowH * data.length;
+    svg.setAttribute("viewBox", "0 0 " + W + " " + H);
+    var plotW = W - padL - padR;
+    var maxV = Math.max.apply(null, data.map(function (d) { return d.v; }));
+    if (maxV <= 0) maxV = 1;
+    function X(v) { return padL + clamp(v, 0, maxV) / maxV * plotW; }
+    var out = "";
+    niceTicks(0, maxV, 4).forEach(function (t) {
+      out += '<line x1="' + X(t).toFixed(1) + '" y1="' + padT + '" x2="' + X(t).toFixed(1) + '" y2="' + (H - padB) + '" stroke="var(--hair)" stroke-width="1"></line>';
+      out += '<text x="' + X(t).toFixed(1) + '" y="' + (H - padB + 14) + '" class="ax" text-anchor="middle">' + fmtTick(m.isPct ? t * 100 : t) + "</text>";
+    });
+    data.forEach(function (d, i) {
+      var y = padT + i * rowH + (rowH - 18) / 2;
+      out += '<text x="' + (padL - 7) + '" y="' + (y + 13) + '" class="ax" text-anchor="end" fill="var(--ink-2)">' + esc(d.mode) + "</text>";
+      out += '<path d="' + rightRoundRect(padL, y, Math.max(2, X(d.v) - padL), 18, 4) + '" fill="' + modeColor(d.mode) + '"></path>';
+      out += '<text x="' + (X(d.v) + 7).toFixed(1) + '" y="' + (y + 13) + '" class="ax" fill="var(--ink)">' + fmtMetric(m, d.v) + "</text>";
+      out += '<rect x="0" y="' + (padT + i * rowH) + '" width="' + W + '" height="' + rowH + '" fill="transparent" data-tip="' +
+        esc(d.mode + '<br>среднее: <span class="tv">' + fmtMetric(m, d.v) + "</span><br>запусков: " + d.runs) + '"></rect>';
+    });
+    svg.innerHTML = out;
+    hookTips(svg);
+  }
+
+  function renderScatter(trend) {
+    var svg = $("scatter_svg");
+    var W = 460, H = 240, padL = 46, padR = 14, padT = 12, padB = 32;
+    var pts = trend.map(function (p) {
+      return { id: p.id, i: p.run_index, mode: p.improve_mode, x: p.total_utility, y: p.gini_total_norm };
+    }).filter(function (p) { return isNum(p.x) && isNum(p.y); });
+    if (!pts.length) { chartEmpty(svg, "нет данных"); return; }
+    var plotW = W - padL - padR, plotH = H - padT - padB;
+    var xMin = Infinity, xMax = -Infinity, yMin = Infinity, yMax = -Infinity;
+    pts.forEach(function (p) {
+      if (p.x < xMin) xMin = p.x; if (p.x > xMax) xMax = p.x;
+      if (p.y < yMin) yMin = p.y; if (p.y > yMax) yMax = p.y;
+    });
+    if (xMax <= xMin) { xMin -= 1; xMax += 1; }
+    if (yMax <= yMin) { yMin -= 0.01; yMax += 0.01; }
+    var xs = (xMax - xMin) * 0.08, ys = (yMax - yMin) * 0.1;
+    xMin -= xs; xMax += xs; yMin -= ys; yMax += ys;
+    function X(v) { return padL + (v - xMin) / (xMax - xMin) * plotW; }
+    function Y(v) { return padT + plotH - (v - yMin) / (yMax - yMin) * plotH; }
+    var out = "";
+    niceTicks(yMin, yMax, 4).forEach(function (t) {
+      if (t < yMin || t > yMax) return;
+      out += '<line x1="' + padL + '" y1="' + Y(t).toFixed(1) + '" x2="' + (W - padR) + '" y2="' + Y(t).toFixed(1) + '" stroke="var(--hair)" stroke-width="1"></line>';
+      out += '<text x="' + (padL - 6) + '" y="' + (Y(t) + 3.5).toFixed(1) + '" class="ax" text-anchor="end">' + fmtTick(t) + "</text>";
+    });
+    niceTicks(xMin, xMax, 5).forEach(function (t) {
+      if (t < xMin || t > xMax) return;
+      out += '<text x="' + X(t).toFixed(1) + '" y="' + (H - padB + 15) + '" class="ax" text-anchor="middle">' + fmtTick(t) + "</text>";
+    });
+    out += '<text x="' + (W - padR) + '" y="' + (H - 2) + '" class="ax-name" text-anchor="end">полезность →</text>';
+    out += '<text x="12" y="' + padT + '" class="ax-name" transform="rotate(-90 12 ' + padT + ')" text-anchor="end">Джини ↑</text>';
+    out += '<text x="' + (W - padR - 4) + '" y="' + (padT + plotH - 6) + '" class="note-corner" text-anchor="end">идеал ↘</text>';
+    var r = pts.length > 120 ? 3.2 : 4.5;
+    pts.forEach(function (p) {
+      out += '<circle cx="' + X(p.x).toFixed(1) + '" cy="' + Y(p.y).toFixed(1) + '" r="' + r +
+        '" fill="' + modeColor(p.mode) + '" stroke="var(--surface)" stroke-width="2"></circle>';
+    });
+    out += '<circle id="sc_dot" r="' + (r + 2) + '" fill="none" stroke="var(--ink)" stroke-width="1.5" style="display:none"></circle>';
+    out += '<rect id="sc_hit" x="' + padL + '" y="' + padT + '" width="' + plotW + '" height="' + plotH + '" fill="transparent"></rect>';
+    svg.innerHTML = out;
+
+    var hit = svg.querySelector("#sc_hit");
+    var hdot = svg.querySelector("#sc_dot");
+    hit.addEventListener("pointermove", function (evt) {
+      var rect = svg.getBoundingClientRect();
+      var px = (evt.clientX - rect.left) * (W / rect.width);
+      var py = (evt.clientY - rect.top) * (H / rect.height);
+      var bestP = null, bestD = Infinity;
+      pts.forEach(function (p) {
+        var dx = X(p.x) - px, dy = Y(p.y) - py;
+        var d = dx * dx + dy * dy;
+        if (d < bestD) { bestD = d; bestP = p; }
+      });
+      if (!bestP || bestD > 26 * 26) { hdot.style.display = "none"; tipHide(); return; }
+      hdot.style.display = "block";
+      hdot.setAttribute("cx", X(bestP.x).toFixed(1));
+      hdot.setAttribute("cy", Y(bestP.y).toFixed(1));
+      tipShow('запуск №' + bestP.i + " (id " + bestP.id + ")<br>" +
+        '<span class="tk" style="background:' + modeColor(bestP.mode) + '"></span>' + esc(bestP.mode) +
+        '<br>полезность: <span class="tv">' + fmt(bestP.x, 1) + "</span>" +
+        '<br>Джини: <span class="tv">' + fmt(bestP.y, 3) + "</span>", evt);
+    });
+    hit.addEventListener("pointerleave", function () { hdot.style.display = "none"; tipHide(); });
+  }
+
+  // ---------- fill / alloc / metrics ----------
   function renderFill() {
     var alloc = lastRun.data.alloc, cap = lastRun.cfg.cap_default;
     var counts = {};
@@ -1218,13 +1952,26 @@
   }
   $("q_student").addEventListener("input", function () { renderAlloc(this.value.trim()); });
 
+  var metricsSort = { k: null, dir: -1 };
+  makeSortable("metrics_tbl", metricsSort, renderMetrics);
+  $("q_metric").addEventListener("input", renderMetrics);
+
   function renderMetrics() {
+    if (!lastRun) return;
     var m = lastRun.data.metrics, mx = lastRun.data.maxima;
-    $("metrics_tbl").querySelector("tbody").innerHTML = Object.keys(m).map(function (k) {
-      return "<tr><td class=\"mono\" style=\"text-align:left\">" + k + "</td><td>" + fmt(m[k], 4) +
-        "</td><td>" + (mx && k in mx ? fmt(mx[k], 4) : "—") + "</td></tr>";
+    var q = $("q_metric").value.trim().toLowerCase();
+    var rows = Object.keys(m).map(function (k) {
+      return { name: k, value: m[k], max: mx && k in mx ? mx[k] : null };
+    });
+    if (q) rows = rows.filter(function (r) { return r.name.toLowerCase().indexOf(q) >= 0; });
+    $("metrics_tbl").querySelector("tbody").innerHTML = sortRows(rows, metricsSort).map(function (r) {
+      return "<tr><td class=\"mono\" style=\"text-align:left\">" + esc(r.name) + "</td><td>" + fmt(r.value, 4) +
+        "</td><td>" + (r.max === null ? "—" : fmt(r.max, 4)) + "</td></tr>";
     }).join("");
   }
+
+  // history analytics render on page load (server keeps runs between sessions)
+  loadStats();
 })();
 </script>
 </body>
