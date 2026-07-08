@@ -36,6 +36,7 @@ metrics_extended.csv
 # Docs (keep README in repo root)
 *.md
 !README.md
+!IMPLEMENTATION_DECISIONS_AND_OPEN_QUESTIONS_RU.md
 
 # Data tables (exclude both cases)
 tables/

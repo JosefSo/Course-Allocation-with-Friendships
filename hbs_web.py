@@ -256,7 +256,7 @@ def _api_run_start(params: dict) -> dict:
     with _JOBS_LOCK:
         _JOBS[job_id] = {
             "done": False, "error": None, "result": None,
-            "stage": "старт", "iter": 0, "total": total_iters, "events": [],
+            "stage": "starting", "iter": 0, "total": total_iters, "events": [],
         }
     threading.Thread(target=_run_job, args=(job_id, params), daemon=True).start()
     return {"job": job_id, "total": total_iters}

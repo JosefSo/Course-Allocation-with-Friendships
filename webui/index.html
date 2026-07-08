@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>HBS Social — панель экспериментов</title>
+<title>HBS Social — Experiment Dashboard</title>
 <style>
   :root {
     --paper: #f9f9f7;
@@ -224,7 +224,7 @@
 
 <header class="top">
   <h1>HBS Social</h1>
-  <span class="sub">панель экспериментов · снейк-драфт с дружескими предпочтениями</span>
+  <span class="sub">experiment dashboard · snake draft with friendship preferences</span>
 </header>
 
 <div class="layout">
@@ -232,72 +232,72 @@
   <!-- ================= CONFIG ================= -->
   <aside>
     <div class="card">
-      <h2>Данные</h2>
+      <h2>Data</h2>
       <div class="field">
-        <label for="csv_a">Таблица 1 — предпочтения по курсам</label>
+        <label for="csv_a">Table 1 — course preferences</label>
         <select id="csv_a"></select>
       </div>
       <div class="field">
-        <label for="csv_b">Таблица 2 — дружеские предпочтения</label>
+        <label for="csv_b">Table 2 — friendship preferences</label>
         <select id="csv_b"></select>
       </div>
       <div class="field">
-        <label for="csv_lambda">Таблица 3 — λ по студентам (необязательно)</label>
-        <select id="csv_lambda"><option value="">— не использовать (λ = 0.3) —</option></select>
+        <label for="csv_lambda">Table 3 — per-student λ (optional)</label>
+        <select id="csv_lambda"><option value="">— do not use (λ = 0.3) —</option></select>
       </div>
 
       <details>
-        <summary>Сгенерировать новые данные</summary>
+        <summary>Generate new data</summary>
         <div class="grid3" style="margin-top:10px">
-          <div class="field"><label for="g_students">Студенты</label><input id="g_students" type="number" value="200" min="2"></div>
-          <div class="field"><label for="g_courses">Курсы</label><input id="g_courses" type="number" value="8" min="2"></div>
+          <div class="field"><label for="g_students">Students</label><input id="g_students" type="number" value="200" min="2"></div>
+          <div class="field"><label for="g_courses">Courses</label><input id="g_courses" type="number" value="8" min="2"></div>
           <div class="field"><label for="g_seed">Seed</label><input id="g_seed" type="number" value="11"></div>
         </div>
         <div class="grid2">
           <div class="field">
-            <label for="g_pop">Популярность (0–1)</label>
+            <label for="g_pop">Popularity (0–1)</label>
             <input id="g_pop" type="number" value="0.7" min="0" max="1" step="0.1">
           </div>
-          <div class="field"><label for="g_lambda">λ по умолчанию</label><input id="g_lambda" type="number" value="0.3" min="0" max="1" step="0.05"></div>
+          <div class="field"><label for="g_lambda">Default λ</label><input id="g_lambda" type="number" value="0.3" min="0" max="1" step="0.05"></div>
         </div>
-        <p class="hint">Популярность &gt; 0 создаёт конкуренцию за одни и те же курсы — на таких данных методы различимы.</p>
-        <button id="btn_generate" style="width:100%">Сгенерировать в tables/</button>
+        <p class="hint">Popularity &gt; 0 creates competition for the same courses, making the methods easier to distinguish.</p>
+        <button id="btn_generate" style="width:100%">Generate in tables/</button>
       </details>
     </div>
 
     <div class="card">
-      <h2>Параметры запуска</h2>
+      <h2>Run Parameters</h2>
       <div class="grid3">
-        <div class="field"><label for="p_cap">Мест на курс</label><input id="p_cap" type="number" value="75" min="1"></div>
-        <div class="field"><label for="p_b">Курсов на студента</label><input id="p_b" type="number" value="3" min="1"></div>
+        <div class="field"><label for="p_cap">Seats per course</label><input id="p_cap" type="number" value="75" min="1"></div>
+        <div class="field"><label for="p_b">Courses per student</label><input id="p_b" type="number" value="3" min="1"></div>
         <div class="field"><label for="p_seed">Seed</label><input id="p_seed" type="number" value="11"></div>
       </div>
-      <div class="field"><label for="p_rounds">Раундов draft (пусто = b)</label><input id="p_rounds" type="number" min="0" placeholder="по умолчанию = b"></div>
+      <div class="field"><label for="p_rounds">Draft rounds (blank = b)</label><input id="p_rounds" type="number" min="0" placeholder="default = b"></div>
       <div class="field">
-        <label for="p_initial">Начальный механизм</label>
+        <label for="p_initial">Initial mechanism</label>
         <select id="p_initial">
-          <option value="sequential">sequential — драфт по очереди</option>
-          <option value="simultaneous-priority">simultaneous-priority — заявки одновременно, конфликт решает приоритет</option>
+          <option value="sequential">sequential — students draft in order</option>
+          <option value="simultaneous-priority">simultaneous-priority — simultaneous requests, conflicts resolved by priority</option>
         </select>
       </div>
       <div class="field">
-        <label for="p_sequence">Picking sequence — порядок выбора</label>
+        <label for="p_sequence">Picking sequence</label>
         <select id="p_sequence">
-          <option value="snake">snake — балансная альтернация (1→n, n→1, …)</option>
-          <option value="round-robin">round-robin — 1→n каждый раунд</option>
-          <option value="n-first">n-first — лучшая MMS-гарантия (AAMAS 2026)</option>
+          <option value="snake">snake — balanced alternation (1→n, n→1, …)</option>
+          <option value="round-robin">round-robin — 1→n every round</option>
+          <option value="n-first">n-first — stronger MMS guarantee (AAMAS 2026)</option>
         </select>
       </div>
       <div class="field">
-        <label for="p_pick">Правило выбора на пике</label>
+        <label for="p_pick">Pick rule</label>
         <select id="p_pick">
-          <option value="personal">personal — своя полезность</option>
-          <option value="social">social — вклад в общее welfare (учитывает друзей)</option>
+          <option value="personal">personal — own utility</option>
+          <option value="social">social — contribution to total welfare (includes friends)</option>
         </select>
       </div>
       <div class="grid2">
         <div class="field">
-          <label for="p_improve">Постобработка</label>
+          <label for="p_improve">Post-processing</label>
           <select id="p_improve">
             <option value="swap-global">swap · global</option>
             <option value="swap-personal">swap · personal</option>
@@ -307,47 +307,47 @@
             <option value="hybrid-personal">hybrid · personal</option>
           </select>
         </div>
-        <div class="field"><label for="p_iters">Итераций постфазы</label><input id="p_iters" type="number" value="40" min="0"></div>
+        <div class="field"><label for="p_iters">Post-processing iterations</label><input id="p_iters" type="number" value="40" min="0"></div>
       </div>
-      <div id="swap_warn" class="warn">swap/hybrid с 30+ итерациями на 200 студентах считается ~30–60 секунд — страница дождётся результата.</div>
-      <button id="btn_run" class="primary" style="margin-top:14px">Запустить аллокацию</button>
+      <div id="swap_warn" class="warn">swap/hybrid with 30+ iterations for 200 students takes about 30–60 seconds; the page will wait for the result.</div>
+      <button id="btn_run" class="primary" style="margin-top:14px">Run allocation</button>
       <div class="grid2" style="margin-top:10px">
-        <div class="field"><label for="p_batch">Seeds в batch</label><input id="p_batch" type="number" value="10" min="1" max="200"></div>
-        <button id="btn_compare" type="button">Сравнить 6 режимов</button>
+        <div class="field"><label for="p_batch">Seeds per batch</label><input id="p_batch" type="number" value="10" min="1" max="200"></div>
+        <button id="btn_compare" type="button">Compare 6 modes</button>
       </div>
     </div>
   </aside>
 
   <!-- ================= RESULTS ================= -->
   <main>
-    <div id="err" class="banner-error"><b>Ошибка.</b> <span id="err_text"></span></div>
+    <div id="err" class="banner-error"><b>Error.</b> <span id="err_text"></span></div>
 
     <div id="running" class="card run-live">
       <div class="section-head">
-        <h2>Идёт распределение</h2>
+        <h2>Allocation in progress</h2>
         <div class="tools">
-          <span class="mono" id="run_clock" style="color:var(--muted)">0 с</span>
-          <button class="ghost" id="btn_skip" type="button">пропустить анимацию ⏭</button>
+          <span class="mono" id="run_clock" style="color:var(--muted)">0 s</span>
+          <button class="ghost" id="btn_skip" type="button">skip animation ⏭</button>
         </div>
       </div>
-      <div class="stage-note" id="stage_note">подключаюсь…</div>
+      <div class="stage-note" id="stage_note">connecting…</div>
       <div class="board-wrap">
         <svg id="viz_board" viewBox="0 0 960 276" role="img"
-             aria-label="Живая визуализация распределения: очередь студентов, по которой ползёт указатель хода, и аудитории курсов, заполняющиеся точками; на постобработке точки перелетают между аудиториями при обменах и add-drop"></svg>
+             aria-label="Live allocation visualization: a student queue with a moving turn pointer and course rooms filling with dots; during post-processing, dots move between rooms during swaps and add-drop operations"></svg>
       </div>
       <div class="sparks">
         <div class="spark-card">
-          <div class="spark-top"><span class="spark-k">общее благо</span><span class="spark-v mono" id="spark_w_v">—</span></div>
+          <div class="spark-top"><span class="spark-k">total welfare</span><span class="spark-v mono" id="spark_w_v">—</span></div>
           <svg id="spark_w" viewBox="0 0 300 56" preserveAspectRatio="none" aria-hidden="true"></svg>
         </div>
         <div class="spark-card">
-          <div class="spark-top"><span class="spark-k">худший студент</span><span class="spark-v mono" id="spark_min_v">—</span></div>
+          <div class="spark-top"><span class="spark-k">worst-off student</span><span class="spark-v mono" id="spark_min_v">—</span></div>
           <svg id="spark_min" viewBox="0 0 300 56" preserveAspectRatio="none" aria-hidden="true"></svg>
         </div>
       </div>
       <div class="progress-track"><div class="progress-fill" id="prog_fill"></div></div>
       <div class="run-meta">
-        <span class="stage" id="run_stage">старт…</span>
+        <span class="stage" id="run_stage">starting…</span>
         <span id="run_iter"></span>
       </div>
       <div class="feed" id="feed"></div>
@@ -355,98 +355,98 @@
 
     <div id="empty" class="empty">
       <div class="big">◫◫◫</div>
-      Выбери данные слева (или сгенерируй новые) и нажми «Запустить аллокацию».<br>
-      Каждый запуск добавляется в таблицу сравнения — так удобно сопоставлять методы.
+      Select data on the left (or generate new data), then click “Run allocation.”<br>
+      Each run is added to the comparison table, making it easy to compare methods.
     </div>
 
     <div id="results" style="display:none">
       <div class="tiles" id="tiles"></div>
 
       <div class="card" id="dist_card" style="display:none">
-        <h2>Распределение полезности по студентам (последний запуск)</h2>
+        <h2>Student Utility Distribution (Latest Run)</h2>
         <div class="chart-cols">
           <div>
-            <h3 class="mini-h">Гистограмма итоговой полезности</h3>
+            <h3 class="mini-h">Total utility histogram</h3>
             <svg id="hist_svg" class="chart-svg" viewBox="0 0 460 230" role="img"
-                 aria-label="Гистограмма распределения итоговой полезности по студентам"></svg>
+                 aria-label="Histogram of total utility across students"></svg>
           </div>
           <div>
-            <h3 class="mini-h">Кривая Лоренца — концентрация полезности</h3>
+            <h3 class="mini-h">Lorenz curve — utility concentration</h3>
             <svg id="lorenz_svg" class="chart-svg" viewBox="0 0 460 230" role="img"
-                 aria-label="Кривая Лоренца: накопленная доля полезности против доли студентов"></svg>
+                 aria-label="Lorenz curve: cumulative share of utility versus share of students"></svg>
           </div>
         </div>
-        <p class="hint">Чем ближе кривая Лоренца к диагонали, тем равномернее распределена полезность (Джини → 0). Значения по студентам — в таблице «Аллокация» ниже.</p>
+        <p class="hint">The closer the Lorenz curve is to the diagonal, the more evenly utility is distributed (Gini → 0). Per-student values appear in the Allocation table below.</p>
       </div>
 
       <div class="card" id="cmp_card" style="display:none">
         <div class="section-head">
-          <h2>Сравнение 6 режимов постобработки</h2>
+          <h2>Comparison of 6 Post-processing Modes</h2>
           <div class="tools">
-            <label for="cmp_metric" class="hint" style="margin:0">метрика:</label>
+            <label for="cmp_metric" class="hint" style="margin:0">metric:</label>
             <select id="cmp_metric"></select>
             <span class="hint" id="cmp_meta"></span>
           </div>
         </div>
         <svg id="cmp_svg" class="chart-svg" viewBox="0 0 960 240" role="img"
-             aria-label="Средние значения выбранной метрики по режимам постобработки с разбросом ±σ"></svg>
+             aria-label="Mean selected metric by post-processing mode with ±σ variation"></svg>
         <div class="tbl-wrap" style="margin-top:12px">
           <table id="cmp_tbl">
             <thead><tr>
-              <th class="sortable" data-k="improve_mode">режим</th>
-              <th class="sortable" data-k="avg_total_utility">полезность avg</th>
+              <th class="sortable" data-k="improve_mode">mode</th>
+              <th class="sortable" data-k="avg_total_utility">avg utility</th>
               <th class="sortable" data-k="std_total_utility">±σ</th>
-              <th class="sortable" data-k="avg_gini_total_norm">Джини avg</th>
-              <th class="sortable" data-k="avg_jain_index">Джейн avg</th>
-              <th class="sortable" data-k="avg_egalitarian_welfare">худший avg</th>
-              <th class="sortable" data-k="avg_avg_friend_overlaps_per_student">пересеч. avg</th>
-              <th class="sortable" data-k="avg_share_top3">топ-3 avg</th>
+              <th class="sortable" data-k="avg_gini_total_norm">avg Gini</th>
+              <th class="sortable" data-k="avg_jain_index">avg Jain</th>
+              <th class="sortable" data-k="avg_egalitarian_welfare">avg worst-off</th>
+              <th class="sortable" data-k="avg_avg_friend_overlaps_per_student">avg overlaps</th>
+              <th class="sortable" data-k="avg_share_top3">avg top-3</th>
             </tr></thead>
             <tbody></tbody>
           </table>
         </div>
-        <p class="hint" style="margin-top:8px">Каждый режим прогнан на одинаковом наборе seeds; ус — ±1 стандартное отклонение. Лучшие значения выделены.</p>
+        <p class="hint" style="margin-top:8px">Each mode uses the same set of seeds; whiskers show ±1 standard deviation. Best values are highlighted.</p>
       </div>
 
       <div class="card">
         <div class="section-head">
-          <h2>Сравнение запусков</h2>
-          <button class="ghost" id="btn_clear">очистить историю</button>
+          <h2>Run Comparison</h2>
+          <button class="ghost" id="btn_clear">clear history</button>
         </div>
         <div class="tbl-wrap">
           <table id="history">
             <thead><tr>
               <th class="sortable" data-k="n">#</th>
-              <th class="sortable" data-k="label">метод</th>
-              <th class="sortable" data-k="total">полезность</th>
-              <th class="sortable" data-k="share">% от лучшего</th>
-              <th class="sortable" data-k="egal">худший студент</th>
-              <th class="sortable" data-k="gini">Джини</th>
-              <th class="sortable" data-k="jain">Джейн</th>
-              <th class="sortable" data-k="ef1">EF1-наруш.</th>
-              <th class="sortable" data-k="overlaps">пересеч. с друзьями</th>
-              <th class="sortable" data-k="time">время</th>
+              <th class="sortable" data-k="label">method</th>
+              <th class="sortable" data-k="total">utility</th>
+              <th class="sortable" data-k="share">% of best</th>
+              <th class="sortable" data-k="egal">worst-off student</th>
+              <th class="sortable" data-k="gini">Gini</th>
+              <th class="sortable" data-k="jain">Jain</th>
+              <th class="sortable" data-k="ef1">EF1 violations</th>
+              <th class="sortable" data-k="overlaps">friend overlaps</th>
+              <th class="sortable" data-k="time">time</th>
             </tr></thead>
             <tbody></tbody>
           </table>
         </div>
-        <p class="hint" style="margin-top:8px">Клик по заголовку сортирует. «% от лучшего» — доля от максимальной суммарной полезности среди запусков в этой таблице. Точный оптимум считается отдельно: <code>experiments/ilp_benchmark.py</code>.</p>
+        <p class="hint" style="margin-top:8px">Click a column header to sort. “% of best” is the share of the highest total utility among runs in this table. The exact optimum is calculated separately by <code>experiments/ilp_benchmark.py</code>.</p>
       </div>
 
       <div id="run_cards" style="display:none">
       <div class="card">
-        <h2>Заполняемость курсов (последний запуск)</h2>
+        <h2>Course Occupancy (Latest Run)</h2>
         <div id="fill_bars"></div>
       </div>
 
       <div class="card">
-        <h2>Аллокация (последний запуск)</h2>
+        <h2>Allocation (Latest Run)</h2>
         <div class="search">
-          <input id="q_student" type="search" placeholder="Поиск по StudentID, например S17">
+          <input id="q_student" type="search" placeholder="Search by StudentID, e.g. S17">
         </div>
         <div class="tbl-wrap" style="max-height:320px;overflow-y:auto">
           <table id="alloc_tbl">
-            <thead><tr><th>Студент</th><th style="text-align:left">Курсы</th></tr></thead>
+            <thead><tr><th>Student</th><th style="text-align:left">Courses</th></tr></thead>
             <tbody></tbody>
           </table>
         </div>
@@ -454,16 +454,16 @@
 
       <div class="card">
         <details>
-          <summary>Все метрики последнего запуска</summary>
+          <summary>All Metrics from the Latest Run</summary>
           <div class="search" style="margin-top:10px">
-            <input id="q_metric" type="search" placeholder="Фильтр по имени метрики, например gini">
+            <input id="q_metric" type="search" placeholder="Filter by metric name, e.g. gini">
           </div>
           <div class="tbl-wrap">
             <table id="metrics_tbl">
               <thead><tr>
-                <th class="sortable" data-k="name">метрика</th>
-                <th class="sortable" data-k="value">значение</th>
-                <th class="sortable" data-k="max">максимум шкалы</th>
+                <th class="sortable" data-k="name">metric</th>
+                <th class="sortable" data-k="value">value</th>
+                <th class="sortable" data-k="max">scale maximum</th>
               </tr></thead>
               <tbody></tbody>
             </table>
@@ -475,30 +475,30 @@
 
     <div class="card" id="stats_card" style="display:none">
       <div class="section-head">
-        <h2>Аналитика по истории запусков</h2>
+        <h2>Run History Analytics</h2>
         <div class="tools">
-          <label for="stat_metric" class="hint" style="margin:0">метрика:</label>
+          <label for="stat_metric" class="hint" style="margin:0">metric:</label>
           <select id="stat_metric"></select>
           <span class="hint" id="stats_meta"></span>
         </div>
       </div>
       <div class="legend" id="stats_legend"></div>
-      <h3 class="mini-h" id="trend_title">Динамика по запускам</h3>
+      <h3 class="mini-h" id="trend_title">Trend across runs</h3>
       <svg id="trend_svg" class="chart-svg" viewBox="0 0 960 250" role="img"
-           aria-label="Значение выбранной метрики по всем сохранённым запускам, цвет точки — режим постобработки"></svg>
+           aria-label="Selected metric across all saved runs; point color indicates post-processing mode"></svg>
       <div class="chart-cols" style="margin-top:18px">
         <div>
-          <h3 class="mini-h" id="mode_bars_title">Среднее по режимам</h3>
+          <h3 class="mini-h" id="mode_bars_title">Average by mode</h3>
           <svg id="mode_svg" class="chart-svg" viewBox="0 0 460 240" role="img"
-               aria-label="Среднее значение выбранной метрики по режимам постобработки"></svg>
+               aria-label="Mean selected metric by post-processing mode"></svg>
         </div>
         <div>
-          <h3 class="mini-h">Компромисс: благо ↔ справедливость</h3>
+          <h3 class="mini-h">Trade-off: welfare ↔ fairness</h3>
           <svg id="scatter_svg" class="chart-svg" viewBox="0 0 460 240" role="img"
-               aria-label="Диаграмма рассеяния: суммарная полезность против индекса Джини, каждая точка — один запуск"></svg>
+               aria-label="Scatter plot: total utility versus Gini index, with one point per run"></svg>
         </div>
       </div>
-      <p class="hint" style="margin-top:8px">Все сохранённые запуски (включая batch-прогоны «Сравнить 6 режимов»). На диаграмме компромисса идеал — правый нижний угол: максимум блага при минимуме неравенства.</p>
+      <p class="hint" style="margin-top:8px">All saved runs, including batch runs from “Compare 6 modes.” On the trade-off chart, the ideal is the bottom-right corner: maximum welfare with minimum inequality.</p>
     </div>
   </main>
 </div>
@@ -518,7 +518,7 @@
   // ---------- helpers ----------
   function fmt(x, digits) {
     if (x === null || x === undefined || (typeof x === "number" && !isFinite(x))) return "—";
-    return Number(x).toLocaleString("ru-RU", { minimumFractionDigits: digits, maximumFractionDigits: digits });
+    return Number(x).toLocaleString("en-US", { minimumFractionDigits: digits, maximumFractionDigits: digits });
   }
   function pct(x) {
     if (x === null || x === undefined || (typeof x === "number" && !isFinite(x))) return "—";
@@ -586,19 +586,19 @@
 
   // ---------- metric catalogue for history/compare charts ----------
   var METRICS = [
-    { k: "total_utility", label: "суммарная полезность", digits: 1 },
-    { k: "total_utility_norm", label: "доля от максимума", digits: 3 },
-    { k: "egalitarian_welfare", label: "худший студент", digits: 3 },
-    { k: "gini_total_norm", label: "Джини (общий) — меньше лучше", digits: 3, lowIsBetter: true },
-    { k: "gini_base_norm", label: "Джини (базовый) — меньше лучше", digits: 3, lowIsBetter: true },
-    { k: "jain_index", label: "индекс Джейна", digits: 3 },
-    { k: "nash_welfare_geomean", label: "Нэш-благосостояние (геом. среднее)", digits: 2 },
-    { k: "avg_friend_overlaps_per_student", label: "пересечения с друзьями / студ.", digits: 2 },
-    { k: "share_students_with_any_friend_overlap", label: "доля студентов с пересечением", digits: 1, isPct: true },
-    { k: "avg_position", label: "средняя позиция курса — меньше лучше", digits: 2, lowIsBetter: true },
-    { k: "share_top1", label: "доля топ-1 выборов", digits: 1, isPct: true },
-    { k: "share_top3", label: "доля топ-3 выборов", digits: 1, isPct: true },
-    { k: "ef1_violation_pair_share_substitution_combined", label: "EF1-нарушения (пары) — меньше лучше", digits: 1, isPct: true, lowIsBetter: true }
+    { k: "total_utility", label: "total utility", digits: 1 },
+    { k: "total_utility_norm", label: "share of maximum", digits: 3 },
+    { k: "egalitarian_welfare", label: "worst-off student", digits: 3 },
+    { k: "gini_total_norm", label: "Gini (total) — lower is better", digits: 3, lowIsBetter: true },
+    { k: "gini_base_norm", label: "Gini (base) — lower is better", digits: 3, lowIsBetter: true },
+    { k: "jain_index", label: "Jain index", digits: 3 },
+    { k: "nash_welfare_geomean", label: "Nash welfare (geometric mean)", digits: 2 },
+    { k: "avg_friend_overlaps_per_student", label: "friend overlaps per student", digits: 2 },
+    { k: "share_students_with_any_friend_overlap", label: "students with any friend overlap", digits: 1, isPct: true },
+    { k: "avg_position", label: "average course position — lower is better", digits: 2, lowIsBetter: true },
+    { k: "share_top1", label: "share of top-1 choices", digits: 1, isPct: true },
+    { k: "share_top3", label: "share of top-3 choices", digits: 1, isPct: true },
+    { k: "ef1_violation_pair_share_substitution_combined", label: "EF1 violations (pairs) — lower is better", digits: 1, isPct: true, lowIsBetter: true }
   ];
   function metricByKey(k) {
     for (var i = 0; i < METRICS.length; i++) if (METRICS[i].k === k) return METRICS[i];
@@ -626,7 +626,7 @@
     return ticks;
   }
   function fmtTick(v) {
-    if (Math.abs(v) >= 1000) return Number(v.toFixed(0)).toLocaleString("ru-RU");
+    if (Math.abs(v) >= 1000) return Number(v.toFixed(0)).toLocaleString("en-US");
     if (Math.abs(v) >= 10 || v === Math.round(v)) return String(Math.round(v * 10) / 10);
     return String(Math.round(v * 1000) / 1000);
   }
@@ -697,14 +697,14 @@
       csv_b: tables.filter(function (n) { return /^(t2|table2)(_|\b)/i.test(n); }),
       csv_lambda: tables.filter(function (n) { return /^(t3|table3)(_|\b)/i.test(n) || /lambda/i.test(n); })
     };
-    [["csv_a", "Таблица 1"], ["csv_b", "Таблица 2"], ["csv_lambda", "Таблица 3"]].forEach(function (pair) {
+    [["csv_a", "Table 1"], ["csv_b", "Table 2"], ["csv_lambda", "Table 3"]].forEach(function (pair) {
       var sel = $(pair[0]);
       var prev = keep ? sel.value : null;
       var opts = [];
       var candidates = groups[pair[0]];
-      if (pair[0] === "csv_lambda") opts.push('<option value="">— не использовать (λ = 0.5) —</option>');
+      if (pair[0] === "csv_lambda") opts.push('<option value="">— do not use (λ = 0.5) —</option>');
       if (!candidates.length && pair[0] !== "csv_lambda") {
-        opts.push('<option value="">— нет файлов: ' + esc(pair[1]) + ' —</option>');
+        opts.push('<option value="">— no files for ' + esc(pair[1]) + ' —</option>');
       }
       candidates.forEach(function (name) {
         opts.push('<option value="' + esc(name) + '">' + esc(name) + "</option>");
@@ -718,7 +718,7 @@
 
   api("/api/tables").then(function (d) {
     if (!d.tables.length) {
-      showError("В папке tables/ нет CSV — раскрой «Сгенерировать новые данные» слева и создай их.");
+      showError("No CSV files were found in tables/. Open “Generate new data” on the left to create them.");
     }
     fillTableSelects(d.tables, false);
   }).catch(function (e) { showError(e.message); });
@@ -744,7 +744,7 @@
   // ---------- generate ----------
   $("btn_generate").addEventListener("click", function () {
     clearError();
-    var btn = this; btn.disabled = true; btn.textContent = "Генерирую…";
+    var btn = this; btn.disabled = true; btn.textContent = "Generating…";
     api("/api/generate", {
       students: +$("g_students").value, courses: +$("g_courses").value,
       seed: +$("g_seed").value, popularity_strength: +$("g_pop").value,
@@ -753,7 +753,7 @@
       fillTableSelects(d.tables, false);
       $("csv_a").value = d.csv_a; $("csv_b").value = d.csv_b; $("csv_lambda").value = d.csv_lambda;
     }).catch(function (e) { showError(e.message); })
-      .finally(function () { btn.disabled = false; btn.textContent = "Сгенерировать в tables/"; });
+      .finally(function () { btn.disabled = false; btn.textContent = "Generate in tables/"; });
   });
 
   // ---------- run warning ----------
@@ -766,20 +766,20 @@
   swapWarn();
 
   /* =====================================================================
-     Живая визуализация процесса.
+     Live process visualization.
 
-     Сервер шлёт структурированные события (viz):
-       init  — очередь студентов (в порядке жеребьёвки), курсы, вместимость;
-       round — начало раунда драфта;
-       pick  — студент s взял курс c (точка летит из очереди в аудиторию);
-       swap  — обмен курсами между двумя студентами (дуги между аудиториями);
-       ad    — add-drop: студент бросил/взял курсы;
-       pass  — итерация постфазы с изменениями; noop — без изменений.
+     The server sends structured events (viz):
+       init  — student queue (draw order), courses, capacity;
+       round — start of a draft round;
+       pick  — student s selected course c (dot flies from queue to room);
+       swap  — course exchange between two students (arcs between rooms);
+       ad    — add-drop: a student dropped/added courses;
+       pass  — post-processing iteration with changes; noop — no changes.
 
-     События проигрываются с комфортной скоростью независимо от того, как
-     быстро идёт расчёт: очередь событий воспроизводится плеером, скорость
-     адаптируется к размеру бэклога. Поэтому анимация видна и на маленьких
-     таблицах, где сам расчёт занимает доли секунды.
+     Events play at a comfortable speed regardless of computation speed: the
+     event queue is replayed by a player whose speed adapts to the backlog.
+     This keeps the animation visible even for small tables where computation
+     itself takes a fraction of a second.
      ===================================================================== */
   var VIZ = (function () {
     var svgNS = "http://www.w3.org/2000/svg";
@@ -787,40 +787,40 @@
     var reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
     var W = 960, H = 276;
-    var STRIP_Y = 32;          // центр линии очереди
+    var STRIP_Y = 32;          // center of the queue line
     var ROOM_Y = 96, ROOM_H = 154;
 
     var STAGE_META = {
       draft: {
-        label: "Драфт — студенты выбирают курсы",
+        label: "Draft — students select courses",
         note: function (cfg) {
           var seq = {
-            "snake": "змейка (1→n, затем n→1 — указатель ползёт туда-обратно)",
-            "round-robin": "round-robin (каждый раунд 1→n)",
-            "n-first": "n-first (раунд 1: 1→n, дальше всегда n→1)"
+            "snake": "snake (1→n, then n→1 — the pointer moves back and forth)",
+            "round-robin": "round-robin (1→n every round)",
+            "n-first": "n-first (round 1: 1→n, then always n→1)"
           }[cfg.sequence] || cfg.sequence;
           var rule = cfg.pick_rule === "social"
-            ? "с учётом пользы для друзей (social)"
-            : "по личной полезности (personal)";
-          return "Очередь по жеребьёвке, порядок — " + seq + ". На своём ходе студент берёт лучший доступный курс " + rule + ".";
+            ? "while accounting for friends' utility (social)"
+            : "by personal utility (personal)";
+          return "Students are ordered by the draw; the sequence is " + seq + ". On each turn, the student takes the best available course " + rule + ".";
         }
       },
       swap: {
-        label: "Swap — взаимовыгодные обмены",
+        label: "Swap — mutually beneficial exchanges",
         note: function () {
-          return "Локальный поиск: на каждой итерации применяется лучший обмен курсами между парой студентов, если он повышает общее благо. Δ — прирост welfare, точки перелетают между аудиториями.";
+          return "Local search: each iteration applies the best course exchange between two students if it increases total welfare. Δ is the welfare gain; dots move between course rooms.";
         }
       },
       "add-drop": {
-        label: "Add-drop — пересбор по свободным местам",
+        label: "Add-drop — rebuild using available seats",
         note: function () {
-          return "Каждый студент заново собирает корзину из своих курсов и курсов со свободными местами — точки перелетают туда, где освободились места.";
+          return "Each student rebuilds their bundle from their current courses and courses with available seats; dots move to newly available places.";
         }
       },
       hybrid: {
-        label: "Hybrid — add-drop + обмены",
+        label: "Hybrid — add-drop + swaps",
         note: function () {
-          return "Каждая итерация: сначала add-drop по свободным местам; если изменений не было — лучший взаимовыгодный обмен (Δ — прирост welfare).";
+          return "Each iteration first performs add-drop using available seats. If nothing changes, it applies the best mutually beneficial swap (Δ is the welfare gain).";
         }
       }
     };
@@ -850,7 +850,7 @@
       };
     }
 
-    // ---- сборка доски ----
+    // ---- board construction ----
     function buildBoard(v) {
       svg.innerHTML = "";
       st.courses = v.courses || [];
@@ -868,9 +868,9 @@
     function buildStrip() {
       var n = st.order.length;
       el("text", { x: 20, y: 12, "class": "viz-cap" }).textContent =
-        "очередь студентов (" + n + ")";
+        "student queue (" + n + ")";
       st.roundLbl = el("text", { x: W - 20, y: 12, "class": "viz-cap", "text-anchor": "end" });
-      st.roundLbl.textContent = "раунд 1/" + st.rounds;
+      st.roundLbl.textContent = "round 1/" + st.rounds;
       st.tickX = []; st.ticks = [];
       var x0 = 20, x1 = W - 20;
       var tw = clamp((x1 - x0) / Math.max(1, n) * 0.62, 1.4, 9);
@@ -882,7 +882,7 @@
           fill: "var(--bar-track)"
         }));
       }
-      // хвост-комета указателя: змейка ползёт по очереди по реальному порядку ходов
+      // pointer comet tail: snake moves through the queue in actual turn order
       var headColor = st.cfg.pick_rule === "social" ? "var(--opt)" : "var(--accent)";
       st.trail = []; st.trailX = [];
       for (var t = 6; t >= 1; t--) {
@@ -923,14 +923,14 @@
         lbl.textContent = c + " · 0/" + st.cap;
         st.rooms[c] = { seats: seats, occ: occ, cnt: 0, lbl: lbl, flash: flash, cx: x + roomW / 2, top: y };
       });
-      // сканирующий блик: «ищу лучший ход» в паузах между событиями постфазы
+      // scanning highlight: searching for the best move between post-processing events
       st.scan = el("rect", {
         x: pad, y: ROOM_Y - 2, width: 70, height: ROOM_H - 22, rx: 8,
         fill: "var(--accent)", opacity: 0, "pointer-events": "none"
       });
     }
 
-    // ---- места ----
+    // ---- seats ----
     function occupy(c, s) {
       var room = st.rooms[c];
       if (!room) return null;
@@ -956,8 +956,8 @@
       room.seats[i].el.setAttribute("fill-opacity", 1);
       return { x: room.seats[i].x, y: room.seats[i].y };
     }
-    // Прозрачность кодирует раунд драфта: ранние пики ярче — в конце видно
-    // «слои» заполнения. Изменения постфазы приходят с полной яркостью.
+    // Opacity encodes the draft round: earlier picks are brighter, exposing
+    // occupancy layers at the end. Post-processing changes use full opacity.
     function fillSeat(c, idx, op) {
       var room = st.rooms[c];
       if (room && room.seats[idx]) {
@@ -976,7 +976,7 @@
       if (room) room.flash.setAttribute("opacity", strength || 0.1);
     }
 
-    // ---- полёты и всплывашки ----
+    // ---- flights and popups ----
     function flight(from, to, opts) {
       opts = opts || {};
       if (!from || !to || st.skip || reduced) { if (opts.onEnd) opts.onEnd(); return; }
@@ -998,7 +998,7 @@
     function frame(now) {
       st.raf = requestAnimationFrame(frame);
       if (!st.ready) return;
-      // указатель хода + хвост-комета (змейка ползёт по очереди)
+      // turn pointer and comet tail (snake moves through the queue)
       st.headX += (st.headTX - st.headX) * (reduced ? 1 : 0.28);
       st.head.setAttribute("cx", st.headX.toFixed(1));
       st.headLbl.setAttribute("x", clamp(st.headX, 34, W - 34).toFixed(1));
@@ -1008,7 +1008,7 @@
         var off = Math.min(st.trailX.length - 1, (st.trail.length - ti) * 5);
         st.trail[ti].setAttribute("cx", st.trailX[off].toFixed(1));
       }
-      // скан-блик: виден, когда постфаза считается, а событий пока нет
+      // scanning highlight shown while post-processing runs without pending events
       if (st.scan) {
         var idle = st.stage !== "draft" && !st.queue.length && !st.playing && !st.computeDone;
         var cur = +st.scan.getAttribute("opacity");
@@ -1018,7 +1018,7 @@
           st.scan.setAttribute("x", (16 + (W - 32 - 70) * (0.5 + 0.5 * Math.sin(now / 700))).toFixed(1));
         }
       }
-      // полёты по квадратичной дуге
+      // flights along a quadratic arc
       for (var i = st.flights.length - 1; i >= 0; i--) {
         var f = st.flights[i];
         var p = clamp((now - f.t0) / f.dur, 0, 1);
@@ -1033,7 +1033,7 @@
           st.flights.splice(i, 1);
         }
       }
-      // всплывающие Δ
+      // floating Δ labels
       for (var j = st.floats.length - 1; j >= 0; j--) {
         var fl = st.floats[j];
         var pp = clamp((now - fl.t0) / fl.dur, 0, 1);
@@ -1041,7 +1041,7 @@
         fl.el.setAttribute("opacity", (1 - pp).toFixed(2));
         if (pp >= 1) { fl.el.remove(); st.floats.splice(j, 1); }
       }
-      // затухание подсветки аудиторий
+      // fade course-room highlights
       for (var c in st.rooms) {
         var o = +st.rooms[c].flash.getAttribute("opacity");
         if (o > 0.005) st.rooms[c].flash.setAttribute("opacity", (o * 0.9).toFixed(3));
@@ -1049,7 +1049,7 @@
       }
     }
 
-    // ---- стадии/прогресс ----
+    // ---- stages/progress ----
     function stageFor(iter) {
       if (!st.ready || iter <= st.rounds) return "draft";
       return st.cfg.improve_mode;
@@ -1066,21 +1066,21 @@
         st.headLbl.setAttribute("opacity", 0);
         st.trail.forEach(function (t) { t.setAttribute("display", "none"); });
         st.ticks.forEach(function (t) { t.setAttribute("fill", "var(--bar-track)"); });
-        if (st.roundLbl) st.roundLbl.textContent = "постобработка";
+        if (st.roundLbl) st.roundLbl.textContent = "post-processing";
       }
       if (changed && st.ready) {
         for (var c in st.rooms) roomFlash(c, 0.1);
-        feedLine(st.playedIter, "фаза: " + meta.label);
+        feedLine(st.playedIter, "phase: " + meta.label);
       }
     }
     function updateProgress() {
       var frac = clamp(st.playedIter / Math.max(1, st.totalIter), 0, 1);
       $("prog_fill").style.width = (100 * frac).toFixed(1) + "%";
-      var lag = st.computeDone && st.queue.length ? " · расчёт готов, анимация догоняет" : "";
-      $("run_iter").textContent = "итерация " + st.playedIter + " / " + st.totalIter + lag;
+      var lag = st.computeDone && st.queue.length ? " · computation complete, animation catching up" : "";
+      $("run_iter").textContent = "iteration " + st.playedIter + " / " + st.totalIter + lag;
     }
 
-    // ---- обработчики событий ----
+    // ---- event handlers ----
     function headTo(s) {
       var i = st.orderIdx[s];
       if (i === undefined) return null;
@@ -1102,8 +1102,8 @@
       var dir = { "round-robin": "→" }[st.cfg.sequence];
       if (!dir) dir = (st.cfg.sequence === "n-first" ? (v.round === 1 ? "→" : "←")
                                                      : (v.round % 2 === 1 ? "→" : "←"));
-      if (st.roundLbl) st.roundLbl.textContent = "раунд " + v.round + "/" + st.rounds + "  " + dir;
-      feedLine(v.round, "раунд " + v.round + "/" + st.rounds + " · направление очереди " + dir);
+      if (st.roundLbl) st.roundLbl.textContent = "round " + v.round + "/" + st.rounds + "  " + dir;
+      feedLine(v.round, "round " + v.round + "/" + st.rounds + " · queue direction " + dir);
     }
 
     function onPick(v, entry) {
@@ -1159,7 +1159,7 @@
       feedLine(entry.iter, v.s + ":  −" + ((v.drop || []).join(",") || "∅") + "  +" + ((v.add || []).join(",") || "∅"));
     }
 
-    // ---- живые графики ----
+    // ---- live charts ----
     function onStat(v, entry) {
       st.chartW.push({ i: entry.iter, v: v.w });
       st.chartMin.push({ i: entry.iter, v: v.wmin });
@@ -1208,7 +1208,7 @@
           case "swap": onSwap(v, entry); break;
           case "ad": onAd(v, entry); break;
           case "stat": onStat(v, entry); break;
-          case "noop": feedLine(entry.iter, "улучшений не найдено — состояние стабильно"); break;
+          case "noop": feedLine(entry.iter, "no improvements found — state is stable"); break;
           default: if (entry.text) feedLine(entry.iter, entry.text);
         }
       } else if (entry.text) {
@@ -1217,7 +1217,7 @@
       updateProgress();
     }
 
-    // ---- плеер ----
+    // ---- player ----
     function baseDt(entry) {
       var t = entry.viz && entry.viz.type;
       if (t === "init") return 30;
@@ -1246,7 +1246,7 @@
         maybeDrained();
         return;
       }
-      // скорость адаптируется к бэклогу: чем больше очередь, тем быстрее
+      // speed adapts to backlog: the longer the queue, the faster playback
       var dt = baseDt(entry) / (1 + st.queue.length / 15);
       st.timer = setTimeout(pump, Math.max(6, dt));
     }
@@ -1259,7 +1259,7 @@
       }
     }
 
-    // ---- публичный интерфейс ----
+    // ---- public interface ----
     return {
       start: function (cfg) {
         if (st) {
@@ -1272,7 +1272,7 @@
         var wait = document.createElementNS(svgNS, "text");
         wait.setAttribute("x", W / 2); wait.setAttribute("y", H / 2);
         wait.setAttribute("class", "viz-cap"); wait.setAttribute("text-anchor", "middle");
-        wait.textContent = "жду первые события…";
+        wait.textContent = "waiting for the first events…";
         svg.appendChild(wait);
         st.raf = requestAnimationFrame(frame);
         updateProgress();
@@ -1331,9 +1331,9 @@
     $("running").style.display = "block";
     $("feed").innerHTML = "";
     $("prog_fill").style.width = "0%";
-    $("run_stage").textContent = "старт…";
+    $("run_stage").textContent = "starting…";
     $("run_iter").textContent = "";
-    $("stage_note").textContent = "запускаю расчёт…";
+    $("stage_note").textContent = "starting computation…";
 
     var cfg = {
       csv_a: $("csv_a").value, csv_b: $("csv_b").value, csv_lambda: $("csv_lambda").value,
@@ -1346,9 +1346,9 @@
     VIZ.start(cfg);
 
     var t0 = Date.now();
-    $("run_clock").textContent = "0 с";
+    $("run_clock").textContent = "0 s";
     clockTimer = setInterval(function () {
-      $("run_clock").textContent = Math.round((Date.now() - t0) / 1000) + " с";
+      $("run_clock").textContent = Math.round((Date.now() - t0) / 1000) + " s";
     }, 500);
 
     function finish() {
@@ -1383,7 +1383,7 @@
 
   $("btn_compare").addEventListener("click", function () {
     clearError();
-    var btn = this; btn.disabled = true; btn.textContent = "Считаю batch…";
+    var btn = this; btn.disabled = true; btn.textContent = "Running batch…";
     api("/api/compare", {
       csv_a: $("csv_a").value, csv_b: $("csv_b").value,
       csv_lambda: $("csv_lambda").value,
@@ -1416,7 +1416,7 @@
       renderHistory();
       loadStats();
     }).catch(function (e) { showError(e.message); })
-      .finally(function () { btn.disabled = false; btn.textContent = "Сравнить 6 режимов"; });
+      .finally(function () { btn.disabled = false; btn.textContent = "Compare 6 modes"; });
   });
 
   $("btn_skip").addEventListener("click", function () { VIZ.skip(); });
@@ -1446,14 +1446,14 @@
     var m = lastRun.data.metrics;
     var upper = lastRun.data.maxima.total_utility;
     $("tiles").innerHTML =
-      tile(fmt(m.total_utility, 1), "", "суммарная полезность", true) +
-      tile(pct(upper > 0 ? m.total_utility / upper : 0), "", "от верхней оценки", true) +
-      tile(fmt(m.egalitarian_welfare, 3), "", "худший студент") +
-      tile(fmt(m.gini_total_norm, 3), "", "индекс Джини") +
-      tile(fmt(m.jain_index, 3), "", "индекс Джейна") +
-      tile(pct(m.ef1_violation_share_total), "", "студентов с EF1-нарушением") +
-      tile(fmt(m.avg_friend_overlaps_per_student, 2), "", "пересечений с друзьями / студ.") +
-      tile(fmt(lastRun.data.elapsed_s, 1), "с", "время запуска");
+      tile(fmt(m.total_utility, 1), "", "total utility", true) +
+      tile(pct(upper > 0 ? m.total_utility / upper : 0), "", "of upper bound", true) +
+      tile(fmt(m.egalitarian_welfare, 3), "", "worst-off student") +
+      tile(fmt(m.gini_total_norm, 3), "", "Gini index") +
+      tile(fmt(m.jain_index, 3), "", "Jain index") +
+      tile(pct(m.ef1_violation_share_total), "", "students with EF1 violations") +
+      tile(fmt(m.avg_friend_overlaps_per_student, 2), "", "friend overlaps per student") +
+      tile(fmt(lastRun.data.elapsed_s, 1), "s", "run time");
   }
 
   // ---------- distribution: histogram + Lorenz ----------
@@ -1505,20 +1505,20 @@
     out += '<line x1="' + X(median).toFixed(1) + '" y1="' + padT + '" x2="' + X(median).toFixed(1) + '" y2="' + (padT + plotH) + '" stroke="var(--ink-2)" stroke-width="1"></line>';
     var medAnchor = X(median) > W - 90 ? "end" : "start";
     var medDx = medAnchor === "end" ? -4 : 4;
-    out += '<text x="' + (X(median) + medDx).toFixed(1) + '" y="' + (padT + 9) + '" class="ax" text-anchor="' + medAnchor + '">медиана ' + fmt(median, 2) + "</text>";
+    out += '<text x="' + (X(median) + medDx).toFixed(1) + '" y="' + (padT + 9) + '" class="ax" text-anchor="' + medAnchor + '">median ' + fmt(median, 2) + "</text>";
     // x-axis
     out += '<line x1="' + padL + '" y1="' + (padT + plotH) + '" x2="' + (W - padR) + '" y2="' + (padT + plotH) + '" stroke="var(--hair)" stroke-width="1"></line>';
     niceTicks(lo, hi, 5).forEach(function (t) {
       if (t < lo || t > hi) return;
       out += '<text x="' + X(t).toFixed(1) + '" y="' + (H - padB + 16) + '" class="ax" text-anchor="middle">' + fmtTick(t) + "</text>";
     });
-    out += '<text x="' + (W - padR) + '" y="' + (H - 2) + '" class="ax-name" text-anchor="end">полезность студента</text>';
+    out += '<text x="' + (W - padR) + '" y="' + (H - 2) + '" class="ax-name" text-anchor="end">student utility</text>';
     // hover targets (full column height per bin)
     bins.forEach(function (cnt, i) {
       var a = lo + i * binW, b = a + binW;
       out += '<rect data-i="' + i + '" x="' + (padL + i * slotW).toFixed(1) + '" y="' + padT +
         '" width="' + slotW.toFixed(1) + '" height="' + plotH + '" fill="transparent" data-tip="' +
-        esc('<span class="tv">' + cnt + '</span> студ. · полезность ' + fmt(a, 2) + "–" + fmt(b, 2)) + '"></rect>';
+        esc('<span class="tv">' + cnt + '</span> students · utility ' + fmt(a, 2) + "–" + fmt(b, 2)) + '"></rect>';
     });
     svg.innerHTML = out;
     hookTips(svg);
@@ -1553,9 +1553,9 @@
     out += '<line x1="' + X(0) + '" y1="' + Y(0) + '" x2="' + X(1) + '" y2="' + Y(1) + '" stroke="var(--muted)" stroke-width="1"></line>';
     out += '<path d="' + line + '" fill="none" stroke="var(--s1)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"></path>';
     if (isNum(giniRaw)) {
-      out += '<text x="' + (padL + 8) + '" y="' + (padT + 12) + '" class="ax">Джини (raw) = ' + fmt(giniRaw, 3) + "</text>";
+      out += '<text x="' + (padL + 8) + '" y="' + (padT + 12) + '" class="ax">Gini (raw) = ' + fmt(giniRaw, 3) + "</text>";
     }
-    out += '<text x="' + (W - padR) + '" y="' + (H - 2) + '" class="ax-name" text-anchor="end">доля студентов (от бедных к богатым)</text>';
+    out += '<text x="' + (W - padR) + '" y="' + (H - 2) + '" class="ax-name" text-anchor="end">share of students (lowest to highest utility)</text>';
     // crosshair overlay
     out += '<line id="lz_cross" x1="0" y1="' + padT + '" x2="0" y2="' + (padT + plotH) + '" stroke="var(--muted)" stroke-width="1" style="display:none"></line>';
     out += '<rect id="lz_hit" x="' + padL + '" y="' + padT + '" width="' + plotW + '" height="' + plotH + '" fill="transparent"></rect>';
@@ -1572,8 +1572,8 @@
       cross.style.display = "block";
       cross.setAttribute("x1", X(share).toFixed(1));
       cross.setAttribute("x2", X(share).toFixed(1));
-      tipShow('нижние <span class="tv">' + Math.round(share * 100) + "%</span> студентов → " +
-        '<span class="tv">' + fmt(yv * 100, 1) + "%</span> полезности", evt);
+      tipShow('bottom <span class="tv">' + Math.round(share * 100) + "%</span> of students → " +
+        '<span class="tv">' + fmt(yv * 100, 1) + "%</span> of utility", evt);
     }
     hit.addEventListener("pointermove", onMove);
     hit.addEventListener("pointerleave", function () { cross.style.display = "none"; tipHide(); });
@@ -1604,7 +1604,7 @@
         "<td" + (r.total === best ? ' class="best"' : "") + ">" + fmt(r.total, 1) + "</td>" +
         "<td>" + pct(r.share) + "</td><td>" + fmt(r.egal, 3) + "</td><td>" + fmt(r.gini, 3) + "</td>" +
         "<td>" + fmt(r.jain, 3) + "</td>" +
-        "<td>" + pct(r.ef1) + "</td><td>" + fmt(r.overlaps, 2) + "</td><td>" + (r.time === null || r.time === undefined ? "—" : fmt(r.time, 1) + " с") + "</td></tr>";
+        "<td>" + pct(r.ef1) + "</td><td>" + fmt(r.overlaps, 2) + "</td><td>" + (r.time === null || r.time === undefined ? "—" : fmt(r.time, 1) + " s") + "</td></tr>";
     }).join("");
     $("history").querySelector("tbody").innerHTML = html;
   }
@@ -1619,7 +1619,7 @@
     if (!lastCompare) return;
     var rows = lastCompare.by_mode || [];
     var runs = rows.length ? rows[0].runs : 0;
-    $("cmp_meta").textContent = runs ? runs + " seeds × " + rows.length + " режимов" : "";
+    $("cmp_meta").textContent = runs ? runs + " seeds × " + rows.length + " modes" : "";
     renderCompareChart();
     renderCompareTable();
   }
@@ -1635,7 +1635,7 @@
         std: r["std_" + m.k]
       };
     }).filter(function (d) { return isNum(d.avg); });
-    if (!data.length) { chartEmpty(svg, "нет данных по выбранной метрике"); return; }
+    if (!data.length) { chartEmpty(svg, "no data for the selected metric"); return; }
 
     var W = 960, rowH = 34, padL = 150, padR = 120, padT = 8, padB = 26;
     var H = padT + padB + rowH * data.length;
@@ -1671,7 +1671,7 @@
         (i === bestIdx ? ' font-weight="700"' : "") + ">" + fmtMetric(m, d.avg) +
         (isNum(d.std) ? ' ± ' + (m.isPct ? fmt(d.std * 100, 1) : fmt(d.std, m.digits)) : "") + "</text>";
       out += '<rect x="' + padL + '" y="' + (padT + i * rowH) + '" width="' + (W - padL - 4) + '" height="' + rowH + '" fill="transparent" data-tip="' +
-        esc(d.mode + '<br>среднее: <span class="tv">' + fmtMetric(m, d.avg) + "</span>" +
+        esc(d.mode + '<br>mean: <span class="tv">' + fmtMetric(m, d.avg) + "</span>" +
           (isNum(d.std) ? "<br>σ: " + fmtMetric(m, d.std) : "")) + '"></rect>';
     });
     svg.innerHTML = out;
@@ -1722,10 +1722,10 @@
       return;
     }
     $("stats_card").style.display = "block";
-    $("stats_meta").textContent = "запусков: " + trend.length;
+    $("stats_meta").textContent = "runs: " + trend.length;
     var m = metricByKey($("stat_metric").value);
-    $("trend_title").textContent = "Динамика: " + m.label;
-    $("mode_bars_title").textContent = "Среднее по режимам: " + m.label;
+    $("trend_title").textContent = "Trend: " + m.label;
+    $("mode_bars_title").textContent = "Average by mode: " + m.label;
     renderStatsLegend(trend);
     renderTrend(trend, m);
     renderModeBars((lastStats && lastStats.by_mode) || [], m);
@@ -1750,7 +1750,7 @@
     var pts = trend.map(function (p) {
       return { i: p.run_index, id: p.id, mode: p.improve_mode, v: p[m.k] };
     }).filter(function (p) { return isNum(p.v); });
-    if (!pts.length) { chartEmpty(svg, "для этой метрики нет данных в истории"); return; }
+    if (!pts.length) { chartEmpty(svg, "no historical data for this metric"); return; }
 
     var plotW = W - padL - padR, plotH = H - padT - padB;
     var iMin = pts[0].i, iMax = pts[pts.length - 1].i;
@@ -1773,7 +1773,7 @@
       if (t < iMin || t > iMax || t !== Math.round(t)) return;
       out += '<text x="' + X(t).toFixed(1) + '" y="' + (H - padB + 16) + '" class="ax" text-anchor="middle">' + t + "</text>";
     });
-    out += '<text x="' + (W - padR) + '" y="' + (H - 2) + '" class="ax-name" text-anchor="end">№ запуска (хронологически)</text>';
+    out += '<text x="' + (W - padR) + '" y="' + (H - 2) + '" class="ax-name" text-anchor="end">run number (chronological)</text>';
     // thin connecting line carries the sequence; identity lives in the dots + legend
     var line = "";
     pts.forEach(function (p, i) { line += (i ? " L" : "M") + X(p.i).toFixed(1) + "," + Y(p.v).toFixed(1); });
@@ -1806,7 +1806,7 @@
       hdot.style.display = "block";
       hdot.setAttribute("cx", X(bestP.i).toFixed(1));
       hdot.setAttribute("cy", Y(bestP.v).toFixed(1));
-      tipShow('запуск №' + bestP.i + " (id " + bestP.id + ")<br>" +
+      tipShow('run #' + bestP.i + " (id " + bestP.id + ")<br>" +
         '<span class="tk" style="background:' + modeColor(bestP.mode) + '"></span>' + esc(bestP.mode) +
         '<br><span class="tv">' + fmtMetric(m, bestP.v) + "</span>", evt);
     });
@@ -1820,7 +1820,7 @@
     var data = byMode.map(function (r) {
       return { mode: r.improve_mode, v: r["avg_" + m.k], runs: r.runs };
     }).filter(function (d) { return isNum(d.v); });
-    if (!data.length) { chartEmpty(svg, "нет агрегатов по режимам"); return; }
+    if (!data.length) { chartEmpty(svg, "no aggregates by mode"); return; }
     data.sort(function (a, b) {
       return MODE_ORDER.indexOf(a.mode) - MODE_ORDER.indexOf(b.mode);
     });
@@ -1842,7 +1842,7 @@
       out += '<path d="' + rightRoundRect(padL, y, Math.max(2, X(d.v) - padL), 18, 4) + '" fill="' + modeColor(d.mode) + '"></path>';
       out += '<text x="' + (X(d.v) + 7).toFixed(1) + '" y="' + (y + 13) + '" class="ax" fill="var(--ink)">' + fmtMetric(m, d.v) + "</text>";
       out += '<rect x="0" y="' + (padT + i * rowH) + '" width="' + W + '" height="' + rowH + '" fill="transparent" data-tip="' +
-        esc(d.mode + '<br>среднее: <span class="tv">' + fmtMetric(m, d.v) + "</span><br>запусков: " + d.runs) + '"></rect>';
+        esc(d.mode + '<br>mean: <span class="tv">' + fmtMetric(m, d.v) + "</span><br>runs: " + d.runs) + '"></rect>';
     });
     svg.innerHTML = out;
     hookTips(svg);
@@ -1854,7 +1854,7 @@
     var pts = trend.map(function (p) {
       return { id: p.id, i: p.run_index, mode: p.improve_mode, x: p.total_utility, y: p.gini_total_norm };
     }).filter(function (p) { return isNum(p.x) && isNum(p.y); });
-    if (!pts.length) { chartEmpty(svg, "нет данных"); return; }
+    if (!pts.length) { chartEmpty(svg, "no data"); return; }
     var plotW = W - padL - padR, plotH = H - padT - padB;
     var xMin = Infinity, xMax = -Infinity, yMin = Infinity, yMax = -Infinity;
     pts.forEach(function (p) {
@@ -1877,9 +1877,9 @@
       if (t < xMin || t > xMax) return;
       out += '<text x="' + X(t).toFixed(1) + '" y="' + (H - padB + 15) + '" class="ax" text-anchor="middle">' + fmtTick(t) + "</text>";
     });
-    out += '<text x="' + (W - padR) + '" y="' + (H - 2) + '" class="ax-name" text-anchor="end">полезность →</text>';
-    out += '<text x="12" y="' + padT + '" class="ax-name" transform="rotate(-90 12 ' + padT + ')" text-anchor="end">Джини ↑</text>';
-    out += '<text x="' + (W - padR - 4) + '" y="' + (padT + plotH - 6) + '" class="note-corner" text-anchor="end">идеал ↘</text>';
+    out += '<text x="' + (W - padR) + '" y="' + (H - 2) + '" class="ax-name" text-anchor="end">utility →</text>';
+    out += '<text x="12" y="' + padT + '" class="ax-name" transform="rotate(-90 12 ' + padT + ')" text-anchor="end">Gini ↑</text>';
+    out += '<text x="' + (W - padR - 4) + '" y="' + (padT + plotH - 6) + '" class="note-corner" text-anchor="end">ideal ↘</text>';
     var r = pts.length > 120 ? 3.2 : 4.5;
     pts.forEach(function (p) {
       out += '<circle cx="' + X(p.x).toFixed(1) + '" cy="' + Y(p.y).toFixed(1) + '" r="' + r +
@@ -1905,10 +1905,10 @@
       hdot.style.display = "block";
       hdot.setAttribute("cx", X(bestP.x).toFixed(1));
       hdot.setAttribute("cy", Y(bestP.y).toFixed(1));
-      tipShow('запуск №' + bestP.i + " (id " + bestP.id + ")<br>" +
+      tipShow('run #' + bestP.i + " (id " + bestP.id + ")<br>" +
         '<span class="tk" style="background:' + modeColor(bestP.mode) + '"></span>' + esc(bestP.mode) +
-        '<br>полезность: <span class="tv">' + fmt(bestP.x, 1) + "</span>" +
-        '<br>Джини: <span class="tv">' + fmt(bestP.y, 3) + "</span>", evt);
+        '<br>utility: <span class="tv">' + fmt(bestP.x, 1) + "</span>" +
+        '<br>Gini: <span class="tv">' + fmt(bestP.y, 3) + "</span>", evt);
     });
     hit.addEventListener("pointerleave", function () { hdot.style.display = "none"; tipHide(); });
   }
@@ -1946,7 +1946,7 @@
       return "<tr><td class=\"mono\">" + esc(s) + '</td><td style="text-align:left">' + (chips || "—") + "</td></tr>";
     }).join("");
     if (ids.length > shown.length) {
-      rows += '<tr><td colspan="2" style="color:var(--muted);text-align:left">… ещё ' + (ids.length - shown.length) + " (уточни поиск)</td></tr>";
+      rows += '<tr><td colspan="2" style="color:var(--muted);text-align:left">… ' + (ids.length - shown.length) + " more (refine your search)</td></tr>";
     }
     $("alloc_tbl").querySelector("tbody").innerHTML = rows;
   }
