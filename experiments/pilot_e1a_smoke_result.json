@@ -1,0 +1,19 @@
+{
+  "status": "passed",
+  "interpretation": "engineering smoke test only; three seeds are insufficient for scientific conclusions",
+  "experiment_id": "pilot-e1a-smoke-20260708",
+  "config_hash": "3aa05c539b26dac18060fbf9a36a447b13029314b8dc2231cc444c60aeaa6ae6",
+  "dataset_hash": "612b51f1a51e752fd6b4efbef22c14f31e34e5c0d9878cf46036bc2074e9495d",
+  "runs": 90,
+  "mechanism_cells": 30,
+  "paired_seeds_per_cell": 3,
+  "metric_rows": 11070,
+  "pick_events": 2160,
+  "min_students_full_alloc_rate": 1.0,
+  "max_students_full_alloc_rate": 1.0,
+  "inferential_pipeline": {
+    "friedman": "computed",
+    "wilcoxon_holm_pairs": 435,
+    "warning": "small sample; results are not interpreted"
+  }
+}

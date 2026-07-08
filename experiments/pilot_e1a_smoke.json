@@ -1,0 +1,56 @@
+{
+  "schema_version": 1,
+  "experiment_id": "pilot-e1a-smoke-20260708",
+  "dataset": {
+    "table1": "../tables/research_pilot/table1.csv",
+    "table2": "../tables/research_pilot/table2.csv",
+    "table3": "../tables/research_pilot/table3.csv",
+    "network_model": "erdos-renyi"
+  },
+  "dataset_generation": {
+    "students": 12,
+    "courses": 5,
+    "seed": 20260708,
+    "friend_top_k": 3,
+    "network_model": "erdos-renyi",
+    "network_density": 0.45,
+    "network_reciprocity": 0.5,
+    "lambda_default": 0.3
+  },
+  "allocation": {
+    "cap_default": 5,
+    "b": 2,
+    "draft_rounds": 2,
+    "post_iters": 2
+  },
+  "factors": {
+    "initial_methods": [
+      "sequential",
+      "simultaneous-priority"
+    ],
+    "sequences": [
+      "round-robin",
+      "snake",
+      "reverse-repeat",
+      "last-first-static"
+    ],
+    "pick_rules": [
+      "personal",
+      "utilitarian"
+    ],
+    "post_modes": [
+      "none",
+      "hybrid-global",
+      "hybrid-personal"
+    ],
+    "lambda_values": [
+      0.3
+    ],
+    "seeds": [
+      11,
+      12,
+      13
+    ]
+  },
+  "output_dir": "../results/research/pilot-e1a-smoke-20260708"
+}
