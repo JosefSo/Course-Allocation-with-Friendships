@@ -42,6 +42,13 @@ class PickLogRow:
     utility_at_pick: float
     base_at_pick: float
     friend_bonus_at_pick: float
+    initial_position: int = 0
+    turn_position: int = 0
+    normalized_turn_position: float = 0.0
+    friend_opportunity_at_pick: float = 0.0
+    ex_post_course_utility: float = 0.0
+    ex_post_friend_utility: float = 0.0
+    ex_post_combined_utility: float = 0.0
 
 
 @dataclass(frozen=True)

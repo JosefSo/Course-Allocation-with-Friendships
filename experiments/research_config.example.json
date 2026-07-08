@@ -1,0 +1,46 @@
+{
+  "schema_version": 1,
+  "experiment_id": "pilot-e1a",
+  "dataset": {
+    "table1": "../tables/table1_200×8.csv",
+    "table2": "../tables/table2_200×8.csv",
+    "table3": "../tables/table3_200×8_lambda-0.3.csv",
+    "network_model": "legacy-independent"
+  },
+  "allocation": {
+    "cap_default": 80,
+    "b": 3,
+    "draft_rounds": 3,
+    "post_iters": 5
+  },
+  "factors": {
+    "initial_methods": [
+      "sequential",
+      "simultaneous-priority"
+    ],
+    "sequences": [
+      "round-robin",
+      "snake",
+      "reverse-repeat",
+      "last-first-static"
+    ],
+    "pick_rules": [
+      "personal",
+      "utilitarian"
+    ],
+    "post_modes": [
+      "none",
+      "hybrid-global",
+      "hybrid-personal"
+    ],
+    "lambda_values": [
+      0.3
+    ],
+    "seeds": [
+      11,
+      12,
+      13
+    ]
+  },
+  "output_dir": "../results/research/pilot-e1a"
+}

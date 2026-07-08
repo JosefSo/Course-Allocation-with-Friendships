@@ -205,6 +205,11 @@ The default filenames include dimensions and lambda configuration. Use `--out1`,
 `--out2`, and `--out3` to choose explicit paths. Parent directories are created
 automatically.
 
+Research scenarios can instead use `--network-model erdos-renyi`,
+`watts-strogatz`, or `planted-communities`, together with density, reciprocity,
+community, rewiring, and top-K parameters. Pass `--out-manifest` to persist the exact
+scenario configuration.
+
 ## Run from CLI
 
 ```bash
@@ -268,6 +273,22 @@ python3 hbs_experiments.py \
 ```
 
 Run `python3 hbs_experiments.py --help` for scenario and resume options.
+
+## Versioned research runner
+
+The preregistered research pipeline uses a versioned JSON configuration and keeps
+mechanism provenance, normalized metrics, pick-position events, hashes, and artifacts
+in one output directory:
+
+```bash
+python3 -m pip install -r research_requirements.txt
+python3 hbs_research.py --config experiments/research_config.example.json
+```
+
+It writes SQLite, flat and aggregate CSVs, bootstrap intervals, inferential-statistics
+JSON, and static Results/Position/Fairness HTML reports. Combined utility is never
+ranked across different lambda values. The core allocator and single-run UI do not
+require the research dependencies.
 
 ## ILP benchmark
 

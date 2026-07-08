@@ -227,6 +227,30 @@ class TestSimultaneousPriority(unittest.TestCase):
                 )
                 self.assertEqual(set(result.alloc), {"A", "B", "C"})
 
+    def test_pick_log_contains_positions_opportunity_and_ex_post_values(self) -> None:
+        with TemporaryDirectory() as tmp:
+            table1, table2, lambdas = self._write_common_tables(Path(tmp))
+            result = run_hbs_social(
+                table1,
+                table2,
+                csv_lambda=lambdas,
+                cap_default=2,
+                b=1,
+                draft_rounds=1,
+                post_iters=0,
+                seed=2,
+            )
+            self.assertTrue(result.pick_log)
+            for row in result.pick_log:
+                self.assertGreaterEqual(row.initial_position, 1)
+                self.assertGreaterEqual(row.turn_position, 1)
+                self.assertGreaterEqual(row.normalized_turn_position, 0.0)
+                self.assertLessEqual(row.normalized_turn_position, 1.0)
+                self.assertGreaterEqual(row.friend_opportunity_at_pick, 0.0)
+                self.assertGreaterEqual(row.ex_post_course_utility, 0.0)
+                self.assertGreaterEqual(row.ex_post_friend_utility, 0.0)
+                self.assertGreaterEqual(row.ex_post_combined_utility, 0.0)
+
 
 if __name__ == "__main__":
     unittest.main()

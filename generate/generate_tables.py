@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import json
 import random
 from dataclasses import dataclass
 from pathlib import Path
@@ -172,6 +173,97 @@ def generate_table_1(
     return rows
 
 
+def generate_friend_graph(
+    student_ids: Sequence[str],
+    rng: random.Random,
+    *,
+    model: str,
+    density: float = 0.1,
+    reciprocity: float = 0.3,
+    communities: int = 4,
+    rewiring_probability: float = 0.1,
+) -> dict[str, set[str]]:
+    """Generate a directed base friendship graph for research scenarios."""
+
+    if model not in {"erdos-renyi", "watts-strogatz", "planted-communities"}:
+        raise ValueError(f"Unknown network model: {model}")
+    if not (0.0 <= density <= 1.0):
+        raise ValueError("density must be in [0,1]")
+    if not (0.0 <= reciprocity <= 1.0):
+        raise ValueError("reciprocity must be in [0,1]")
+    if not (0.0 <= rewiring_probability <= 1.0):
+        raise ValueError("rewiring_probability must be in [0,1]")
+    if communities <= 0:
+        raise ValueError("communities must be > 0")
+
+    students = list(student_ids)
+    adjacency = {student_id: set() for student_id in students}
+    undirected_edges: set[tuple[str, str]] = set()
+
+    if model == "erdos-renyi":
+        for left_index, left in enumerate(students):
+            for right in students[left_index + 1 :]:
+                if rng.random() < density:
+                    undirected_edges.add((left, right))
+    elif model == "watts-strogatz":
+        n = len(students)
+        if n > 1:
+            degree = min(n - 1, max(2 if n > 2 else 1, round(density * (n - 1))))
+            if degree % 2 == 1 and degree < n - 1:
+                degree += 1
+            half = max(1, degree // 2)
+            for index, left in enumerate(students):
+                for offset in range(1, half + 1):
+                    right = students[(index + offset) % n]
+                    edge = tuple(sorted((left, right)))
+                    undirected_edges.add(edge)
+            original_edges = sorted(undirected_edges)
+            for edge in original_edges:
+                if rng.random() >= rewiring_probability:
+                    continue
+                left, right = edge
+                forbidden = {left}
+                forbidden.update(
+                    other if node == left else node
+                    for node, other in undirected_edges
+                    if node == left or other == left
+                )
+                candidates = [student for student in students if student not in forbidden]
+                if not candidates:
+                    continue
+                undirected_edges.discard(edge)
+                new_right = rng.choice(candidates)
+                undirected_edges.add(tuple(sorted((left, new_right))))
+    else:
+        shuffled = students[:]
+        rng.shuffle(shuffled)
+        community_by_student = {
+            student_id: index % min(communities, max(1, len(students)))
+            for index, student_id in enumerate(shuffled)
+        }
+        within_probability = min(1.0, density * 2.0)
+        between_probability = min(1.0, density * 0.25)
+        for left_index, left in enumerate(students):
+            for right in students[left_index + 1 :]:
+                probability = (
+                    within_probability
+                    if community_by_student[left] == community_by_student[right]
+                    else between_probability
+                )
+                if rng.random() < probability:
+                    undirected_edges.add((left, right))
+
+    for left, right in sorted(undirected_edges):
+        if rng.random() < reciprocity:
+            adjacency[left].add(right)
+            adjacency[right].add(left)
+        elif rng.random() < 0.5:
+            adjacency[left].add(right)
+        else:
+            adjacency[right].add(left)
+    return adjacency
+
+
 def generate_table_2(
     student_ids: Sequence[str],
     course_ids: Sequence[str],
@@ -182,6 +274,11 @@ def generate_table_2(
     score_max: int,
     score_mode: str = "score_first",
     swap_prob: float = 0.0,
+    network_model: str = "legacy-independent",
+    network_density: float = 0.1,
+    network_reciprocity: float = 0.3,
+    network_communities: int = 4,
+    network_rewiring_probability: float = 0.1,
 ) -> list[Table2Row]:
     """
     Генерирует Таблицу 2 как "топ-3 друзей" для каждого (StudentID_A, CourseID).
@@ -195,9 +292,24 @@ def generate_table_2(
       - Score в диапазоне [score_min, score_max].
     """
     rows: list[Table2Row] = []
+    adjacency = None
+    if network_model != "legacy-independent":
+        adjacency = generate_friend_graph(
+            student_ids,
+            rng,
+            model=network_model,
+            density=network_density,
+            reciprocity=network_reciprocity,
+            communities=network_communities,
+            rewiring_probability=network_rewiring_probability,
+        )
     for course_id in course_ids:
         for student_id_a in student_ids:
-            candidates = [b for b in student_ids if b != student_id_a]
+            candidates = (
+                [b for b in student_ids if b != student_id_a]
+                if adjacency is None
+                else sorted(adjacency[student_id_a])
+            )
             if not candidates or top_k <= 0:
                 continue
             k = min(top_k, len(candidates))
@@ -409,6 +521,20 @@ def _parse_args() -> argparse.Namespace:
         help="Вероятность swap соседних позиций в friend-ранжировании (0..1)",
     )
     p.add_argument(
+        "--network-model",
+        choices=[
+            "legacy-independent",
+            "erdos-renyi",
+            "watts-strogatz",
+            "planted-communities",
+        ],
+        default="legacy-independent",
+    )
+    p.add_argument("--network-density", type=float, default=0.1)
+    p.add_argument("--network-reciprocity", type=float, default=0.3)
+    p.add_argument("--network-communities", type=int, default=4)
+    p.add_argument("--network-rewiring-probability", type=float, default=0.1)
+    p.add_argument(
         "--out1",
         type=Path,
         default=None,
@@ -431,6 +557,12 @@ def _parse_args() -> argparse.Namespace:
         type=Path,
         default=None,
         help="Путь для CSV Таблицы 3 (lambda)",
+    )
+    p.add_argument(
+        "--out-manifest",
+        type=Path,
+        default=None,
+        help="Optional JSON scenario manifest for research provenance",
     )
     return p.parse_args()
 
@@ -495,6 +627,14 @@ def main() -> int:
         raise SystemExit("--friend-score-min должен быть меньше --friend-score-max")
     if not (0.0 <= args.friend_swap_prob <= 1.0):
         raise SystemExit("--friend-swap-prob должен быть в диапазоне 0..1")
+    if not (0.0 <= args.network_density <= 1.0):
+        raise SystemExit("--network-density должен быть в диапазоне 0..1")
+    if not (0.0 <= args.network_reciprocity <= 1.0):
+        raise SystemExit("--network-reciprocity должен быть в диапазоне 0..1")
+    if args.network_communities <= 0:
+        raise SystemExit("--network-communities должен быть > 0")
+    if not (0.0 <= args.network_rewiring_probability <= 1.0):
+        raise SystemExit("--network-rewiring-probability должен быть в диапазоне 0..1")
 
     student_ids = [f"S{i}" for i in range(1, n_students + 1)]
     course_ids = [f"C{i}" for i in range(1, n_courses + 1)]
@@ -519,6 +659,11 @@ def main() -> int:
         score_max=friend_score_max,
         score_mode=args.friend_score_mode,
         swap_prob=args.friend_swap_prob,
+        network_model=args.network_model,
+        network_density=args.network_density,
+        network_reciprocity=args.network_reciprocity,
+        network_communities=args.network_communities,
+        network_rewiring_probability=args.network_rewiring_probability,
     )
     table3 = generate_table_3(
         student_ids,
@@ -543,10 +688,39 @@ def main() -> int:
     _write_csv_table_1(out1, table1)
     _write_csv_table_2(out2, table2)
     _write_csv_table_3(out3, table3)
+    if args.out_manifest is not None:
+        _ensure_parent_dirs(args.out_manifest)
+        args.out_manifest.write_text(
+            json.dumps(
+                {
+                    "schema_version": 1,
+                    "seed": args.seed,
+                    "students": n_students,
+                    "courses": n_courses,
+                    "table1": str(out1),
+                    "table2": str(out2),
+                    "table3": str(out3),
+                    "lambda_default": args.lambda_default,
+                    "friend_top_k": args.friend_top_k,
+                    "network_model": args.network_model,
+                    "network_density": args.network_density,
+                    "network_reciprocity": args.network_reciprocity,
+                    "network_communities": args.network_communities,
+                    "network_rewiring_probability": args.network_rewiring_probability,
+                },
+                ensure_ascii=False,
+                indent=2,
+                sort_keys=True,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
 
     print(f"Готово: {out1} ({len(table1)} строк)")
     print(f"Готово: {out2} ({len(table2)} строк)")
     print(f"Готово: {out3} ({len(table3)} строк)")
+    if args.out_manifest is not None:
+        print(f"Готово: {args.out_manifest} (scenario manifest)")
     return 0
 
 

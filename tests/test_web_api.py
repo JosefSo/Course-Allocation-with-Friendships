@@ -1,4 +1,5 @@
 import sys
+import sqlite3
 import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -58,6 +59,26 @@ class TestWebApi(unittest.TestCase):
         self.assertIn("S1", result["allocation"])
         self.assertIn("RoundPicked,StudentID,CourseID", result["csv_outputs"]["allocation"])
         self.assertIsInstance(result["run_history_id"], int)
+        with sqlite3.connect(hbs_web.HISTORY_DB_PATH) as conn:
+            history = conn.execute(
+                "SELECT initial_method, sequence, pick_rule FROM run_history WHERE id = ?",
+                (result["run_history_id"],),
+            ).fetchone()
+            self.assertEqual(history, ("sequential", "snake", "personal"))
+            metric = conn.execute(
+                """
+                SELECT metric, representation, envy_definition
+                FROM run_metrics
+                WHERE run_id = ? AND metric = 'ef1_violation_pair_share'
+                  AND representation = 'combined'
+                  AND envy_definition = 'substitution'
+                """,
+                (result["run_history_id"],),
+            ).fetchone()
+            self.assertEqual(
+                metric,
+                ("ef1_violation_pair_share", "combined", "substitution"),
+            )
 
     def test_run_payload_requires_table1(self) -> None:
         payload = {

@@ -484,6 +484,13 @@ def _init_history_db(db_path: Path | None = None) -> None:
                 move_type TEXT,
                 objective_scope TEXT,
                 improve_mode TEXT NOT NULL,
+                initial_method TEXT NOT NULL DEFAULT 'sequential',
+                sequence TEXT NOT NULL DEFAULT 'snake',
+                pick_rule TEXT NOT NULL DEFAULT 'personal',
+                network_model TEXT,
+                experiment_id TEXT,
+                config_hash TEXT,
+                dataset_hash TEXT,
                 total_utility REAL NOT NULL,
                 gini_total_norm REAL NOT NULL,
                 gini_base_norm REAL NOT NULL,
@@ -501,6 +508,34 @@ def _init_history_db(db_path: Path | None = None) -> None:
             conn.execute("ALTER TABLE run_history ADD COLUMN objective_scope TEXT")
         if "metrics_extended_json" not in columns:
             conn.execute("ALTER TABLE run_history ADD COLUMN metrics_extended_json TEXT")
+        provenance_columns = {
+            "initial_method": "TEXT NOT NULL DEFAULT 'sequential'",
+            "sequence": "TEXT NOT NULL DEFAULT 'snake'",
+            "pick_rule": "TEXT NOT NULL DEFAULT 'personal'",
+            "network_model": "TEXT",
+            "experiment_id": "TEXT",
+            "config_hash": "TEXT",
+            "dataset_hash": "TEXT",
+        }
+        for name, declaration in provenance_columns.items():
+            if name not in columns:
+                conn.execute(f"ALTER TABLE run_history ADD COLUMN {name} {declaration}")
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS run_metrics (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                run_id INTEGER NOT NULL,
+                metric TEXT NOT NULL,
+                value REAL NOT NULL,
+                representation TEXT,
+                envy_definition TEXT,
+                FOREIGN KEY (run_id) REFERENCES run_history(id)
+            )
+            """
+        )
+        conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_run_metrics_run_id ON run_metrics(run_id)"
+        )
         rows_to_backfill = conn.execute(
             """
             SELECT id, improve_mode
@@ -556,6 +591,13 @@ def _append_run_history(
     gini_base_norm: float,
     metrics_extended: dict[str, float] | None = None,
     db_path: Path | None = None,
+    initial_method: str = "sequential",
+    sequence: str = "snake",
+    pick_rule: str = "personal",
+    network_model: str | None = None,
+    experiment_id: str | None = None,
+    config_hash: str | None = None,
+    dataset_hash: str | None = None,
 ) -> int:
     db_path = _resolve_history_db_path(db_path)
     _init_history_db(db_path)
@@ -566,8 +608,10 @@ def _append_run_history(
             INSERT INTO run_history (
                 created_at, table1_ref, table2_ref, lambda_ref, cap_default, b, seed,
                 draft_rounds, post_iters, move_type, objective_scope, improve_mode,
+                initial_method, sequence, pick_rule, network_model, experiment_id,
+                config_hash, dataset_hash,
                 total_utility, gini_total_norm, gini_base_norm, metrics_extended_json
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 created_at,
@@ -582,14 +626,57 @@ def _append_run_history(
                 move_type,
                 objective_scope,
                 improve_mode,
+                initial_method,
+                sequence,
+                pick_rule,
+                network_model,
+                experiment_id,
+                config_hash,
+                dataset_hash,
                 total_utility,
                 gini_total_norm,
                 gini_base_norm,
                 json.dumps(metrics_extended or {}, ensure_ascii=True, sort_keys=True),
             ),
         )
+        run_id = int(cursor.lastrowid)
+        for metric_name, metric_value in (metrics_extended or {}).items():
+            representation = next(
+                (
+                    candidate
+                    for candidate in ("course", "friend", "combined")
+                    if metric_name.endswith(f"_{candidate}")
+                ),
+                None,
+            )
+            base_name = (
+                metric_name[: -(len(representation) + 1)]
+                if representation is not None
+                else metric_name
+            )
+            envy_definition = None
+            for candidate in ("substitution", "swap", "base_only"):
+                suffix = f"_{candidate}"
+                if base_name.endswith(suffix):
+                    envy_definition = candidate.replace("_", "-")
+                    base_name = base_name[: -len(suffix)]
+                    break
+            conn.execute(
+                """
+                INSERT INTO run_metrics (
+                    run_id, metric, value, representation, envy_definition
+                ) VALUES (?, ?, ?, ?, ?)
+                """,
+                (
+                    run_id,
+                    base_name,
+                    float(metric_value),
+                    representation,
+                    envy_definition,
+                ),
+            )
         conn.commit()
-        return int(cursor.lastrowid)
+        return run_id
 
 
 def _list_run_history(limit: int = 200, db_path: Path | None = None) -> dict[str, Any]:
@@ -1137,6 +1224,9 @@ def _run_payload(payload: dict[str, Any]) -> dict[str, Any]:
             gini_total_norm=result.summary.gini_total_norm,
             gini_base_norm=result.summary.gini_base_norm,
             metrics_extended=result.metrics_extended.values,
+            initial_method=initial_method,
+            sequence=sequence,
+            pick_rule=pick_rule,
         )
 
         return {
@@ -1327,6 +1417,9 @@ def _run_mode_comparison_payload(payload: dict[str, Any]) -> dict[str, Any]:
                     gini_total_norm=float(row["gini_total_norm"]),
                     gini_base_norm=float(row["gini_base_norm"]),
                     metrics_extended=dict(row.get("metrics_extended") or {}),
+                    initial_method=initial_method,
+                    sequence=sequence,
+                    pick_rule=pick_rule,
                 )
             )
 

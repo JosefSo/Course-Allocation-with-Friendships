@@ -97,13 +97,37 @@ def _write_allocation_csv(
     _ensure_output_parent(path)
     with path.open("w", newline="", encoding="utf-8") as f:
         writer = csv.writer(f)
-        writer.writerow(["RoundPicked", "StudentID", "CourseID"])
+        writer.writerow(
+            [
+                "RoundPicked",
+                "StudentID",
+                "CourseID",
+                "InitialPosition",
+                "TurnPosition",
+                "NormalizedTurnPosition",
+                "FriendOpportunityAtPick",
+                "ReactiveFriendBonusAtPick",
+                "UtilityAtPick",
+                "ExPostCourseUtility",
+                "ExPostFriendUtility",
+                "ExPostCombinedUtility",
+            ]
+        )
         for row in pick_log:
             writer.writerow(
                 [
                     row.round_picked,
                     row.student_id,
                     row.course_id,
+                    row.initial_position,
+                    row.turn_position,
+                    f"{row.normalized_turn_position:.6f}",
+                    f"{row.friend_opportunity_at_pick:.6f}",
+                    f"{row.friend_bonus_at_pick:.6f}",
+                    f"{row.utility_at_pick:.6f}",
+                    f"{row.ex_post_course_utility:.6f}",
+                    f"{row.ex_post_friend_utility:.6f}",
+                    f"{row.ex_post_combined_utility:.6f}",
                 ]
             )
 

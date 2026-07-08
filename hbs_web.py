@@ -172,6 +172,9 @@ def _run_job(job_id: str, params: dict) -> None:
             gini_total_norm=result.summary.gini_total_norm,
             gini_base_norm=result.summary.gini_base_norm,
             metrics_extended=result.metrics_extended.values,
+            initial_method=str(params.get("initial_method", "sequential")),
+            sequence=str(params.get("sequence", "snake")),
+            pick_rule=str(params.get("pick_rule", "personal")),
         )
 
         swaps = sum(1 for r in result.post_log if r.event_type == "SWAP")

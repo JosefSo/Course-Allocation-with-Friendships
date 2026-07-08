@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import math
 import random
+from dataclasses import replace
 
 from .hbs_config import _RunConfig
 from .hbs_domain import (
@@ -904,6 +905,25 @@ class _HbsSocialDraftEngine:
 
         summary, metrics_extended = self._compute_metrics()
 
+        final_values: dict[str, tuple[float, float, float]] = {}
+        for student_id in self._students:
+            course, friend_raw = self._student_welfare_components(student_id)
+            friend = friend_raw / self._max_friend_bonus(student_id)
+            final_values[student_id] = (
+                course,
+                friend,
+                self._student_welfare(student_id),
+            )
+        pick_log = [
+            replace(
+                row,
+                ex_post_course_utility=final_values[row.student_id][0],
+                ex_post_friend_utility=final_values[row.student_id][1],
+                ex_post_combined_utility=final_values[row.student_id][2],
+            )
+            for row in pick_log
+        ]
+
         return RunResult(
             alloc=self._alloc_list,
             pick_log=pick_log,
@@ -928,6 +948,9 @@ class _HbsSocialDraftEngine:
         priority = self._students[:]
         self._rng.shuffle(priority)
         self._draft_order = priority[:]
+        initial_positions = {
+            student_id: index for index, student_id in enumerate(priority, start=1)
+        }
         self._notify({
             "stage": "draft",
             "iter": 0,
@@ -960,6 +983,7 @@ class _HbsSocialDraftEngine:
             }
             capacity_snapshot = dict(self._capacity_left)
             ranked: dict[str, list[tuple[str, float, float, float]]] = {}
+            opportunity_by_student: dict[str, float] = {}
             for student_id in priority:
                 candidates = [
                     course_id
@@ -995,8 +1019,11 @@ class _HbsSocialDraftEngine:
                 ranked[student_id] = [
                     (item[4], item[5], item[6], item[7]) for item in scored
                 ]
+                opportunity_by_student[student_id] = max(
+                    (item[7] for item in scored), default=0.0
+                )
 
-            for student_id in priority:
+            for turn_position, student_id in enumerate(priority, start=1):
                 selected = next(
                     (
                         item
@@ -1030,6 +1057,14 @@ class _HbsSocialDraftEngine:
                         utility_at_pick=value,
                         base_at_pick=base,
                         friend_bonus_at_pick=friend_bonus,
+                        initial_position=initial_positions[student_id],
+                        turn_position=turn_position,
+                        normalized_turn_position=(
+                            (turn_position - 1) / (len(priority) - 1)
+                            if len(priority) > 1
+                            else 0.0
+                        ),
+                        friend_opportunity_at_pick=opportunity_by_student[student_id],
                     )
                 )
         return pick_log
@@ -1043,6 +1078,9 @@ class _HbsSocialDraftEngine:
         self._rng.shuffle(order)
         # Persist the seeded permutation so post-phase can reuse the same snake order.
         self._draft_order = order[:]
+        initial_positions = {
+            student_id: index for index, student_id in enumerate(order, start=1)
+        }
 
         self._notify({
             "stage": "draft",
@@ -1069,7 +1107,7 @@ class _HbsSocialDraftEngine:
             })
             turn_order = self._turn_order(order, round_index)
 
-            for student_id in turn_order:
+            for turn_position, student_id in enumerate(turn_order, start=1):
                 candidates = [
                     course_id
                     for course_id in self._courses
@@ -1105,6 +1143,7 @@ class _HbsSocialDraftEngine:
                     scored,
                     key=lambda t: (t[0], t[2], -t[1], t[3], t[4]),
                 )
+                friend_opportunity = max((item[7] for item in scored), default=0.0)
 
                 self._alloc_list[student_id].append(course_id_star)
                 self._alloc_set[student_id].add(course_id_star)
@@ -1129,6 +1168,14 @@ class _HbsSocialDraftEngine:
                         utility_at_pick=u,
                         base_at_pick=base,
                         friend_bonus_at_pick=friend_bonus,
+                        initial_position=initial_positions[student_id],
+                        turn_position=turn_position,
+                        normalized_turn_position=(
+                            (turn_position - 1) / (len(turn_order) - 1)
+                            if len(turn_order) > 1
+                            else 0.0
+                        ),
+                        friend_opportunity_at_pick=friend_opportunity,
                     )
                 )
 
