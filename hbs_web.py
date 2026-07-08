@@ -12,6 +12,7 @@ the server is stdlib http.server, the UI is a single static HTML file
 from __future__ import annotations
 
 import argparse
+import csv
 import json
 import subprocess
 import sys
@@ -91,6 +92,28 @@ def _resolve_table(name: str) -> Path:
     if candidate.parent != TABLES_DIR.resolve() or not candidate.is_file():
         raise ValueError(f"table not found: {name}")
     return candidate
+
+
+_TABLE_REQUIRED_COLUMNS = {
+    "table1": {"StudentID", "CourseID", "Score", "Position"},
+    "table2": {"StudentID_A", "StudentID_B", "CourseID", "Position"},
+    "lambda": {"StudentID", "LambdaFriend"},
+}
+
+
+def _validate_table_kind(path: Path, kind: str) -> None:
+    """Reject a CSV selected in the wrong UI slot before starting a job."""
+
+    required = _TABLE_REQUIRED_COLUMNS[kind]
+    with path.open("r", newline="", encoding="utf-8-sig") as handle:
+        columns = set(next(csv.reader(handle), []))
+    missing = required - columns
+    if missing:
+        expected = ", ".join(sorted(required))
+        raise ValueError(
+            f"{kind} selected the wrong CSV file '{path.name}'. "
+            f"Expected columns: {expected}"
+        )
 
 
 # ---- background jobs with live progress -----------------------------------
@@ -206,10 +229,13 @@ def _run_job(job_id: str, params: dict) -> None:
 
 def _api_run_start(params: dict) -> dict:
     # Validate table names up front so obvious mistakes fail fast (HTTP 400).
-    _resolve_table(str(params["csv_a"]))
-    _resolve_table(str(params["csv_b"]))
+    csv_a = _resolve_table(str(params["csv_a"]))
+    csv_b = _resolve_table(str(params["csv_b"]))
+    _validate_table_kind(csv_a, "table1")
+    _validate_table_kind(csv_b, "table2")
     if params.get("csv_lambda"):
-        _resolve_table(str(params["csv_lambda"]))
+        csv_lambda = _resolve_table(str(params["csv_lambda"]))
+        _validate_table_kind(csv_lambda, "lambda")
 
     b = int(params.get("b", 3))
     draft_rounds = int(params["draft_rounds"]) if params.get("draft_rounds") else b
@@ -248,6 +274,15 @@ def _api_progress(job_id: str, cursor: int) -> dict:
 
 
 def _api_compare(params: dict) -> dict:
+    csv_a = _resolve_table(str(params["csv_a"]))
+    csv_b = _resolve_table(str(params["csv_b"]))
+    _validate_table_kind(csv_a, "table1")
+    _validate_table_kind(csv_b, "table2")
+    if params.get("csv_lambda"):
+        _validate_table_kind(
+            _resolve_table(str(params["csv_lambda"])),
+            "lambda",
+        )
     payload = {
         "table1_file": str(params["csv_a"]),
         "table2_file": str(params["csv_b"]),

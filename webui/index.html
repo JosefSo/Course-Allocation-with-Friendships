@@ -411,18 +411,26 @@
 
   // ---------- tables list ----------
   function fillTableSelects(tables, keep) {
-    [["csv_a", "t1"], ["csv_b", "t2"], ["csv_lambda", "t3"]].forEach(function (pair) {
+    var groups = {
+      csv_a: tables.filter(function (n) { return /^(t1|table1)(_|\b)/i.test(n); }),
+      csv_b: tables.filter(function (n) { return /^(t2|table2)(_|\b)/i.test(n); }),
+      csv_lambda: tables.filter(function (n) { return /^(t3|table3)(_|\b)/i.test(n) || /lambda/i.test(n); })
+    };
+    [["csv_a", "Таблица 1"], ["csv_b", "Таблица 2"], ["csv_lambda", "Таблица 3"]].forEach(function (pair) {
       var sel = $(pair[0]);
       var prev = keep ? sel.value : null;
       var opts = [];
-      if (pair[0] === "csv_lambda") opts.push('<option value="">— не использовать (λ = 0.3) —</option>');
-      tables.forEach(function (name) {
+      var candidates = groups[pair[0]];
+      if (pair[0] === "csv_lambda") opts.push('<option value="">— не использовать (λ = 0.5) —</option>');
+      if (!candidates.length && pair[0] !== "csv_lambda") {
+        opts.push('<option value="">— нет файлов: ' + esc(pair[1]) + ' —</option>');
+      }
+      candidates.forEach(function (name) {
         opts.push('<option value="' + esc(name) + '">' + esc(name) + "</option>");
       });
       sel.innerHTML = opts.join("");
-      // preselect: previous choice, else first file matching the table prefix
-      var candidates = tables.filter(function (n) { return n.indexOf(pair[1]) === 0; });
-      if (prev && tables.indexOf(prev) >= 0) sel.value = prev;
+      // Preserve only a previous choice that is valid for this exact table slot.
+      if (prev && candidates.indexOf(prev) >= 0) sel.value = prev;
       else if (candidates.length) sel.value = candidates[0];
     });
   }
